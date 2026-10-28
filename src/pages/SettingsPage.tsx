@@ -94,7 +94,7 @@ export default function SettingsPage() {
               <div className="sw-sub" style={{ color: 'var(--text-3)', fontSize: 12.5, margin: '0 0 12px' }}>{t('settings.languageSub')}</div>
               <div className="seg" style={{ flexWrap: 'wrap' }}>
                 {LOCALES.map((l) => (
-                  <button key={l.code} className={locale === l.code ? 'active' : ''} onClick={() => setLocale(l.code)}>{l.native}</button>
+                  <button key={l.code} className={locale === l.code ? 'active' : ''} aria-label={`${l.flag} ${l.native} (${l.english})`} onClick={() => setLocale(l.code)}>{l.flag} {l.native}</button>
                 ))}
               </div>
             </div>

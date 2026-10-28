@@ -1,10 +1,10 @@
 export type Locale = 'en' | 'ru' | 'uk' | 'zh-CN'
 
-export const LOCALES: { code: Locale; native: string; english: string }[] = [
-  { code: 'en', native: 'English', english: 'English' },
-  { code: 'ru', native: 'Русский', english: 'Russian' },
-  { code: 'uk', native: 'Українська', english: 'Ukrainian' },
-  { code: 'zh-CN', native: '中文', english: 'Simplified Chinese' },
+export const LOCALES: { code: Locale; native: string; english: string; flag: string }[] = [
+  { code: 'en', native: 'English', english: 'English', flag: '🇬🇧' },
+  { code: 'ru', native: 'Русский', english: 'Russian', flag: '🇷🇺' },
+  { code: 'uk', native: 'Українська', english: 'Ukrainian', flag: '🇺🇦' },
+  { code: 'zh-CN', native: '中文', english: 'Simplified Chinese', flag: '🇨🇳' },
 ]
 
 export const en = {
