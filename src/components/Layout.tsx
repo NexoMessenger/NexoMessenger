@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar } from './ui'
@@ -20,6 +20,10 @@ const NAV: { to: string; labelKey: TranslationKey; icon: ComponentType<IconProps
 export default function Layout({ children }: { children: ReactNode }) {
   const { profile } = useAuth()
   const { t } = useI18n()
+  const { pathname } = useLocation()
+  // Inside an open conversation the message composer must own the bottom of
+  // the screen — the fixed bottom navigation would cover it on mobile.
+  const inRoom = /^\/(chat|group|channel)\//.test(pathname)
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   )
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${inRoom ? 'in-room' : ''}`}>
       <aside className="sidebar">
         <div className="logo-badge"><NexoMark size={26} /></div>
         {items('desktop')}
