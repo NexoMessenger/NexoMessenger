@@ -29,10 +29,14 @@ export default function WelcomePage() {
         <div className="lang-grid" role="radiogroup" aria-label={t('welcome.chooseLanguage')}>
           {LOCALES.map((l) => (
             <button key={l.code} role="radio" aria-checked={locale === l.code}
+              aria-label={`${l.flag} ${l.native} (${l.english})`}
               className={`lang-option glass ${locale === l.code ? 'active' : ''}`}
               onClick={() => setLocale(l.code)}>
-              <span className="lang-native">{l.native}</span>
-              <span className="lang-english">{l.english}</span>
+              <span className="lang-flag" aria-hidden="true">{l.flag}</span>
+              <span className="lang-names">
+                <span className="lang-native">{l.native}</span>
+                <span className="lang-english">{l.english}</span>
+              </span>
               {locale === l.code && <span className="lang-check" aria-hidden="true">✓</span>}
             </button>
           ))}
