@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
-import { EmptyState, ErrorBox, GroupAvatar, Modal, UserPicker, fmtTime } from '../components/ui'
+import { EmptyState, ErrorBox, GroupAvatar, Modal, UserPicker, fmtTime, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
@@ -24,7 +24,7 @@ export default function GroupsPage() {
   const load = async () => {
     if (!profile) return
     try { setItems(await api.listGroups(profile.id)); setError('') }
-    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    catch (e) { setError(errText(e, t)) }
     finally { setLoading(false) }
   }
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function GroupsPage() {
       const id = await api.createGroup(profile.id, name, description, isPublic, members.map((m) => m.id))
       setShowCreate(false); setName(''); setDescription(''); setMembers([]); setIsPublic(false)
       navigate(`/group/${id}`)
-    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    } catch (e) { setError(errText(e, t)) }
     finally { setCreating(false) }
   }
 

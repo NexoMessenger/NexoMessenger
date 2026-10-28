@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { dictionaries, LOCALES, type Locale, type TranslationKey } from './translations'
+export type { Locale, TranslationKey } from './translations'
+export { LOCALES } from './translations'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 

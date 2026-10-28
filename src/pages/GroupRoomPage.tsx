@@ -6,7 +6,8 @@ import type { AttachmentInfo, Group, GroupMessage, Profile, Reaction } from '../
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconBack, IconGroups, IconChecks, IconHeart } from '../components/icons'
-import { AttachmentView, Avatar, GroupAvatar, Modal, UserPicker, fmtClock } from '../components/ui'
+import { AttachmentView, Avatar, GroupAvatar, Modal, UserPicker, fmtClock, errText } from '../components/ui'
+import UserProfileModal from '../components/UserProfileModal'
 import { ReactionBar, REACTION_SET, toggleReactionLocal } from '../components/MessageExtras'
 
 const PAGE = 60
@@ -30,6 +31,8 @@ export default function GroupRoomPage() {
   const [typingName, setTypingName] = useState('')
   const [showInfo, setShowInfo] = useState(false)
   const [addPick, setAddPick] = useState<Profile[]>([])
+  const [memberError, setMemberError] = useState(false)
+  const [viewUser, setViewUser] = useState<Profile | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const typingTimeout = useRef<number>()
   const reqRef = useRef(0)
@@ -43,17 +46,22 @@ export default function GroupRoomPage() {
     if (!profile) { setLoading(false); return }
     const my = ++reqRef.current
     try {
-      const [g, ms, mems, reacts] = await Promise.all([
+      // Members and reactions are auxiliary: if either request fails (e.g.
+      // migration 003 not applied yet), the room and member list must still
+      // render — never blank the whole screen for one failing sub-request.
+      const [g, ms, mems] = await Promise.all([
         api.getGroup(id), api.listGroupMessages(id, { limit: PAGE }),
-        api.getGroupMembers(id), api.listReactions('group', id),
+        api.getGroupMembers(id).catch(() => { if (my === reqRef.current) setMemberError(true); return [] as { profile: Profile; role: string }[] }),
       ])
+      const reacts = await api.listReactions('group', id).catch(() => [] as Reaction[])
       if (my !== reqRef.current) return
       setGroup(g); setMessages(ms); setMembers(mems); setReactions(reacts)
+      if (mems.length) setMemberError(false)
       setProfiles(Object.fromEntries(mems.map((m) => [m.profile.id, m.profile])))
       setHasMore(ms.length === PAGE)
       setError('')
     } catch (e) {
-      if (my === reqRef.current) setError(e instanceof Error ? e.message : t('error.generic'))
+      if (my === reqRef.current) setError(errText(e, t))
     } finally {
       if (my === reqRef.current) setLoading(false)
     }
@@ -102,7 +110,7 @@ export default function GroupRoomPage() {
       setHasMore(older.length === PAGE)
       requestAnimationFrame(() => { if (el) el.scrollTop = el.scrollHeight - prevH })
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
     } finally { setLoadingEarlier(false) }
   }
 
@@ -118,11 +126,11 @@ export default function GroupRoomPage() {
     setPickerFor(null)
     setReactions((prev) => toggleReactionLocal(prev, 'group', id, m.id, profile.id, emoji))
     try { await api.toggleReaction('group', id, m.id, profile.id, emoji) }
-    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')); void load() }
+    catch (e) { setError(errText(e, t)); void load() }
   }
 
   const act = async (fn: () => Promise<void>) => {
-    try { await fn(); await load() } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    try { await fn(); await load() } catch (e) { setError(errText(e, t)) }
   }
 
   return (
@@ -204,17 +212,28 @@ export default function GroupRoomPage() {
             <div style={{ color: 'var(--text-3)', fontSize: 13 }}>{group.is_public ? t('groups.publicGroup') : t('groups.privateGroup')} · {members.length} {t('common.members')}</div>
             {group.description && <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>{group.description}</p>}
           </div>
-          <div className="section-label">{t('groups.membersLabel')}</div>
-          <div className="list">
+          <div className="section-label">{t('groups.membersLabel')} · {members.length}</div>
+          {memberError && members.length === 0 && (
+            <div className="error-box" role="alert" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ flex: 1, minWidth: 0 }}>{t('groups.membersError')}</span>
+              <button className="btn btn-sm" onClick={() => void load()}>{t('common.retry')}</button>
+            </div>
+          )}
+          {!memberError && members.length === 0 && <p className="members-empty">{t('groups.noMembers')}</p>}
+          <div className="list member-list">
             {members.map(({ profile: p, role }) => (
-              <div key={p.id} className="row-card glass" style={{ cursor: 'default' }}>
-                <Avatar profile={p} size={40} showOnline />
-                <span className="row-main">
-                  <span className="row-title">{p.display_name}</span>
-                  <span className="row-preview">@{p.username} · {role}</span>
+              <div key={p.id} className="row-card glass member-row">
+                <span className="member-main" role="button" tabIndex={0} title={t('profile.view')}
+                  onClick={() => setViewUser(p)} onKeyDown={(e) => { if (e.key === 'Enter') setViewUser(p) }}>
+                  <Avatar profile={p} size={40} showOnline />
+                  <span className="row-main">
+                    <span className="row-title">{p.display_name}</span>
+                    <span className="row-preview">@{p.username}</span>
+                  </span>
                 </span>
+                <span className={`role-badge role-${role}`}>{t(role === 'owner' ? 'roles.owner' : role === 'admin' ? 'roles.admin' : 'roles.member')}</span>
                 {canManage && p.id !== group.owner_id && p.id !== profile.id && (
-                  <span style={{ display: 'flex', gap: 6 }}>
+                  <span className="member-actions">
                     <button className="btn btn-sm" onClick={() => act(() => api.setGroupRole(id, p.id, role === 'admin' ? 'member' : 'admin'))}>
                       {role === 'admin' ? t('groups.demote') : t('groups.makeAdmin')}
                     </button>
@@ -244,6 +263,7 @@ export default function GroupRoomPage() {
           {myRole === 'owner' && <p style={{ color: 'var(--text-3)', fontSize: 12.5, textAlign: 'center', marginTop: 14 }}>{t('groups.ownerNote')}</p>}
         </Modal>
       )}
+      {viewUser && <UserProfileModal userId={viewUser.id} onClose={() => setViewUser(null)} />}
     </div>
   )
 }

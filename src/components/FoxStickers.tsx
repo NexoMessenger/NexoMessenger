@@ -1,27 +1,27 @@
 import { useId, useState, type ReactNode } from 'react'
-import { useI18n } from '../i18n'
+import { useI18n, type TranslationKey } from '../i18n'
 
 export type FoxVariant =
   | 'happy' | 'laugh' | 'sad' | 'angry' | 'surprised' | 'love' | 'wave' | 'bye'
   | 'sleepy' | 'thumbsup' | 'thanks' | 'celebrate' | 'confused' | 'facepalm' | 'heart' | 'cool'
 
-export const STICKERS: { key: FoxVariant; name: string }[] = [
-  { key: 'happy', name: 'Happy fox' },
-  { key: 'laugh', name: 'Laughing fox' },
-  { key: 'sad', name: 'Sad fox' },
-  { key: 'angry', name: 'Angry fox' },
-  { key: 'surprised', name: 'Surprised fox' },
-  { key: 'love', name: 'Love-struck fox' },
-  { key: 'wave', name: 'Fox waving hello' },
-  { key: 'bye', name: 'Fox saying goodbye' },
-  { key: 'sleepy', name: 'Sleepy fox' },
-  { key: 'thumbsup', name: 'Thumbs-up fox' },
-  { key: 'thanks', name: 'Fox saying thanks' },
-  { key: 'celebrate', name: 'Fox celebrating' },
-  { key: 'confused', name: 'Confused fox' },
-  { key: 'facepalm', name: 'Facepalm fox' },
-  { key: 'heart', name: 'Fox sending a heart' },
-  { key: 'cool', name: 'Cool fox with sunglasses' },
+export const STICKERS: { key: FoxVariant; nameKey: TranslationKey }[] = [
+  { key: 'happy', nameKey: 'sticker.happy' },
+  { key: 'laugh', nameKey: 'sticker.laugh' },
+  { key: 'sad', nameKey: 'sticker.sad' },
+  { key: 'angry', nameKey: 'sticker.angry' },
+  { key: 'surprised', nameKey: 'sticker.surprised' },
+  { key: 'love', nameKey: 'sticker.love' },
+  { key: 'wave', nameKey: 'sticker.wave' },
+  { key: 'bye', nameKey: 'sticker.bye' },
+  { key: 'sleepy', nameKey: 'sticker.sleepy' },
+  { key: 'thumbsup', nameKey: 'sticker.thumbsup' },
+  { key: 'thanks', nameKey: 'sticker.thanks' },
+  { key: 'celebrate', nameKey: 'sticker.celebrate' },
+  { key: 'confused', nameKey: 'sticker.confused' },
+  { key: 'facepalm', nameKey: 'sticker.facepalm' },
+  { key: 'heart', nameKey: 'sticker.heart' },
+  { key: 'cool', nameKey: 'sticker.cool' },
 ]
 
 const INK = '#33241A'
@@ -145,14 +145,14 @@ export function StickerPicker({ onSend }: { onSend: (stickerKey: string) => void
       <div className="sticker-preview">
         <FoxSticker variant={selected} size={92} />
         <div className="sticker-preview-meta">
-          <div className="sticker-preview-name">{current.name}</div>
+          <div className="sticker-preview-name">{t(current.nameKey)}</div>
           <button className="btn btn-primary btn-sm" onClick={() => onSend(selected)}>{t('stickers.send')}</button>
         </div>
       </div>
       <div className="sticker-grid">
         {STICKERS.map((s) => (
           <button key={s.key} className={`sticker-cell ${selected === s.key ? 'active' : ''}`}
-            onClick={() => setSelected(s.key)} aria-label={s.name} title={s.name}
+            onClick={() => setSelected(s.key)} aria-label={t(s.nameKey)} title={t(s.nameKey)}
             aria-pressed={selected === s.key}>
             <FoxSticker variant={s.key} size={52} />
           </button>

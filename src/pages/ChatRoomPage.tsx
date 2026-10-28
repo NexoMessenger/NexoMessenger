@@ -6,7 +6,7 @@ import type { AttachmentInfo, Message, Profile, Reaction } from '../lib/types'
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconBack, IconChats, IconChecks, IconHeart } from '../components/icons'
-import { AttachmentView, Avatar, fmtClock, fmtLastSeen } from '../components/ui'
+import { AttachmentView, Avatar, fmtClock, fmtLastSeen, errText } from '../components/ui'
 import { ReactionBar, REACTION_SET, toggleReactionLocal } from '../components/MessageExtras'
 
 const PAGE = 60
@@ -48,7 +48,7 @@ export default function ChatRoomPage() {
       setHasMore(msgs.length === PAGE)
       setError('')
     } catch (e) {
-      if (my === reqRef.current) setError(e instanceof Error ? e.message : t('error.generic'))
+      if (my === reqRef.current) setError(errText(e, t))
     } finally {
       if (my === reqRef.current) setLoading(false)
     }
@@ -99,7 +99,7 @@ export default function ChatRoomPage() {
       setHasMore(older.length === PAGE)
       requestAnimationFrame(() => { if (el) el.scrollTop = el.scrollHeight - prevH })
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
     } finally { setLoadingEarlier(false) }
   }
 
@@ -115,7 +115,7 @@ export default function ChatRoomPage() {
     setPickerFor(null)
     setReactions((prev) => toggleReactionLocal(prev, 'direct', id, m.id, profile.id, emoji))
     try { await api.toggleReaction('direct', id, m.id, profile.id, emoji) }
-    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')); void load() }
+    catch (e) { setError(errText(e, t)); void load() }
   }
 
   const myLastOwn = [...messages].reverse().find((m) => m.sender_id === profile?.id)

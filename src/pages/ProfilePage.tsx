@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
-import { Avatar, ErrorBox } from '../components/ui'
+import { Avatar, ErrorBox, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
@@ -33,7 +33,7 @@ export default function ProfilePage() {
       await api.updateProfile(profile.id, { display_name: displayName.trim(), username, bio: bio.trim() })
       await refresh()
       setEditing(false); setNotice(t('profile.saved'))
-    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    } catch (e) { setError(errText(e, t)) }
     finally { setSaving(false) }
   }
 
@@ -44,7 +44,7 @@ export default function ProfilePage() {
       const url = await api.uploadAvatar(file, profile.id)
       await api.updateProfile(profile.id, { avatar_url: url })
       await refresh()
-    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    } catch (e) { setError(errText(e, t)) }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
   }
 

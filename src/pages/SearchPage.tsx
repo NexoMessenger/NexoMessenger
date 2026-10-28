@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Channel, Group, Profile } from '../lib/types'
-import { Avatar, ErrorBox, EmptyState, GroupAvatar } from '../components/ui'
+import { Avatar, ErrorBox, EmptyState, GroupAvatar, errText } from '../components/ui'
+import UserProfileModal from '../components/UserProfileModal'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
@@ -19,12 +20,15 @@ export default function SearchPage() {
   const [error, setError] = useState('')
   const [searched, setSearched] = useState(false)
   const [busy, setBusy] = useState('')
+  const [viewUser, setViewUser] = useState<Profile | null>(null)
   const timer = useRef<number>()
+  const seqRef = useRef(0)
 
   useEffect(() => {
     if (!profile) return
     if (!q.trim()) { setPeople([]); setGroups([]); setChannels([]); setSearched(false); return }
     setLoading(true)
+    const seq = ++seqRef.current
     timer.current = window.setTimeout(async () => {
       try {
         const [p, g, c] = await Promise.all([
@@ -32,10 +36,12 @@ export default function SearchPage() {
           api.searchPublicGroups(q),
           api.searchPublicChannels(q),
         ])
+        if (seqRef.current !== seq) return // stale response — a newer query is in flight
         setPeople(p); setGroups(g); setChannels(c); setError(''); setSearched(true)
       } catch (e) {
-        setError(e instanceof Error ? e.message : t('error.generic'))
-      } finally { setLoading(false) }
+        if (seqRef.current !== seq) return
+        setError(errText(e, t))
+      } finally { if (seqRef.current === seq) setLoading(false) }
     }, 300)
     return () => window.clearTimeout(timer.current)
   }, [q, profile])
@@ -44,7 +50,7 @@ export default function SearchPage() {
     if (!profile) return
     setBusy(p.id)
     try { navigate(`/chat/${await api.getOrCreateDirect(profile.id, p.id)}`) }
-    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    catch (e) { setError(errText(e, t)) }
     finally { setBusy('') }
   }
 
@@ -52,7 +58,7 @@ export default function SearchPage() {
     if (!profile) return
     setBusy(g.id)
     try { await api.addGroupMember(g.id, profile.id); navigate(`/group/${g.id}`) }
-    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    catch (e) { setError(errText(e, t)) }
     finally { setBusy('') }
   }
 
@@ -60,7 +66,7 @@ export default function SearchPage() {
     if (!profile) return
     setBusy(c.id)
     try { await api.subscribeChannel(c.id, profile.id); navigate(`/channel/${c.id}`) }
-    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    catch (e) { setError(errText(e, t)) }
     finally { setBusy('') }
   }
 
@@ -93,13 +99,14 @@ export default function SearchPage() {
           <div className="section-label">{t('search.people')}</div>
           <div className="list">
             {people.map((p) => (
-              <div key={p.id} className="row-card glass">
+              <div key={p.id} className="row-card glass" role="button" tabIndex={0} title={t('profile.view')}
+                onClick={() => setViewUser(p)} onKeyDown={(e) => { if (e.key === 'Enter') setViewUser(p) }}>
                 <Avatar profile={p} size={44} showOnline />
                 <span className="row-main">
                   <span className="row-title">{p.display_name}</span>
                   <span className="row-preview">@{p.username}{p.bio ? ` · ${p.bio}` : ''} · {p.is_online ? t('common.online') : t('common.offline')}</span>
                 </span>
-                <button className="btn btn-sm btn-primary" disabled={busy === p.id} onClick={() => openChat(p)}>
+                <button className="btn btn-sm btn-primary" disabled={busy === p.id} onClick={(e) => { e.stopPropagation(); void openChat(p) }}>
                   {busy === p.id ? '…' : t('search.message')}
                 </button>
               </div>
@@ -128,6 +135,7 @@ export default function SearchPage() {
         </>
       )}
 
+      {viewUser && <UserProfileModal userId={viewUser.id} onClose={() => setViewUser(null)} />}
       {channels.length > 0 && (
         <>
           <div className="section-label">{t('search.publicChannels')}</div>

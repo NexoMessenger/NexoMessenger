@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
-import { Avatar, EmptyState, ErrorBox, Modal, UserPicker, fmtTime } from '../components/ui'
+import { Avatar, EmptyState, ErrorBox, Modal, UserPicker, fmtTime, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
@@ -24,7 +24,7 @@ export default function ChatsPage() {
       setItems(await api.listDirectChats(profile.id))
       setError('')
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
     } finally { setLoading(false) }
   }
 
@@ -43,7 +43,7 @@ export default function ChatsPage() {
       setShowNew(false); setPicked([])
       navigate(`/chat/${id}`)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
     } finally { setStarting(false) }
   }
 
