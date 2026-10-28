@@ -3,6 +3,8 @@ import type { Profile } from '../lib/types'
 import * as api from '../lib/api'
 import { useI18n } from '../i18n'
 import { IconClose, IconSearch, IconFile } from './icons'
+import { AudioBubble, VideoCircle } from './MessageExtras'
+import { FoxSticker } from './FoxStickers'
 
 export function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'N'
@@ -150,8 +152,17 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
 
 export function isImageType(t: string) { return t.startsWith('image/') }
 
-export function AttachmentView({ url, name, type }: { url: string; name: string; type: string }) {
+export function AttachmentView({ url, name, type, duration }: { url: string; name: string; type: string; duration?: number }) {
   if (!url) return null
+  if (type === 'sticker/nexo-fox') {
+    return <div className="sticker-msg"><FoxSticker variant={url} size={132} /></div>
+  }
+  if (type.startsWith('audio/')) {
+    return <AudioBubble url={url} duration={duration} label={name || 'voice message'} />
+  }
+  if (type.startsWith('video/')) {
+    return <VideoCircle url={url} duration={duration} label={name || 'video message'} />
+  }
   if (isImageType(type)) {
     return <a href={url} target="_blank" rel="noreferrer"><img className="attachment-img" src={url} alt={name || 'attachment'} /></a>
   }

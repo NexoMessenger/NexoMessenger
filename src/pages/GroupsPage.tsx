@@ -35,7 +35,7 @@ export default function GroupsPage() {
   }, [profile?.id])
 
   const create = async () => {
-    if (!profile) return
+    if (!profile || creating) return // guard against duplicate group creation
     setCreating(true)
     try {
       const id = await api.createGroup(profile.id, name, description, isPublic, members.map((m) => m.id))

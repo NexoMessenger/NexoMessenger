@@ -118,3 +118,31 @@ export const IconGoogle = ({ size = 18 }: { size?: number }) => (
     <path fill="#EA4335" d="M12 4.5c1.8 0 3 .8 3.7 1.4l3.3-3.2A11.9 11.9 0 0 0 1.3 6.4l4 3A7.1 7.1 0 0 1 12 4.5Z" />
   </svg>
 )
+
+export const IconMic = (p: IconProps) => (
+  <svg {...base(p)}><rect x="9" y="2.8" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" /></svg>
+)
+export const IconVideoCircle = (p: IconProps) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="M10 8.8v6.4L15.5 12 10 8.8Z" fill="currentColor" stroke="none" /></svg>
+)
+export const IconSticker = (p: IconProps) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="9" /><circle cx="9" cy="10" r="0.7" fill="currentColor" stroke="none" /><circle cx="15" cy="10" r="0.7" fill="currentColor" stroke="none" /><path d="M8 14.5c1.2 1.3 2.6 2 4 2s2.8-.7 4-2" /></svg>
+)
+export const IconPlay = (p: IconProps) => (
+  <svg {...base(p)}><path d="M8 5.2v13.6L19 12 8 5.2Z" fill="currentColor" stroke="none" /></svg>
+)
+export const IconPause = (p: IconProps) => (
+  <svg {...base(p)}><rect x="6.5" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none" /><rect x="13.9" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" stroke="none" /></svg>
+)
+export const IconHeart = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 20.3S3.8 15 3.8 9.6A4.6 4.6 0 0 1 12 6.7a4.6 4.6 0 0 1 8.2 2.9c0 5.4-8.2 10.7-8.2 10.7Z" strokeLinejoin="round" /></svg>
+)
+export const IconStop = (p: IconProps) => (
+  <svg {...base(p)}><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" stroke="none" /></svg>
+)
+export const IconFlipCamera = (p: IconProps) => (
+  <svg {...base(p)}><path d="M4.5 8.5A8 8 0 0 1 19 6.6M19.5 15.5A8 8 0 0 1 5 17.4" /><path d="M19.3 3.2v3.6h-3.6M4.7 20.8v-3.6h3.6" /></svg>
+)
+export const IconClock = (p: IconProps) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="M12 7v5.2l3.4 2" /></svg>
+)

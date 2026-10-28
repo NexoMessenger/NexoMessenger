@@ -2,7 +2,7 @@ import { supabase, backendMode } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply } from './localBackend'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, Group, GroupMessage,
-  Message, Profile, UserSettings,
+  Message, Profile, Reaction, ReactionScope, UserSettings,
 } from './types'
 
 export const mode = backendMode
@@ -257,13 +257,21 @@ export async function getOrCreateDirect(me: string, otherId: string): Promise<st
   return conv.id
 }
 
-export async function listMessages(conversationId: string): Promise<Message[]> {
+export interface PageOpts { limit?: number; before?: string }
+
+/** Latest page of messages (ascending). Pass `before` (oldest created_at) to page backwards. */
+export async function listMessages(conversationId: string, opts: PageOpts = {}): Promise<Message[]> {
+  const limit = opts.limit ?? 60
   if (isSb()) {
-    const { data, error } = await supabase!.from('messages').select('*').eq('conversation_id', conversationId).order('created_at', { ascending: true }).limit(300)
+    let q = supabase!.from('messages').select('*').eq('conversation_id', conversationId)
+    if (opts.before) q = q.lt('created_at', opts.before)
+    const { data, error } = await q.order('created_at', { ascending: false }).limit(limit)
     if (error) err(error.message)
-    return (data as Message[]) || []
+    return ((data as Message[]) || []).reverse()
   }
-  return loadDB().messages.filter((m) => m.conversation_id === conversationId).sort((a, b) => a.created_at.localeCompare(b.created_at))
+  let all = loadDB().messages.filter((m) => m.conversation_id === conversationId)
+  if (opts.before) all = all.filter((m) => m.created_at < opts.before!)
+  return all.sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-limit)
 }
 
 export async function sendMessage(conversationId: string, senderId: string, body: string, att?: AttachmentInfo): Promise<void> {
@@ -273,13 +281,14 @@ export async function sendMessage(conversationId: string, senderId: string, body
     const { error } = await supabase!.from('messages').insert({
       conversation_id: conversationId, sender_id: senderId, body,
       attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '',
+      attachment_duration: att?.duration || 0,
     })
     if (error) err(error.message)
     await supabase!.from('conversations').update({ last_message_at: now() }).eq('id', conversationId)
     return
   }
   const db = loadDB()
-  db.messages.push({ id: uid(), conversation_id: conversationId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', created_at: now() })
+  db.messages.push({ id: uid(), conversation_id: conversationId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, created_at: now() })
   const conv = db.conversations.find((c) => c.id === conversationId); if (conv) conv.last_message_at = now()
   saveDB(db)
   maybeAssistantReply(db, conversationId, senderId)
@@ -288,7 +297,22 @@ export async function sendMessage(conversationId: string, senderId: string, body
 export async function markDirectRead(conversationId: string, userId: string) {
   if (isSb()) { await supabase!.from('conversation_members').update({ last_read_at: now() }).eq('conversation_id', conversationId).eq('user_id', userId); return }
   const db = loadDB(); const m = db.convMembers.find((x) => x.conversation_id === conversationId && x.user_id === userId)
-  if (m) { m.last_read_at = now(); saveDB(db) }
+  if (!m) return
+  // Only write when something is actually unread — otherwise this write would
+  // re-trigger realtime listeners and loop (load -> mark -> emit -> load...).
+  const hasUnread = db.messages.some((x) => x.conversation_id === conversationId && x.sender_id !== userId && x.created_at > m.last_read_at)
+  if (!hasUnread) return
+  m.last_read_at = now(); saveDB(db)
+}
+
+/** Peer's last_read_at for read receipts (lightweight single-row lookup). */
+export async function getPeerLastRead(conversationId: string, meId: string): Promise<string> {
+  if (isSb()) {
+    const { data } = await supabase!.from('conversation_members').select('user_id,last_read_at').eq('conversation_id', conversationId)
+    return (data || []).find((m: { user_id: string }) => m.user_id !== meId)?.last_read_at || ''
+  }
+  const db = loadDB()
+  return db.convMembers.find((m) => m.conversation_id === conversationId && m.user_id !== meId)?.last_read_at || ''
 }
 
 export async function getDirectPeer(conversationId: string, me: string): Promise<Profile | null> {
@@ -384,32 +408,77 @@ export async function setGroupRole(groupId: string, userId: string, role: 'admin
   const db = loadDB(); const m = db.groupMembers.find((x) => x.group_id === groupId && x.user_id === userId); if (m) m.role = role; saveDB(db)
 }
 
-export async function listGroupMessages(groupId: string): Promise<GroupMessage[]> {
+export async function listGroupMessages(groupId: string, opts: PageOpts = {}): Promise<GroupMessage[]> {
+  const limit = opts.limit ?? 60
   if (isSb()) {
-    const { data, error } = await supabase!.from('group_messages').select('*').eq('group_id', groupId).order('created_at', { ascending: true }).limit(300)
+    let q = supabase!.from('group_messages').select('*').eq('group_id', groupId)
+    if (opts.before) q = q.lt('created_at', opts.before)
+    const { data, error } = await q.order('created_at', { ascending: false }).limit(limit)
     if (error) err(error.message)
-    return (data as GroupMessage[]) || []
+    return ((data as GroupMessage[]) || []).reverse()
   }
-  return loadDB().groupMessages.filter((m) => m.group_id === groupId).sort((a, b) => a.created_at.localeCompare(b.created_at))
+  let all = loadDB().groupMessages.filter((m) => m.group_id === groupId)
+  if (opts.before) all = all.filter((m) => m.created_at < opts.before!)
+  return all.sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-limit)
 }
 
 export async function sendGroupMessage(groupId: string, senderId: string, body: string, att?: AttachmentInfo) {
   body = body.trim(); if (!body && !att) err('Message is empty.')
   if (isSb()) {
-    const { error } = await supabase!.from('group_messages').insert({ group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '' })
+    const { error } = await supabase!.from('group_messages').insert({ group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0 })
     if (error) err(error.message)
     await supabase!.from('groups').update({ last_message_at: now() }).eq('id', groupId)
     return
   }
   const db = loadDB()
-  db.groupMessages.push({ id: uid(), group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', created_at: now() })
+  db.groupMessages.push({ id: uid(), group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, created_at: now() })
   const g = db.groups.find((x) => x.id === groupId); if (g) g.last_message_at = now()
   saveDB(db)
 }
 
 export async function markGroupRead(groupId: string, userId: string) {
   if (isSb()) { await supabase!.from('group_members').update({ last_read_at: now() }).eq('group_id', groupId).eq('user_id', userId); return }
-  const db = loadDB(); const m = db.groupMembers.find((x) => x.group_id === groupId && x.user_id === userId); if (m) { m.last_read_at = now(); saveDB(db) }
+  const db = loadDB(); const m = db.groupMembers.find((x) => x.group_id === groupId && x.user_id === userId)
+  if (!m) return
+  const hasUnread = db.groupMessages.some((x) => x.group_id === groupId && x.sender_id !== userId && x.created_at > m.last_read_at)
+  if (!hasUnread) return
+  m.last_read_at = now(); saveDB(db)
+}
+
+/* ============================== REACTIONS ============================== */
+
+export async function listReactions(scope: ReactionScope, conversationId: string): Promise<Reaction[]> {
+  if (isSb()) {
+    const { data, error } = await supabase!.from('message_reactions').select('*').eq('scope', scope).eq('conversation_id', conversationId).order('created_at', { ascending: true }).limit(1000)
+    if (error) err(error.message)
+    return (data as Reaction[]) || []
+  }
+  return loadDB().reactions.filter((r) => r.scope === scope && r.conversation_id === conversationId)
+}
+
+/** Add / change / remove (same emoji again) the user's single reaction to a message. */
+export async function toggleReaction(scope: ReactionScope, conversationId: string, messageId: string, userId: string, emoji: string): Promise<void> {
+  if (isSb()) {
+    const { data: existing } = await supabase!.from('message_reactions').select('*')
+      .eq('message_id', messageId).eq('user_id', userId).maybeSingle()
+    if (existing && existing.emoji === emoji) {
+      const { error } = await supabase!.from('message_reactions').delete().eq('id', existing.id)
+      if (error) err(error.message)
+    } else if (existing) {
+      const { error } = await supabase!.from('message_reactions').update({ emoji }).eq('id', existing.id)
+      if (error) err(error.message)
+    } else {
+      const { error } = await supabase!.from('message_reactions').insert({ scope, conversation_id: conversationId, message_id: messageId, user_id: userId, emoji })
+      if (error) err(error.message)
+    }
+    return
+  }
+  const db = loadDB()
+  const idx = db.reactions.findIndex((r) => r.message_id === messageId && r.user_id === userId)
+  if (idx >= 0 && db.reactions[idx].emoji === emoji) db.reactions.splice(idx, 1)
+  else if (idx >= 0) db.reactions[idx].emoji = emoji
+  else db.reactions.push({ id: uid(), scope, conversation_id: conversationId, message_id: messageId, user_id: userId, emoji, created_at: now() })
+  saveDB(db)
 }
 
 export async function searchPublicGroups(q: string, limit = 20): Promise<Group[]> {
@@ -598,6 +667,7 @@ export function subscribeRoom(kind: 'direct' | 'group' | 'channel', id: string, 
     const col = kind === 'direct' ? 'conversation_id' : kind === 'group' ? 'group_id' : 'channel_id'
     const ch = supabase!.channel(`room-${kind}-${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table, filter: `${col}=eq.${id}` }, () => cb())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions', filter: `conversation_id=eq.${id}` }, () => cb())
       .subscribe()
     return () => { supabase!.removeChannel(ch) }
   }
