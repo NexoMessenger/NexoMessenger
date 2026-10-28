@@ -1,0 +1,85 @@
+import { useRef, useState } from 'react'
+import type { AttachmentInfo } from '../lib/types'
+import { ErrorBox } from './ui'
+
+interface Props {
+  placeholder: string
+  sending: boolean
+  onSend: (text: string, att?: AttachmentInfo) => Promise<void>
+  onTyping: () => void
+  upload: (file: File) => Promise<AttachmentInfo>
+}
+
+export default function Composer({ placeholder, sending, onSend, onTyping, upload }: Props) {
+  const [text, setText] = useState('')
+  const [pending, setPending] = useState<AttachmentInfo | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+  const taRef = useRef<HTMLTextAreaElement>(null)
+  const lastTyping = useRef(0)
+
+  const grow = () => {
+    const ta = taRef.current
+    if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
+  }
+
+  const handleTyping = () => {
+    const t = Date.now()
+    if (t - lastTyping.current > 2500) { lastTyping.current = t; onTyping() }
+  }
+
+  const pickFile = async (file: File | undefined) => {
+    if (!file) return
+    setUploading(true); setError('')
+    try {
+      const att = await upload(file)
+      setPending(att)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  const submit = async () => {
+    if (sending || uploading) return
+    if (!text.trim() && !pending) return
+    const body = text; const att = pending || undefined
+    setText(''); setPending(null)
+    requestAnimationFrame(grow)
+    try {
+      await onSend(body, att)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to send')
+      setText(body); if (att) setPending(att)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ padding: '0 16px' }}><ErrorBox error={error} /></div>
+      {pending && (
+        <div className="pending-attachment glass">
+          <span>{pending.type.startsWith('image/') ? '🖼' : '📎'}</span>
+          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pending.name}</span>
+          <button className="link-btn" onClick={() => setPending(null)}>Remove</button>
+        </div>
+      )}
+      {uploading && <div style={{ padding: '0 16px 8px', fontSize: 12.5, color: 'var(--text-2)' }}>Uploading attachment…</div>}
+      <div className="composer">
+        <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.txt,.zip,.doc,.docx"
+          onChange={(e) => pickFile(e.target.files?.[0])} />
+        <button className="icon-btn" style={{ width: 44, height: 44, borderRadius: '50%' }} onClick={() => fileRef.current?.click()}
+          aria-label="Attach file" disabled={uploading}>＋</button>
+        <textarea ref={taRef} className="composer-input" rows={1} placeholder={placeholder} value={text}
+          onChange={(e) => { setText(e.target.value); grow(); handleTyping() }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }} />
+        <button className="send-btn" onClick={submit} disabled={sending || uploading || (!text.trim() && !pending)} aria-label="Send">
+          {sending ? '…' : '➤'}
+        </button>
+      </div>
+    </div>
+  )
+}
