@@ -6,7 +6,7 @@ import type { AttachmentInfo, Channel, ChannelPost, Profile } from '../lib/types
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
-import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, fmtClock } from '../components/ui'
+import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, fmtClock, errText } from '../components/ui'
 
 export default function ChannelRoomPage() {
   const { id = '' } = useParams()
@@ -34,7 +34,7 @@ export default function ChannelRoomPage() {
       const [ch, ps, mems] = await Promise.all([api.getChannel(id), api.listPosts(id), api.getChannelMembers(id)])
       setChannel(ch); setPosts(ps); setMembers(mems); setError('')
       if (ch) setOwner(await api.getProfile(ch.owner_id))
-    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    } catch (e) { setError(errText(e, t)) }
     finally { setLoading(false) }
   }
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function ChannelRoomPage() {
       if (subscribed) await api.unsubscribeChannel(id, profile.id)
       else await api.subscribeChannel(id, profile.id)
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
+    } catch (e) { setError(errText(e, t)) }
   }
 
   const authorOf = (pid: string) => members.find((m) => m.profile.id === pid)?.profile || (owner?.id === pid ? owner : null)
@@ -133,10 +133,10 @@ export default function ChannelRoomPage() {
                     <Avatar profile={p} size={38} />
                     <span className="row-main">
                       <span className="row-title">{p.display_name}</span>
-                      <span className="row-preview">@{p.username} · {role}{can_post ? ` · ${t('channels.canPostSuffix')}` : ''}</span>
+                      <span className="row-preview">@{p.username} · {t(role === 'owner' ? 'roles.owner' : role === 'admin' ? 'roles.admin' : 'roles.member')}{can_post ? ` · ${t('channels.canPostSuffix')}` : ''}</span>
                     </span>
                     <button className={`btn btn-sm ${can_post ? '' : 'btn-primary'}`}
-                      onClick={async () => { try { await api.setChannelPoster(id, p.id, !can_post); await load() } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) } }}>
+                      onClick={async () => { try { await api.setChannelPoster(id, p.id, !can_post); await load() } catch (e) { setError(errText(e, t)) } }}>
                       {can_post ? t('channels.revokePosting') : t('channels.allowPosting')}
                     </button>
                   </div>

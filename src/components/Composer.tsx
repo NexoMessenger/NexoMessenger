@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AttachmentInfo } from '../lib/types'
-import { ErrorBox } from './ui'
+import { ErrorBox, errText } from './ui'
 import { useI18n } from '../i18n'
 import {
   IconAttach, IconSend, IconImage, IconFile, IconMic, IconVideoCircle,
@@ -75,7 +75,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
     if (!file) return
     setUploading(true); setError('')
     try { setPending(await upload(file)) } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -89,7 +89,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
     setText(''); setPending(null)
     requestAnimationFrame(grow)
     try { await onSend(body, att) } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
       setText(body); if (att) setPending(att)
     }
   }
@@ -167,7 +167,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
       await onSend('', { ...att, duration: Math.max(1, Math.round(durationSec)) })
       setFailedMedia(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
       setFailedMedia({ blob, duration: durationSec, name })
     } finally { setUploading(false) }
   }
@@ -205,7 +205,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
           <StickerPicker onSend={(key) => {
             setStickerOpen(false)
             onSend('', { url: key, name: 'NEXO Fox sticker', type: 'sticker/nexo-fox' }).catch((e) => {
-              setError(e instanceof Error ? e.message : t('error.generic'))
+              setError(errText(e, t))
             })
           }} />
         </div>

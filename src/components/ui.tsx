@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Profile } from '../lib/types'
 import * as api from '../lib/api'
-import { useI18n } from '../i18n'
+import { useI18n, type TranslationKey } from '../i18n'
 import { IconClose, IconSearch, IconFile } from './icons'
 import { AudioBubble, VideoCircle } from './MessageExtras'
 import { FoxSticker } from './FoxStickers'
@@ -64,6 +64,27 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
   )
 }
 
+const ERROR_KEYS: Record<string, TranslationKey> = {
+  'That @username is already taken.': 'error.usernameTaken',
+  'Invalid email or password.': 'error.invalidCredentials',
+  'Username: 3–24 chars, lowercase letters, digits, _ or .': 'error.usernameInvalid',
+  'Password must be at least 6 characters.': 'error.passwordShort',
+  'An account with this email already exists.': 'error.emailExists',
+  'Message is empty.': 'error.emptyMessage',
+  'Group name is required.': 'error.groupNameRequired',
+  'Channel name is required.': 'error.channelNameRequired',
+  'You cannot message yourself.': 'error.cannotMessageSelf',
+  'Profile not found.': 'error.profileNotFound',
+}
+
+/** Map known backend/API error messages to localized UI strings. */
+export function errText(e: unknown, t: (k: TranslationKey) => string): string {
+  const msg = e instanceof Error ? e.message : ''
+  if (!msg) return t('error.generic')
+  const key = ERROR_KEYS[msg]
+  return key ? t(key) : msg
+}
+
 export function ErrorBox({ error }: { error: string }) {
   if (!error) return null
   return <div className="error-box" role="alert">{error}</div>
@@ -103,7 +124,7 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
         setResults(r.filter((p) => !exclude.includes(p.id)))
         setError('')
       } catch (e) {
-        setError(e instanceof Error ? e.message : t('error.generic'))
+        setError(errText(e, t))
       } finally { setLoading(false) }
     }, 280)
     return () => window.clearTimeout(timer.current)

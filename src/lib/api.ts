@@ -181,12 +181,16 @@ export async function setPresence(id: string, online: boolean) {
   if (p) { p.is_online = online; p.last_seen = now(); saveDB(db) }
 }
 
-export async function searchUsers(q: string, excludeId: string, limit = 20): Promise<Profile[]> {
-  q = q.trim().toLowerCase()
+export async function searchUsers(rawQuery: string, excludeId: string, limit = 20): Promise<Profile[]> {
+  // Users naturally type "@Maria": strip leading @ so it matches the stored
+  // username (usernames are stored without @). Also strip ilike wildcards so
+  // a query can never break the PostgREST .or() filter syntax.
+  const q = rawQuery.trim().toLowerCase().replace(/^@+/, '').replace(/[%_,\\]/g, '')
   if (!q) return []
   if (isSb()) {
     const { data, error } = await supabase!.from('profiles')
-      .select('*').or(`username.ilike.%${q}%,display_name.ilike.%${q}%`).neq('id', excludeId).limit(limit)
+      .select('id, username, display_name, avatar_url, bio, is_online, last_seen, created_at')
+      .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`).neq('id', excludeId).limit(limit)
     if (error) err(error.message)
     return (data as Profile[]) || []
   }

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useAuth } from '../lib/AuthContext'
 import { useI18n } from '../i18n'
-import { ErrorBox } from '../components/ui'
+import { ErrorBox, errText } from '../components/ui'
 import { NexoMark, IconGoogle, IconEye, IconEyeOff, IconBack } from '../components/icons'
 
 const DRAFT_KEY = 'nexo_auth_draft'
@@ -55,7 +55,7 @@ function GoogleButton() {
   const click = async () => {
     setBusy(true); setError('')
     try { await api.signInWithGoogle() } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
     } finally { setBusy(false) }
   }
   return (

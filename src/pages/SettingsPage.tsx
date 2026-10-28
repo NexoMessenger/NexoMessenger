@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { UserSettings } from '../lib/types'
-import { ErrorBox } from '../components/ui'
+import { ErrorBox, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { LOCALES } from '../i18n/translations'
 
@@ -27,7 +27,7 @@ export default function SettingsPage() {
     if (!profile) return
     api.getSettings(profile.id)
       .then(setSettings)
-      .catch((e) => setError(e instanceof Error ? e.message : t('error.generic')))
+      .catch((e) => setError(errText(e, t)))
       .finally(() => setLoading(false))
   }, [profile])
 
@@ -40,7 +40,7 @@ export default function SettingsPage() {
       if (patch.theme) document.documentElement.dataset.theme = patch.theme
       setNotice(t('settings.saved'))
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('error.generic'))
+      setError(errText(e, t))
       setSettings(settings)
     } finally { setSaving(false) }
   }
