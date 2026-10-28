@@ -21,17 +21,21 @@ create index if not exists idx_reactions_conv on public.message_reactions (conve
 create index if not exists idx_reactions_msg on public.message_reactions (message_id);
 
 alter table public.message_reactions enable row level security;
+drop policy if exists "reactions read members" on public.message_reactions;
 create policy "reactions read members" on public.message_reactions for select using (
   (scope = 'direct' and public.is_conv_member(conversation_id)) or
   (scope = 'group' and public.is_group_member(conversation_id))
 );
+drop policy if exists "reactions write own" on public.message_reactions;
 create policy "reactions write own" on public.message_reactions for insert with check (
   user_id = auth.uid() and (
     (scope = 'direct' and public.is_conv_member(conversation_id)) or
     (scope = 'group' and public.is_group_member(conversation_id))
   )
 );
+drop policy if exists "reactions update own" on public.message_reactions;
 create policy "reactions update own" on public.message_reactions for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "reactions delete own" on public.message_reactions;
 create policy "reactions delete own" on public.message_reactions for delete using (user_id = auth.uid());
 
 -- ============ STICKER PACKS (extensible registry; assets ship with the app) ============
@@ -50,7 +54,9 @@ create table if not exists public.stickers (
 );
 alter table public.sticker_packs enable row level security;
 alter table public.stickers enable row level security;
+drop policy if exists "sticker packs public read" on public.sticker_packs;
 create policy "sticker packs public read" on public.sticker_packs for select using (true);
+drop policy if exists "stickers public read" on public.stickers;
 create policy "stickers public read" on public.stickers for select using (true);
 
 insert into public.sticker_packs (id, name, author) values ('nexo-fox', 'NEXO Fox', 'NEXO')
@@ -75,4 +81,9 @@ insert into public.stickers (id, pack_id, name, asset_key, sort) values
 on conflict (id) do nothing;
 
 -- Realtime for reactions
-alter publication supabase_realtime add table public.message_reactions;
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'message_reactions') then
+    alter publication supabase_realtime add table public.message_reactions;
+  end if;
+end $$;
