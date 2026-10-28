@@ -4,9 +4,11 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { EmptyState, ErrorBox, GroupAvatar, Modal, UserPicker, fmtTime } from '../components/ui'
+import { useI18n } from '../i18n'
 
 export default function GroupsPage() {
   const { profile } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [items, setItems] = useState<api.GroupListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -21,7 +23,7 @@ export default function GroupsPage() {
   const load = async () => {
     if (!profile) return
     try { setItems(await api.listGroups(profile.id)); setError('') }
-    catch (e) { setError(e instanceof Error ? e.message : 'Failed to load groups') }
+    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
     finally { setLoading(false) }
   }
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function GroupsPage() {
       const id = await api.createGroup(profile.id, name, description, isPublic, members.map((m) => m.id))
       setShowCreate(false); setName(''); setDescription(''); setMembers([]); setIsPublic(false)
       navigate(`/group/${id}`)
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not create group') }
+    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
     finally { setCreating(false) }
   }
 
@@ -48,16 +50,16 @@ export default function GroupsPage() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1 className="page-title">Groups</h1>
-          <p className="page-sub">Group conversations with roles, members and realtime messages.</p>
+          <h1 className="page-title">{t('groups.title')}</h1>
+          <p className="page-sub">{t('groups.sub')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>＋ Create group</button>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('groups.create')}</button>
       </div>
       <ErrorBox error={error} />
-      {loading ? <div className="center-loader"><div className="spinner" />Loading groups…</div>
+      {loading ? <div className="center-loader"><div className="spinner" />{t('groups.loading')}</div>
       : items.length === 0 ? (
-        <EmptyState icon="👥" title="No groups yet" text="Create a group, add registered users and chat together. Only members can read private groups.">
-          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}>Create your first group</button></div>
+        <EmptyState icon="👥" title={t('groups.emptyTitle')} text={t('groups.emptyText')}>
+          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('groups.createFirst')}</button></div>
         </EmptyState>
       ) : (
         <div className="list">
@@ -66,10 +68,10 @@ export default function GroupsPage() {
               <GroupAvatar name={group.name} url={group.avatar_url} />
               <span className="row-main">
                 <span className="row-title">{group.name}
-                  <span className="pill">{group.is_public ? 'Public' : 'Private'}</span>
+                  <span className="pill">{group.is_public ? t('common.public') : t('common.private')}</span>
                   {myRole !== 'member' && <span className="pill pill-accent">{myRole}</span>}
                 </span>
-                <span className="row-preview">{memberCount} members{lastMessage ? ` · ${lastMessage.body || '📎 Attachment'}` : ''}</span>
+                <span className="row-preview">{memberCount} {t('common.members')}{lastMessage ? ` · ${lastMessage.body || `📎 ${t('common.attachment')}`}` : ''}</span>
               </span>
               <span className="row-meta">
                 <span className="row-time">{fmtTime(group.last_message_at)}</span>
@@ -81,21 +83,21 @@ export default function GroupsPage() {
       )}
 
       {showCreate && profile && (
-        <Modal title="Create group" onClose={() => setShowCreate(false)}>
-          <div className="field"><label>Group name *</label>
-            <input className="input" placeholder="e.g. Design Circle" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
-          <div className="field"><label>Description</label>
-            <input className="input" placeholder="What is this group about?" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+        <Modal title={t('groups.createTitle')} onClose={() => setShowCreate(false)}>
+          <div className="field"><label>{t('groups.name')}</label>
+            <input className="input" placeholder={t('groups.namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
+          <div className="field"><label>{t('groups.description')}</label>
+            <input className="input" placeholder={t('groups.descPlaceholder')} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
           <label className="check-row">
             <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
-            Public group (discoverable in Search)
+            {t('groups.publicLabel')}
           </label>
-          <div className="section-label">Add members</div>
+          <div className="section-label">{t('groups.addMembers')}</div>
           <UserPicker meId={profile.id} selected={members} onToggle={toggle} />
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-            <button className="btn" style={{ flex: 1 }} onClick={() => setShowCreate(false)}>Cancel</button>
+            <button className="btn" style={{ flex: 1 }} onClick={() => setShowCreate(false)}>{t('common.cancel')}</button>
             <button className="btn btn-primary" style={{ flex: 1 }} disabled={!name.trim() || creating} onClick={create}>
-              {creating ? 'Creating…' : 'Create group'}
+              {creating ? t('groups.creating') : t('groups.createTitle')}
             </button>
           </div>
         </Modal>

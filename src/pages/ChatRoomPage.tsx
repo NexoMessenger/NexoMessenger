@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { AttachmentInfo, Message, Profile } from '../lib/types'
 import Composer from '../components/Composer'
+import { useI18n } from '../i18n'
 import { AttachmentView, Avatar, ErrorBox, fmtClock, fmtLastSeen } from '../components/ui'
 
 export default function ChatRoomPage() {
@@ -17,6 +18,7 @@ export default function ChatRoomPage() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [typingName, setTypingName] = useState('')
+  const { t, locale } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
   const typingTimeout = useRef<number>()
 
@@ -33,7 +35,7 @@ export default function ChatRoomPage() {
       const mine = chats.find((c) => c.conv.id === id)
       setPeerReadAt(mine && msgs.length ? String(mine.unread === 0) : '')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load conversation')
+      setError(e instanceof Error ? e.message : t('error.generic'))
     } finally { setLoading(false) }
   }
 
@@ -69,11 +71,11 @@ export default function ChatRoomPage() {
   return (
     <div className="room-wrap">
       <div className="room-head">
-        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label="Back">←</button>
+        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label={t('common.back')}>←</button>
         {peer ? <Avatar profile={peer} size={42} showOnline /> : <span className="avatar" style={{ width: 42, height: 42 }}>?</span>}
         <div className="row-main">
-          <div className="row-title">{peer ? peer.display_name : 'Conversation'}</div>
-          <div className="row-preview">{peer ? (typingName ? 'typing…' : `@${peer.username} · ${fmtLastSeen(peer)}`) : ''}</div>
+          <div className="row-title">{peer ? peer.display_name : t('room.conversation')}</div>
+          <div className="row-preview">{peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</div>
         </div>
       </div>
 
@@ -81,12 +83,12 @@ export default function ChatRoomPage() {
 
       <div className="messages-scroll" ref={scrollRef}>
         {loading ? (
-          <div className="center-loader"><div className="spinner" />Loading messages…</div>
+          <div className="center-loader"><div className="spinner" />{t('room.loading')}</div>
         ) : messages.length === 0 ? (
           <div className="empty-state" style={{ margin: 'auto', width: '100%' }}>
             <div className="empty-icon">👋</div>
-            <h3>No messages yet</h3>
-            <p>Say hello to {peer?.display_name || 'start the conversation'} — messages are stored in the database and delivered in realtime.</p>
+            <h3>{t('room.noMessages')}</h3>
+            <p>{t('room.sayHelloTo')}</p>
           </div>
         ) : messages.map((m) => {
           const day = new Date(m.created_at).toDateString()
@@ -112,10 +114,10 @@ export default function ChatRoomPage() {
       </div>
 
       <div className="typing-indicator">
-        {typingName && <><span className="typing-dots"><span /><span /><span /></span> {typingName} is typing…</>}
+        {typingName && <><span className="typing-dots"><span /><span /><span /></span> {typingName} {t('room.typing')}</>}
       </div>
 
-      <Composer placeholder={`Message ${peer?.display_name || ''}…`} sending={sending}
+      <Composer placeholder={`${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`direct-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)} />
     </div>

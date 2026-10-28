@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { EmptyState, ErrorBox, GroupAvatar, Modal } from '../components/ui'
+import { useI18n } from '../i18n'
 
 export default function ChannelsPage() {
   const { profile } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [items, setItems] = useState<api.ChannelListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +22,7 @@ export default function ChannelsPage() {
   const load = async () => {
     if (!profile) return
     try { setItems(await api.listChannels(profile.id)); setError('') }
-    catch (e) { setError(e instanceof Error ? e.message : 'Failed to load channels') }
+    catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
     finally { setLoading(false) }
   }
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function ChannelsPage() {
       const id = await api.createChannel(profile.id, name, description, isPublic)
       setShowCreate(false); setName(''); setDescription(''); setIsPublic(true)
       navigate(`/channel/${id}`)
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not create channel') }
+    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
     finally { setCreating(false) }
   }
 
@@ -48,7 +50,7 @@ export default function ChannelsPage() {
       if (item.myRole) await api.unsubscribeChannel(item.channel.id, profile.id)
       else await api.subscribeChannel(item.channel.id, profile.id)
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Subscription failed') }
+    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
     finally { setBusyId('') }
   }
 
@@ -62,15 +64,15 @@ export default function ChannelsPage() {
         <GroupAvatar name={item.channel.name} url={item.channel.avatar_url} />
         <span className="row-main">
           <span className="row-title">{item.channel.name}
-            <span className="pill">{item.channel.is_public ? 'Public' : 'Private'}</span>
-            {item.canPost && <span className="pill pill-accent">Can post</span>}
+            <span className="pill">{item.channel.is_public ? t('common.public') : t('common.private')}</span>
+            {item.canPost && <span className="pill pill-accent">{t('channels.canPost')}</span>}
           </span>
-          <span className="row-preview">{item.subscribers} subscribers{item.channel.description ? ` · ${item.channel.description}` : ''}</span>
+          <span className="row-preview">{item.subscribers} {t('common.subscribers')}{item.channel.description ? ` · ${item.channel.description}` : ''}</span>
         </span>
       </button>
       {item.channel.owner_id !== profile?.id && (
         <button className={`btn btn-sm ${item.myRole ? '' : 'btn-primary'}`} disabled={busyId === item.channel.id} onClick={() => toggleSub(item)}>
-          {busyId === item.channel.id ? '…' : item.myRole ? 'Subscribed' : 'Subscribe'}
+          {busyId === item.channel.id ? '…' : item.myRole ? t('channels.subscribed') : t('channels.subscribe')}
         </button>
       )}
     </div>
@@ -80,39 +82,39 @@ export default function ChannelsPage() {
     <div className="page">
       <div className="page-head">
         <div>
-          <h1 className="page-title">Channels</h1>
-          <p className="page-sub">Broadcasts from owners and authorized publishers. Subscribers read — they cannot post unless granted permission.</p>
+          <h1 className="page-title">{t('channels.title')}</h1>
+          <p className="page-sub">{t('channels.sub')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>＋ Create channel</button>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('channels.create')}</button>
       </div>
       <ErrorBox error={error} />
-      {loading ? <div className="center-loader"><div className="spinner" />Loading channels…</div>
+      {loading ? <div className="center-loader"><div className="spinner" />{t('channels.loading')}</div>
       : items.length === 0 ? (
-        <EmptyState icon="📣" title="No channels yet" text="Create a channel to broadcast, or find public channels in Search.">
-          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}>Create a channel</button></div>
+        <EmptyState icon="📣" title={t('channels.emptyTitle')} text={t('channels.emptyText')}>
+          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('channels.createFirst')}</button></div>
         </EmptyState>
       ) : (
         <>
-          {subscribed.length > 0 && <><div className="section-label">Your channels</div><div className="list">{subscribed.map(renderItem)}</div></>}
-          {discover.length > 0 && <><div className="section-label">Discover public channels</div><div className="list">{discover.map(renderItem)}</div></>}
+          {subscribed.length > 0 && <><div className="section-label">{t('channels.yours')}</div><div className="list">{subscribed.map(renderItem)}</div></>}
+          {discover.length > 0 && <><div className="section-label">{t('channels.discover')}</div><div className="list">{discover.map(renderItem)}</div></>}
         </>
       )}
 
       {showCreate && (
-        <Modal title="Create channel" onClose={() => setShowCreate(false)}>
-          <div className="field"><label>Channel name *</label>
-            <input className="input" placeholder="e.g. NEXO Updates" value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
-          <div className="field"><label>Description</label>
-            <textarea className="textarea" rows={3} placeholder="What will you broadcast?" value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+        <Modal title={t('channels.createTitle')} onClose={() => setShowCreate(false)}>
+          <div className="field"><label>{t('channels.name')}</label>
+            <input className="input" placeholder={t('channels.namePlaceholder')} value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
+          <div className="field"><label>{t('channels.description')}</label>
+            <textarea className="textarea" rows={3} placeholder={t('channels.descPlaceholder')} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
           <label className="check-row">
             <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
-            Public channel (anyone can find and subscribe)
+            {t('channels.publicLabel')}
           </label>
-          <p style={{ color: 'var(--text-3)', fontSize: 12.5 }}>Private channels are visible only to members. Only owners, admins and users you grant posting rights can publish — enforced by the backend (RLS), not just this screen.</p>
+          <p style={{ color: 'var(--text-3)', fontSize: 12.5 }}>{t('channels.permissionNote')}</p>
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <button className="btn" style={{ flex: 1 }} onClick={() => setShowCreate(false)}>Cancel</button>
+            <button className="btn" style={{ flex: 1 }} onClick={() => setShowCreate(false)}>{t('common.cancel')}</button>
             <button className="btn btn-primary" style={{ flex: 1 }} disabled={!name.trim() || creating} onClick={create}>
-              {creating ? 'Creating…' : 'Create channel'}
+              {creating ? t('channels.creating') : t('channels.createTitle')}
             </button>
           </div>
         </Modal>
