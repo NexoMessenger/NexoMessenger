@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { AttachmentInfo, Channel, ChannelPost, Profile } from '../lib/types'
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, fmtClock } from '../components/ui'
 
 export default function ChannelRoomPage() {
@@ -65,7 +66,7 @@ export default function ChannelRoomPage() {
   return (
     <div className="room-wrap">
       <div className="room-head">
-        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/channels')} aria-label={t('common.back')}>←</button>
+        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/channels')} aria-label={t('common.back')}><IconBack size={18} /></button>
         {channel && <GroupAvatar name={channel.name} url={channel.avatar_url} size={42} />}
         <div className="row-main">
           <div className="row-title">{channel?.name || 'Channel'}</div>
@@ -85,7 +86,7 @@ export default function ChannelRoomPage() {
         {loading ? <div className="center-loader"><div className="spinner" />{t('room.loading')}</div>
         : posts.length === 0 ? (
           <div className="empty-state" style={{ margin: 'auto', width: '100%' }}>
-            <div className="empty-icon">📣</div><h3>{t('channels.noPosts')}</h3>
+            <div className="empty-icon"><IconChannel size={30} /></div><h3>{t('channels.noPosts')}</h3>
             <p>{canPost ? t('channels.noPostsOwner') : t('channels.noPostsSub')}</p>
           </div>
         ) : posts.map((post) => {

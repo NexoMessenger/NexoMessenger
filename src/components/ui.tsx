@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Profile } from '../lib/types'
 import * as api from '../lib/api'
 import { useI18n } from '../i18n'
+import { IconClose, IconSearch, IconFile } from './icons'
 
 export function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'N'
@@ -53,7 +54,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close dialog">✕</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Close dialog"><IconClose size={17} /></button>
         </div>
         {children}
       </div>
@@ -66,7 +67,7 @@ export function ErrorBox({ error }: { error: string }) {
   return <div className="error-box" role="alert">{error}</div>
 }
 
-export function EmptyState({ icon, title, text, children }: { icon: string; title: string; text: string; children?: ReactNode }) {
+export function EmptyState({ icon, title, text, children }: { icon: ReactNode; title: string; text: string; children?: ReactNode }) {
   return (
     <div className="empty-state glass card">
       <div className="empty-icon">{icon}</div>
@@ -113,13 +114,13 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
         <div style={{ marginBottom: 10 }}>
           {selected.map((p) => (
             <span key={p.id} className="member-chip glass">@{p.username}
-              <button onClick={() => onToggle(p)} aria-label={`Remove ${p.username}`}>✕</button>
+              <button onClick={() => onToggle(p)} aria-label={`Remove ${p.username}`}><IconClose size={13} /></button>
             </span>
           ))}
         </div>
       )}
       <div className="search-input-wrap" style={{ marginBottom: 8 }}>
-        <span className="search-icon">⌕</span>
+        <span className="search-icon"><IconSearch size={16} /></span>
         <input className="input" placeholder={t('picker.placeholder')} value={q}
           onChange={(e) => setQ(e.target.value)} autoFocus />
       </div>
@@ -156,7 +157,7 @@ export function AttachmentView({ url, name, type }: { url: string; name: string;
   }
   return (
     <a className="attachment-file" href={url} target="_blank" rel="noreferrer" download={name}>
-      <span>📎</span><span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'File'}</span>
+      <span style={{ display: 'inline-flex', flexShrink: 0 }}><IconFile size={16} /></span><span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'File'}</span>
     </a>
   )
 }

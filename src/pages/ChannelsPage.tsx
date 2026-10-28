@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { EmptyState, ErrorBox, GroupAvatar, Modal } from '../components/ui'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
 export default function ChannelsPage() {
   const { profile } = useAuth()
@@ -85,13 +86,13 @@ export default function ChannelsPage() {
           <h1 className="page-title">{t('channels.title')}</h1>
           <p className="page-sub">{t('channels.sub')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('channels.create')}</button>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}><IconPlus size={16} /> {t('channels.create')}</button>
       </div>
       <ErrorBox error={error} />
       {loading ? <div className="center-loader"><div className="spinner" />{t('channels.loading')}</div>
       : items.length === 0 ? (
-        <EmptyState icon="📣" title={t('channels.emptyTitle')} text={t('channels.emptyText')}>
-          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('channels.createFirst')}</button></div>
+        <EmptyState icon={<IconChannel size={30} />} title={t('channels.emptyTitle')} text={t('channels.emptyText')}>
+          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}><IconPlus size={16} /> {t('channels.createFirst')}</button></div>
         </EmptyState>
       ) : (
         <>

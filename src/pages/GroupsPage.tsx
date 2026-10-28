@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { EmptyState, ErrorBox, GroupAvatar, Modal, UserPicker, fmtTime } from '../components/ui'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
 export default function GroupsPage() {
   const { profile } = useAuth()
@@ -53,13 +54,13 @@ export default function GroupsPage() {
           <h1 className="page-title">{t('groups.title')}</h1>
           <p className="page-sub">{t('groups.sub')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('groups.create')}</button>
+        <button className="btn btn-primary" onClick={() => setShowCreate(true)}><IconPlus size={16} /> {t('groups.create')}</button>
       </div>
       <ErrorBox error={error} />
       {loading ? <div className="center-loader"><div className="spinner" />{t('groups.loading')}</div>
       : items.length === 0 ? (
-        <EmptyState icon="👥" title={t('groups.emptyTitle')} text={t('groups.emptyText')}>
-          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}>{t('groups.createFirst')}</button></div>
+        <EmptyState icon={<IconGroups size={30} />} title={t('groups.emptyTitle')} text={t('groups.emptyText')}>
+          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowCreate(true)}><IconPlus size={16} /> {t('groups.createFirst')}</button></div>
         </EmptyState>
       ) : (
         <div className="list">
@@ -71,7 +72,7 @@ export default function GroupsPage() {
                   <span className="pill">{group.is_public ? t('common.public') : t('common.private')}</span>
                   {myRole !== 'member' && <span className="pill pill-accent">{myRole}</span>}
                 </span>
-                <span className="row-preview">{memberCount} {t('common.members')}{lastMessage ? ` · ${lastMessage.body || `📎 ${t('common.attachment')}`}` : ''}</span>
+                <span className="row-preview">{memberCount} {t('common.members')}{lastMessage ? ` · ${lastMessage.body || t('common.attachment')}` : ''}</span>
               </span>
               <span className="row-meta">
                 <span className="row-time">{fmtTime(group.last_message_at)}</span>

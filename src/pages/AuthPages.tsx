@@ -4,6 +4,7 @@ import * as api from '../lib/api'
 import { useAuth } from '../lib/AuthContext'
 import { useI18n } from '../i18n'
 import { ErrorBox } from '../components/ui'
+import { NexoMark, IconGoogle, IconEye, IconEyeOff, IconBack } from '../components/icons'
 
 const DRAFT_KEY = 'nexo_auth_draft'
 function loadDraft(): Record<string, string> {
@@ -18,9 +19,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="auth-wrap">
       <div className="auth-card glass card">
-        <Link className="auth-back" to="/">{t('auth.backWelcome')}</Link>
+        <Link className="auth-back" to="/"><IconBack size={15} /> {t('auth.backWelcome')}</Link>
         <div className="auth-logo">
-          <div className="logo-badge">N</div>
+          <div className="logo-badge"><NexoMark size={26} /></div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 19, letterSpacing: '-0.3px' }}>NEXO</div>
             <div style={{ color: 'var(--text-3)', fontSize: 12 }}>MESSENGER</div>
@@ -42,7 +43,7 @@ function PasswordInput({ value, onChange, autoComplete, placeholder }: {
       <input className="input" type={show ? 'text' : 'password'} required autoComplete={autoComplete}
         placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
       <button type="button" className="password-eye" aria-label={show ? t('auth.hidePassword') : t('auth.showPassword')}
-        onClick={() => setShow(!show)}>{show ? '🙈' : '👁'}</button>
+        onClick={() => setShow(!show)}>{show ? <IconEyeOff size={17} /> : <IconEye size={17} />}</button>
     </div>
   )
 }
@@ -61,7 +62,7 @@ function GoogleButton() {
     <div>
       <ErrorBox error={error} />
       <button className="btn google-btn" onClick={click} disabled={busy} type="button">
-        <span style={{ fontWeight: 800 }}>G</span> {busy ? t('auth.redirecting') : t('auth.google')}
+        <IconGoogle size={18} /> {busy ? t('auth.redirecting') : t('auth.google')}
       </button>
     </div>
   )

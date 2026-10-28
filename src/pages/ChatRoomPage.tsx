@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { AttachmentInfo, Message, Profile } from '../lib/types'
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 import { AttachmentView, Avatar, ErrorBox, fmtClock, fmtLastSeen } from '../components/ui'
 
 export default function ChatRoomPage() {
@@ -71,7 +72,7 @@ export default function ChatRoomPage() {
   return (
     <div className="room-wrap">
       <div className="room-head">
-        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label={t('common.back')}>←</button>
+        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label={t('common.back')}><IconBack size={18} /></button>
         {peer ? <Avatar profile={peer} size={42} showOnline /> : <span className="avatar" style={{ width: 42, height: 42 }}>?</span>}
         <div className="row-main">
           <div className="row-title">{peer ? peer.display_name : t('room.conversation')}</div>
@@ -86,7 +87,7 @@ export default function ChatRoomPage() {
           <div className="center-loader"><div className="spinner" />{t('room.loading')}</div>
         ) : messages.length === 0 ? (
           <div className="empty-state" style={{ margin: 'auto', width: '100%' }}>
-            <div className="empty-icon">👋</div>
+            <div className="empty-icon"><IconChats size={30} /></div>
             <h3>{t('room.noMessages')}</h3>
             <p>{t('room.sayHelloTo')}</p>
           </div>
@@ -104,7 +105,7 @@ export default function ChatRoomPage() {
                   {m.body && <div>{m.body}</div>}
                   <div className="bubble-meta">
                     <span>{fmtClock(m.created_at)}</span>
-                    {mine && <span title={peerReadAt ? 'Read' : 'Delivered'}>{peerReadAt ? '✓✓' : '✓'}</span>}
+                    {mine && <span className={peerReadAt ? 'status-read' : 'status-sent'} title={peerReadAt ? 'Read' : 'Delivered'}>{peerReadAt ? <IconChecks size={14} /> : <IconChecks size={14} />}</span>}
                   </div>
                 </div>
               </div>

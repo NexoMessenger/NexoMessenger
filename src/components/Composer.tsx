@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import type { AttachmentInfo } from '../lib/types'
 import { ErrorBox } from './ui'
 import { useI18n } from '../i18n'
+import { IconAttach, IconSend, IconImage, IconFile } from './icons'
 
 interface Props {
   placeholder: string
@@ -64,7 +65,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
       <div style={{ padding: '0 16px' }}><ErrorBox error={error} /></div>
       {pending && (
         <div className="pending-attachment glass">
-          <span>{pending.type.startsWith('image/') ? '🖼' : '📎'}</span>
+          <span style={{ display: 'inline-flex', flexShrink: 0 }}>{pending.type.startsWith('image/') ? <IconImage size={17} /> : <IconFile size={17} />}</span>
           <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pending.name}</span>
           <button className="link-btn" onClick={() => setPending(null)}>{t('composer.remove')}</button>
         </div>
@@ -74,12 +75,12 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
         <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.txt,.zip,.doc,.docx"
           onChange={(e) => pickFile(e.target.files?.[0])} />
         <button className="icon-btn" style={{ width: 44, height: 44, borderRadius: '50%' }} onClick={() => fileRef.current?.click()}
-          aria-label={t('composer.attach')} disabled={uploading}>＋</button>
+          aria-label={t('composer.attach')} disabled={uploading}><IconAttach size={19} /></button>
         <textarea ref={taRef} className="composer-input" rows={1} placeholder={placeholder} value={text}
           onChange={(e) => { setText(e.target.value); grow(); handleTyping() }}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }} />
         <button className="send-btn" onClick={submit} disabled={sending || uploading || (!text.trim() && !pending)} aria-label={t('composer.send')}>
-          {sending ? '…' : '➤'}
+          {sending ? '…' : <IconSend size={18} />}
         </button>
       </div>
     </div>
