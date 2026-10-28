@@ -81,6 +81,10 @@ export default function SearchPage() {
         </div>
       </div>
 
+      {api.mode === 'local' && (
+        <div className="local-notice" role="note">{t('search.localNotice')}</div>
+      )}
+
       <div className="search-input-wrap">
         <span className="search-icon"><IconSearch size={16} /></span>
         <input className="input" placeholder={t('search.placeholder')} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />

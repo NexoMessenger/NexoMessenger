@@ -21,6 +21,31 @@ The app uses `HashRouter` and a relative Vite `base`, so the production build ca
 
 Demo account (Local Demo Mode only): `demo@nexo.app` / `demo1234`
 
+## Make friends visible to each other (required for real use)
+
+If people on **different phones** cannot find each other by `@username` and
+do not see each other's group messages, the live site is running in
+**Local Demo Mode** — every device keeps its own private copy of the data and
+nothing syncs between phones. The fix is connecting the shared backend once:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In **SQL Editor**, run these files in order: `001_init.sql`,
+   `002_language.sql`, `003_reactions_media_stickers.sql`,
+   `004_cross_user_sync.sql` (from `supabase/migrations/`).
+3. In Supabase → **Project Settings → API**, copy the **Project URL** and the
+   **anon public** key (never the `service_role` key).
+4. In GitHub → repo **Settings → Secrets and variables → Actions →
+   Variables**, add two repository variables: `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY`.
+5. Re-deploy: push to `main` or run the “Deploy NEXO Messenger to GitHub
+   Pages” workflow manually. The workflow log prints the detected backend
+   mode, and the app's Profile/Settings screens show
+   “Backend: Supabase” when connected.
+
+After that, everyone registers **once more** on the live site (Local Demo
+accounts live only in each phone's browser and do not migrate), and then
+search by `@username`, direct chats and shared groups sync in realtime.
+
 ## Supabase setup (production)
 
 1. Create a project at [supabase.com](https://supabase.com).

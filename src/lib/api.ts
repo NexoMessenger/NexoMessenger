@@ -194,7 +194,7 @@ export async function searchUsers(rawQuery: string, excludeId: string, limit = 2
     if (error) err(error.message)
     return (data as Profile[]) || []
   }
-  return loadDB().profiles.filter((p) => p.id !== excludeId && (p.username.includes(q) || p.display_name.toLowerCase().includes(q))).slice(0, limit)
+  return loadDB().profiles.filter((p) => p.id !== excludeId && (p.username.toLowerCase().includes(q) || p.display_name.toLowerCase().includes(q))).slice(0, limit)
 }
 
 /* ============================== DIRECT CHATS ============================== */
