@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Profile } from '../lib/types'
 import * as api from '../lib/api'
+import { useI18n } from '../i18n'
 
 export function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'N'
@@ -36,9 +37,9 @@ export function fmtTime(iso?: string | null) {
 export function fmtClock(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
-export function fmtLastSeen(p: Profile) {
-  if (p.is_online) return 'online'
-  return `last seen ${new Date(p.last_seen).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+export function fmtLastSeen(p: Profile, labels?: { online: string; lastSeen: string }, locale?: string) {
+  if (p.is_online) return labels?.online ?? 'online'
+  return `${labels?.lastSeen ?? 'last seen'} ${new Date(p.last_seen).toLocaleString(locale || undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
 }
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -52,7 +53,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
+          <button className="icon-btn" onClick={onClose} aria-label="Close dialog">✕</button>
         </div>
         {children}
       </div>
@@ -88,6 +89,7 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const timer = useRef<number>()
+  const { t } = useI18n()
 
   useEffect(() => {
     if (!q.trim()) { setResults([]); return }
@@ -98,7 +100,7 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
         setResults(r.filter((p) => !exclude.includes(p.id)))
         setError('')
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Search failed')
+        setError(e instanceof Error ? e.message : t('error.generic'))
       } finally { setLoading(false) }
     }, 280)
     return () => window.clearTimeout(timer.current)
@@ -118,13 +120,13 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
       )}
       <div className="search-input-wrap" style={{ marginBottom: 8 }}>
         <span className="search-icon">⌕</span>
-        <input className="input" placeholder="Search people by @username or name…" value={q}
+        <input className="input" placeholder={t('picker.placeholder')} value={q}
           onChange={(e) => setQ(e.target.value)} autoFocus />
       </div>
       <ErrorBox error={error} />
-      {loading && <div className="center-loader"><div className="spinner" />Searching…</div>}
+      {loading && <div className="center-loader"><div className="spinner" />{t('picker.searching')}</div>}
       {!loading && q.trim() && results.length === 0 && !error && (
-        <p style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '14px 0' }}>No people found for “{q}”.</p>
+        <p style={{ color: 'var(--text-3)', fontSize: 13, textAlign: 'center', padding: '14px 0' }}>{t('picker.noPeople')}: “{q}”</p>
       )}
       <div className="list">
         {results.map((p) => {
@@ -136,7 +138,7 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
                 <span className="row-title">{p.display_name}</span>
                 <span className="row-preview">@{p.username}{p.bio ? ` · ${p.bio}` : ''}</span>
               </span>
-              <span className={active ? 'pill pill-accent' : 'pill'}>{active ? 'Added' : 'Add'}</span>
+              <span className={active ? 'pill pill-accent' : 'pill'}>{active ? t('common.added') : t('common.add')}</span>
             </button>
           )
         })}

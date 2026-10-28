@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { AttachmentInfo, Group, GroupMessage, Profile } from '../lib/types'
 import Composer from '../components/Composer'
+import { useI18n } from '../i18n'
 import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, UserPicker, fmtClock } from '../components/ui'
 
 export default function GroupRoomPage() {
@@ -20,6 +21,7 @@ export default function GroupRoomPage() {
   const [typingName, setTypingName] = useState('')
   const [showInfo, setShowInfo] = useState(false)
   const [addPick, setAddPick] = useState<Profile[]>([])
+  const { t } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
   const typingTimeout = useRef<number>()
 
@@ -33,7 +35,7 @@ export default function GroupRoomPage() {
       setGroup(g); setMessages(ms); setMembers(mems); setError('')
       setProfiles(Object.fromEntries(mems.map((m) => [m.profile.id, m.profile])))
       await api.markGroupRead(id, profile.id)
-    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to load group') }
+    } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
     finally { setLoading(false) }
   }
   useEffect(() => {
@@ -62,29 +64,29 @@ export default function GroupRoomPage() {
   }
 
   const act = async (fn: () => Promise<void>) => {
-    try { await fn(); await load() } catch (e) { setError(e instanceof Error ? e.message : 'Action failed') }
+    try { await fn(); await load() } catch (e) { setError(e instanceof Error ? e.message : t('error.generic')) }
   }
 
   return (
     <div className="room-wrap">
       <div className="room-head">
-        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/groups')} aria-label="Back">←</button>
+        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/groups')} aria-label={t('common.back')}>←</button>
         {group && <GroupAvatar name={group.name} url={group.avatar_url} size={42} />}
         <div className="row-main">
           <div className="row-title">{group?.name || 'Group'}</div>
-          <div className="row-preview">{typingName ? `${typingName} is typing…` : `${members.length} members · ${group?.is_public ? 'Public' : 'Private'}`}</div>
+          <div className="row-preview">{typingName ? `${typingName} ${t('room.typing')}` : `${members.length} ${t('common.members')} · ${group?.is_public ? t('common.public') : t('common.private')}`}</div>
         </div>
-        <button className="btn btn-sm" onClick={() => setShowInfo(true)}>Details</button>
+        <button className="btn btn-sm" onClick={() => setShowInfo(true)}>{t('groups.details')}</button>
       </div>
 
       <div style={{ padding: '10px 16px 0' }}><ErrorBox error={error} /></div>
 
       <div className="messages-scroll" ref={scrollRef}>
-        {loading ? <div className="center-loader"><div className="spinner" />Loading messages…</div>
+        {loading ? <div className="center-loader"><div className="spinner" />{t('room.loading')}</div>
         : messages.length === 0 ? (
           <div className="empty-state" style={{ margin: 'auto', width: '100%' }}>
-            <div className="empty-icon">👥</div><h3>No group messages yet</h3>
-            <p>Start the conversation — every member will receive it in realtime.</p>
+            <div className="empty-icon">👥</div><h3>{t('room.noMessages')}</h3>
+            <p>{t('groups.noMessagesText')}</p>
           </div>
         ) : messages.map((m) => {
           const mine = m.sender_id === profile?.id
@@ -103,21 +105,21 @@ export default function GroupRoomPage() {
         })}
       </div>
 
-      <div className="typing-indicator">{typingName && <><span className="typing-dots"><span /><span /><span /></span> {typingName} is typing…</>}</div>
+      <div className="typing-indicator">{typingName && <><span className="typing-dots"><span /><span /><span /></span> {typingName} {t('room.typing')}</>}</div>
 
-      <Composer placeholder={`Message ${group?.name || 'group'}…`} sending={sending}
+      <Composer placeholder={t('groups.messagePlaceholder', { name: group?.name || '' })} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`group-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)} />
 
       {showInfo && group && profile && (
-        <Modal title="Group details" onClose={() => setShowInfo(false)}>
+        <Modal title={t('groups.groupDetails')} onClose={() => setShowInfo(false)}>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}><GroupAvatar name={group.name} url={group.avatar_url} size={72} /></div>
             <h3 style={{ margin: '12px 0 2px' }}>{group.name}</h3>
-            <div style={{ color: 'var(--text-3)', fontSize: 13 }}>{group.is_public ? 'Public group' : 'Private group'} · {members.length} members</div>
+            <div style={{ color: 'var(--text-3)', fontSize: 13 }}>{group.is_public ? t('groups.publicGroup') : t('groups.privateGroup')} · {members.length} {t('common.members')}</div>
             {group.description && <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>{group.description}</p>}
           </div>
-          <div className="section-label">Members</div>
+          <div className="section-label">{t('groups.membersLabel')}</div>
           <div className="list">
             {members.map(({ profile: p, role }) => (
               <div key={p.id} className="row-card glass" style={{ cursor: 'default' }}>
@@ -129,9 +131,9 @@ export default function GroupRoomPage() {
                 {canManage && p.id !== group.owner_id && p.id !== profile.id && (
                   <span style={{ display: 'flex', gap: 6 }}>
                     <button className="btn btn-sm" onClick={() => act(() => api.setGroupRole(id, p.id, role === 'admin' ? 'member' : 'admin'))}>
-                      {role === 'admin' ? 'Demote' : 'Make admin'}
+                      {role === 'admin' ? t('groups.demote') : t('groups.makeAdmin')}
                     </button>
-                    <button className="btn btn-sm btn-danger" onClick={() => act(() => api.removeGroupMember(id, p.id))}>Remove</button>
+                    <button className="btn btn-sm btn-danger" onClick={() => act(() => api.removeGroupMember(id, p.id))}>{t('common.remove')}</button>
                   </span>
                 )}
               </div>
@@ -139,22 +141,22 @@ export default function GroupRoomPage() {
           </div>
           {canManage && (
             <>
-              <div className="section-label">Add members</div>
+              <div className="section-label">{t('groups.addMembers')}</div>
               <UserPicker meId={profile.id} selected={addPick} exclude={members.map((m) => m.profile.id)}
                 onToggle={(p) => setAddPick((prev) => prev.some((x) => x.id === p.id) ? prev.filter((x) => x.id !== p.id) : [...prev, p])} />
               <button className="btn btn-primary btn-block" style={{ marginTop: 12 }} disabled={!addPick.length}
                 onClick={() => act(async () => { for (const p of addPick) await api.addGroupMember(id, p.id); setAddPick([]) })}>
-                Add selected members
+                {t('groups.addSelected')}
               </button>
             </>
           )}
           {myRole !== 'owner' && (
             <button className="btn btn-danger btn-block" style={{ marginTop: 16 }}
               onClick={() => act(async () => { await api.removeGroupMember(id, profile.id); navigate('/groups') })}>
-              Leave group
+              {t('groups.leave')}
             </button>
           )}
-          {myRole === 'owner' && <p style={{ color: 'var(--text-3)', fontSize: 12.5, textAlign: 'center', marginTop: 14 }}>You are the group owner. Owners manage members and roles.</p>}
+          {myRole === 'owner' && <p style={{ color: 'var(--text-3)', fontSize: 12.5, textAlign: 'center', marginTop: 14 }}>{t('groups.ownerNote')}</p>}
         </Modal>
       )}
     </div>

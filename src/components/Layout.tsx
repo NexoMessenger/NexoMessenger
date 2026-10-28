@@ -3,18 +3,21 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar } from './ui'
+import { useI18n } from '../i18n'
+import type { TranslationKey } from '../i18n/translations'
 
-const NAV = [
-  { to: '/chats', label: 'Chats', icon: '💬' },
-  { to: '/groups', label: 'Groups', icon: '👥' },
-  { to: '/channels', label: 'Channels', icon: '📣' },
-  { to: '/search', label: 'Search', icon: '⌕' },
-  { to: '/profile', label: 'Profile', icon: '◯' },
-  { to: '/settings', label: 'Settings', icon: '⚙' },
+const NAV: { to: string; labelKey: TranslationKey; icon: string }[] = [
+  { to: '/chats', labelKey: 'nav.chats', icon: '💬' },
+  { to: '/groups', labelKey: 'nav.groups', icon: '👥' },
+  { to: '/channels', labelKey: 'nav.channels', icon: '📣' },
+  { to: '/search', labelKey: 'nav.search', icon: '⌕' },
+  { to: '/profile', labelKey: 'nav.profile', icon: '◯' },
+  { to: '/settings', labelKey: 'nav.settings', icon: '⚙' },
 ]
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { profile } = useAuth()
+  const { t } = useI18n()
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {NAV.map((n) => (
         <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${cls}`}>
           <span style={{ fontSize: 19, lineHeight: 1 }}>{n.icon}</span>
-          <span>{n.label}</span>
+          <span>{t(n.labelKey)}</span>
           {n.to === '/chats' && unread > 0 && <span className="nav-badge">{unread > 99 ? '99+' : unread}</span>}
         </NavLink>
       ))}
@@ -60,7 +63,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {api.mode === 'local' && (
           <div className="demo-banner" role="note">
             <span>⚠</span>
-            <span><strong>Local Demo Mode.</strong> Supabase keys are not configured, so data is stored only in this browser. Add keys from <code>.env.example</code> (see README) for real accounts, cloud sync and Google sign-in.</span>
+            <span>{t('banner.demo')}</span>
           </div>
         )}
         {children}

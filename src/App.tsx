@@ -1,6 +1,8 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthContext'
+import { LanguageProvider, useI18n } from './i18n'
 import Layout from './components/Layout'
+import WelcomePage from './pages/WelcomePage'
 import { LoginPage, RegisterPage, ForgotPage } from './pages/AuthPages'
 import ChatsPage from './pages/ChatsPage'
 import ChatRoomPage from './pages/ChatRoomPage'
@@ -13,20 +15,32 @@ import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import type { ReactNode } from 'react'
 
+function SessionSplash() {
+  const { t } = useI18n()
+  return (
+    <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', position: 'relative', zIndex: 1 }}>
+      <div style={{ textAlign: 'center' }}>
+        <div className="logo-badge" style={{ margin: '0 auto 16px', width: 54, height: 54, fontSize: 23 }}>N</div>
+        <div className="spinner" />
+        <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 14 }}>{t('session.restoring')}</p>
+      </div>
+    </div>
+  )
+}
+
+/** Entry gate: signed-in users go straight to the messenger (session preserved),
+ *  everyone else lands on the multilingual welcome screen first. */
+function Gate() {
+  const { profile, loading } = useAuth()
+  if (loading) return <SessionSplash />
+  if (profile) return <Navigate to="/chats" replace />
+  return <WelcomePage />
+}
+
 function Protected({ children }: { children: ReactNode }) {
   const { profile, loading } = useAuth()
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', position: 'relative', zIndex: 1 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="logo-badge" style={{ margin: '0 auto 16px', width: 54, height: 54, fontSize: 23 }}>N</div>
-          <div className="spinner" />
-          <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 14 }}>Restoring your session…</p>
-        </div>
-      </div>
-    )
-  }
-  if (!profile) return <Navigate to="/login" replace />
+  if (loading) return <SessionSplash />
+  if (!profile) return <Navigate to="/" replace />
   return <Layout>{children}</Layout>
 }
 
@@ -39,23 +53,26 @@ function PublicOnly({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
-          <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
-          <Route path="/forgot" element={<ForgotPage />} />
-          <Route path="/chats" element={<Protected><ChatsPage /></Protected>} />
-          <Route path="/chat/:id" element={<Protected><ChatRoomPage /></Protected>} />
-          <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
-          <Route path="/group/:id" element={<Protected><GroupRoomPage /></Protected>} />
-          <Route path="/channels" element={<Protected><ChannelsPage /></Protected>} />
-          <Route path="/channel/:id" element={<Protected><ChannelRoomPage /></Protected>} />
-          <Route path="/search" element={<Protected><SearchPage /></Protected>} />
-          <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
-          <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
-          <Route path="*" element={<Navigate to="/chats" replace />} />
-        </Routes>
-      </HashRouter>
+      <LanguageProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<Gate />} />
+            <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
+            <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
+            <Route path="/forgot" element={<ForgotPage />} />
+            <Route path="/chats" element={<Protected><ChatsPage /></Protected>} />
+            <Route path="/chat/:id" element={<Protected><ChatRoomPage /></Protected>} />
+            <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
+            <Route path="/group/:id" element={<Protected><GroupRoomPage /></Protected>} />
+            <Route path="/channels" element={<Protected><ChannelsPage /></Protected>} />
+            <Route path="/channel/:id" element={<Protected><ChannelRoomPage /></Protected>} />
+            <Route path="/search" element={<Protected><SearchPage /></Protected>} />
+            <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
+            <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </HashRouter>
+      </LanguageProvider>
     </AuthProvider>
   )
 }

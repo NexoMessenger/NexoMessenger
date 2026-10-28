@@ -93,6 +93,7 @@ export interface UserSettings {
   theme: 'nexoglass' | 'midnight' | 'graphite'
   notifications_enabled: boolean
   privacy_profile: 'public' | 'private'
+  language?: string
   updated_at: string
 }
 

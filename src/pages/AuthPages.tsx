@@ -1,13 +1,24 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
 import { useAuth } from '../lib/AuthContext'
+import { useI18n } from '../i18n'
 import { ErrorBox } from '../components/ui'
 
+const DRAFT_KEY = 'nexo_auth_draft'
+function loadDraft(): Record<string, string> {
+  try { return JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}') } catch { return {} }
+}
+function saveDraft(patch: Record<string, string>) {
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...loadDraft(), ...patch })) } catch { /* ignore */ }
+}
+
 function Shell({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n()
   return (
     <div className="auth-wrap">
       <div className="auth-card glass card">
+        <Link className="auth-back" to="/">{t('auth.backWelcome')}</Link>
         <div className="auth-logo">
           <div className="logo-badge">N</div>
           <div>
@@ -21,20 +32,36 @@ function Shell({ children }: { children: React.ReactNode }) {
   )
 }
 
+function PasswordInput({ value, onChange, autoComplete, placeholder }: {
+  value: string; onChange: (v: string) => void; autoComplete: string; placeholder: string
+}) {
+  const { t } = useI18n()
+  const [show, setShow] = useState(false)
+  return (
+    <div className="password-wrap">
+      <input className="input" type={show ? 'text' : 'password'} required autoComplete={autoComplete}
+        placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
+      <button type="button" className="password-eye" aria-label={show ? t('auth.hidePassword') : t('auth.showPassword')}
+        onClick={() => setShow(!show)}>{show ? '🙈' : '👁'}</button>
+    </div>
+  )
+}
+
 function GoogleButton() {
+  const { t } = useI18n()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const click = async () => {
     setBusy(true); setError('')
     try { await api.signInWithGoogle() } catch (e) {
-      setError(e instanceof Error ? e.message : 'Google sign-in failed')
+      setError(e instanceof Error ? e.message : t('error.generic'))
     } finally { setBusy(false) }
   }
   return (
     <div>
       <ErrorBox error={error} />
       <button className="btn google-btn" onClick={click} disabled={busy} type="button">
-        <span style={{ fontWeight: 800 }}>G</span> {busy ? 'Redirecting…' : 'Continue with Google'}
+        <span style={{ fontWeight: 800 }}>G</span> {busy ? t('auth.redirecting') : t('auth.google')}
       </button>
     </div>
   )
@@ -43,7 +70,9 @@ function GoogleButton() {
 export function LoginPage() {
   const navigate = useNavigate()
   const { refresh } = useAuth()
-  const [email, setEmail] = useState('')
+  const { t } = useI18n()
+  const draft = loadDraft()
+  const [email, setEmail] = useState(draft.email || '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -55,31 +84,30 @@ export function LoginPage() {
       await refresh()
       navigate('/chats')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed')
+      setError(err instanceof Error ? err.message : t('error.generic'))
     } finally { setBusy(false) }
   }
 
   return (
     <Shell>
-      <h1 className="auth-title">Welcome back</h1>
-      <p className="auth-sub">Sign in to continue to NEXO Messenger.</p>
-      {api.mode === 'local' && (
-        <div className="notice-box">Demo account: <strong>demo@nexo.app</strong> / <strong>demo1234</strong> — or register a new account below. Data stays in this browser until Supabase is connected.</div>
-      )}
+      <h1 className="auth-title">{t('auth.welcomeBack')}</h1>
+      <p className="auth-sub">{t('auth.signInSub')}</p>
+      {api.mode === 'local' && <div className="notice-box">{t('auth.demoNotice')}</div>}
       <ErrorBox error={error} />
       <form onSubmit={submit}>
-        <div className="field"><label>Email</label>
-          <input className="input" type="email" required autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-        <div className="field"><label>Password</label>
-          <input className="input" type="password" required autoComplete="current-password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <div className="field"><label>{t('auth.email')}</label>
+          <input className="input" type="email" required autoComplete="email" placeholder="you@example.com" value={email}
+            onChange={(e) => { setEmail(e.target.value); saveDraft({ email: e.target.value }) }} /></div>
+        <div className="field"><label>{t('auth.password')}</label>
+          <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" placeholder="••••••••" /></div>
+        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? t('auth.signingIn') : t('auth.signIn')}</button>
       </form>
       <div style={{ textAlign: 'right', marginTop: 10 }}>
-        <Link className="link-btn" to="/forgot" style={{ textDecoration: 'underline', fontSize: 13, color: 'var(--text-2)' }}>Forgot password?</Link>
+        <Link to="/forgot" style={{ fontSize: 13, color: 'var(--text-2)' }}>{t('auth.forgot')}</Link>
       </div>
-      <div className="divider">or</div>
+      <div className="divider">{t('auth.or')}</div>
       <GoogleButton />
-      <p className="auth-switch">New to NEXO? <Link to="/register">Create an account</Link></p>
+      <p className="auth-switch">{t('auth.newTo')} <Link to="/register">{t('auth.createLink')}</Link></p>
     </Shell>
   )
 }
@@ -87,9 +115,11 @@ export function LoginPage() {
 export function RegisterPage() {
   const navigate = useNavigate()
   const { refresh } = useAuth()
-  const [displayName, setDisplayName] = useState('')
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
+  const { t } = useI18n()
+  const draft = loadDraft()
+  const [displayName, setDisplayName] = useState(draft.displayName || '')
+  const [username, setUsername] = useState(draft.username || '')
+  const [email, setEmail] = useState(draft.email || '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -102,62 +132,65 @@ export function RegisterPage() {
       await refresh()
       const p = await api.getCurrentProfile()
       if (p) navigate('/chats')
-      else setNotice('Account created. If email confirmation is enabled in Supabase, confirm your email, then sign in.')
+      else setNotice(t('auth.createdNotice'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+      setError(err instanceof Error ? err.message : t('error.generic'))
     } finally { setBusy(false) }
   }
 
   return (
     <Shell>
-      <h1 className="auth-title">Create your account</h1>
-      <p className="auth-sub">Choose a unique @username — it is how people find you on NEXO.</p>
+      <h1 className="auth-title">{t('auth.createTitle')}</h1>
+      <p className="auth-sub">{t('auth.createSub')}</p>
       <ErrorBox error={error} />
       {notice && <div className="notice-box">{notice}</div>}
       <form onSubmit={submit}>
-        <div className="field"><label>Display name</label>
-          <input className="input" required placeholder="Alex Rivera" value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></div>
-        <div className="field"><label>Username</label>
+        <div className="field"><label>{t('auth.displayName')}</label>
+          <input className="input" required placeholder="Alex Rivera" value={displayName}
+            onChange={(e) => { setDisplayName(e.target.value); saveDraft({ displayName: e.target.value }) }} /></div>
+        <div className="field"><label>{t('auth.username')}</label>
           <input className="input" required placeholder="@alex" value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))} />
-          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>3–24 chars: lowercase letters, digits, _ or . Uniqueness is enforced by the database.</div></div>
-        <div className="field"><label>Email</label>
-          <input className="input" type="email" required autoComplete="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-        <div className="field"><label>Password</label>
-          <input className="input" type="password" required autoComplete="new-password" placeholder="At least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Creating account…' : 'Create account'}</button>
+            onChange={(e) => { const v = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''); setUsername(v); saveDraft({ username: v }) }} />
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>{t('auth.usernameHint')}</div></div>
+        <div className="field"><label>{t('auth.email')}</label>
+          <input className="input" type="email" required autoComplete="email" placeholder="you@example.com" value={email}
+            onChange={(e) => { setEmail(e.target.value); saveDraft({ email: e.target.value }) }} /></div>
+        <div className="field"><label>{t('auth.password')}</label>
+          <PasswordInput value={password} onChange={setPassword} autoComplete="new-password" placeholder={t('auth.passwordHint')} /></div>
+        <button className="btn btn-primary btn-block" disabled={busy}>{busy ? t('auth.creating') : t('auth.createTitle')}</button>
       </form>
-      <div className="divider">or</div>
+      <div className="divider">{t('auth.or')}</div>
       <GoogleButton />
-      <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
+      <p className="auth-switch">{t('auth.alreadyHave')} <Link to="/login">{t('auth.signInLink')}</Link></p>
     </Shell>
   )
 }
 
 export function ForgotPage() {
-  const [email, setEmail] = useState('')
+  const { t } = useI18n()
+  const [email, setEmail] = useState(loadDraft().email || '')
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError('')
     try { await api.resetPassword(email.trim()); setSent(true) } catch (err) {
-      setError(err instanceof Error ? err.message : 'Reset failed')
+      setError(err instanceof Error ? err.message : t('error.generic'))
     } finally { setBusy(false) }
   }
   return (
     <Shell>
-      <h1 className="auth-title">Reset password</h1>
-      <p className="auth-sub">We will email you a secure reset link via the auth provider.</p>
+      <h1 className="auth-title">{t('auth.resetTitle')}</h1>
+      <p className="auth-sub">{t('auth.resetSub')}</p>
       <ErrorBox error={error} />
-      {sent ? <div className="notice-box">Check your inbox for a password reset link.</div> : (
+      {sent ? <div className="notice-box">{t('auth.resetSent')}</div> : (
         <form onSubmit={submit}>
-          <div className="field"><label>Email</label>
+          <div className="field"><label>{t('auth.email')}</label>
             <input className="input" type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-          <button className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Sending…' : 'Send reset link'}</button>
+          <button className="btn btn-primary btn-block" disabled={busy}>{busy ? t('auth.sending') : t('auth.sendReset')}</button>
         </form>
       )}
-      <p className="auth-switch"><Link to="/login">← Back to sign in</Link></p>
+      <p className="auth-switch"><Link to="/login">{t('auth.backToSignIn')}</Link></p>
     </Shell>
   )
 }
