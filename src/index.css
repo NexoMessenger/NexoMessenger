@@ -595,3 +595,12 @@ input, textarea, select { max-width: 100%; }
   .auth-card { padding: 28px 20px; }
   .modal-sheet { padding: 20px 16px; }
 }
+
+
+/* Local-mode notice on search: friends on other devices are not visible
+   until a shared backend is connected — say so where the user looks. */
+.local-notice {
+  border: 1px solid rgba(245, 197, 66, .35); background: rgba(245, 197, 66, .08);
+  color: #ffe1a8; border-radius: 14px; padding: 11px 14px; font-size: 13px;
+  line-height: 1.55; overflow-wrap: anywhere; margin-bottom: 12px;
+}

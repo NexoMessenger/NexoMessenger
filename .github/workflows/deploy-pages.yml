@@ -33,6 +33,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Report backend mode
+        run: |
+          if [ -n "${{ vars.VITE_SUPABASE_URL }}" ] && [ -n "${{ vars.VITE_SUPABASE_ANON_KEY }}" ]; then
+            echo "Backend mode: SUPABASE (real multi-user sync)"
+          else
+            echo "::warning::Backend mode: LOCAL DEMO — VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY repo Variables are empty. Users on different devices will NOT see each other. See README → 'Make friends visible'."
+          fi
+
       - name: Build
         run: npm run build
         env:
