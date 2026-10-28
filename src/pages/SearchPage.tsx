@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { Channel, Group, Profile } from '../lib/types'
 import { Avatar, ErrorBox, EmptyState, GroupAvatar } from '../components/ui'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
 export default function SearchPage() {
   const { profile } = useAuth()
@@ -75,7 +76,7 @@ export default function SearchPage() {
       </div>
 
       <div className="search-input-wrap">
-        <span className="search-icon">⌕</span>
+        <span className="search-icon"><IconSearch size={16} /></span>
         <input className="input" placeholder={t('search.placeholder')} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
       </div>
 
@@ -83,9 +84,9 @@ export default function SearchPage() {
       {loading && <div className="center-loader"><div className="spinner" />{t('search.searching')}</div>}
 
       {!q.trim() && !loading && (
-        <EmptyState icon="⌕" title={t('search.discoverTitle')} text={t('search.discoverText')} />
+        <EmptyState icon={<IconSearch size={30} />} title={t('search.discoverTitle')} text={t('search.discoverText')} />
       )}
-      {nothing && <EmptyState icon="∅" title={t('search.noResults')} text={`${t('search.noResultsText')} (“${q}”)`} />}
+      {nothing && <EmptyState icon={<IconSearch size={30} />} title={t('search.noResults')} text={`${t('search.noResultsText')} (“${q}”)`} />}
 
       {people.length > 0 && (
         <>

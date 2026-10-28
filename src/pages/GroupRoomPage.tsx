@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { AttachmentInfo, Group, GroupMessage, Profile } from '../lib/types'
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, UserPicker, fmtClock } from '../components/ui'
 
 export default function GroupRoomPage() {
@@ -70,7 +71,7 @@ export default function GroupRoomPage() {
   return (
     <div className="room-wrap">
       <div className="room-head">
-        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/groups')} aria-label={t('common.back')}>←</button>
+        <button className="icon-btn back-btn-mobile" onClick={() => navigate('/groups')} aria-label={t('common.back')}><IconBack size={18} /></button>
         {group && <GroupAvatar name={group.name} url={group.avatar_url} size={42} />}
         <div className="row-main">
           <div className="row-title">{group?.name || 'Group'}</div>
@@ -85,7 +86,7 @@ export default function GroupRoomPage() {
         {loading ? <div className="center-loader"><div className="spinner" />{t('room.loading')}</div>
         : messages.length === 0 ? (
           <div className="empty-state" style={{ margin: 'auto', width: '100%' }}>
-            <div className="empty-icon">👥</div><h3>{t('room.noMessages')}</h3>
+            <div className="empty-icon"><IconGroups size={30} /></div><h3>{t('room.noMessages')}</h3>
             <p>{t('groups.noMessagesText')}</p>
           </div>
         ) : messages.map((m) => {
@@ -98,7 +99,7 @@ export default function GroupRoomPage() {
                 {!mine && sender && <div className="bubble-sender">{sender.display_name} <span style={{ fontWeight: 500, color: 'var(--text-3)' }}>@{sender.username}</span></div>}
                 <AttachmentView url={m.attachment_url} name={m.attachment_name} type={m.attachment_type} />
                 {m.body && <div>{m.body}</div>}
-                <div className="bubble-meta"><span>{fmtClock(m.created_at)}</span>{mine && <span>✓</span>}</div>
+                <div className="bubble-meta"><span>{fmtClock(m.created_at)}</span>{mine && <span className="status-read"><IconChecks size={13} /></span>}</div>
               </div>
             </div>
           )

@@ -13,6 +13,7 @@ import ChannelRoomPage from './pages/ChannelRoomPage'
 import SearchPage from './pages/SearchPage'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
+import { NexoMark } from './components/icons'
 import type { ReactNode } from 'react'
 
 function SessionSplash() {
@@ -20,7 +21,7 @@ function SessionSplash() {
   return (
     <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', position: 'relative', zIndex: 1 }}>
       <div style={{ textAlign: 'center' }}>
-        <div className="logo-badge" style={{ margin: '0 auto 16px', width: 54, height: 54, fontSize: 23 }}>N</div>
+        <div className="logo-badge" style={{ margin: '0 auto 16px', width: 54, height: 54 }}><NexoMark size={30} /></div>
         <div className="spinner" />
         <p style={{ color: 'var(--text-3)', fontSize: 13, marginTop: 14 }}>{t('session.restoring')}</p>
       </div>

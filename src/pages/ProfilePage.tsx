@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar, ErrorBox } from '../components/ui'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -66,7 +67,7 @@ export default function ProfilePage() {
         <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={profile} size={92} showOnline /></div>
         <h2 style={{ margin: '14px 0 2px', fontSize: 22, letterSpacing: '-0.4px' }}>{profile.display_name}</h2>
         <div style={{ color: 'var(--text-2)', fontSize: 14 }}>@{profile.username}</div>
-        <div style={{ marginTop: 8 }}><span className="pill">{profile.is_online ? t('profile.onlineNow') : t('profile.offlineNow')}</span></div>
+        <div style={{ marginTop: 8 }}><span className="pill"><span style={{ width: 7, height: 7, borderRadius: '50%', background: profile.is_online ? 'var(--ok)' : 'var(--text-3)', display: 'inline-block' }} />{profile.is_online ? t('profile.onlineNow') : t('profile.offlineNow')}</span></div>
         {profile.bio && <p style={{ color: 'var(--text-2)', maxWidth: 420, margin: '14px auto 0', fontSize: 14 }}>{profile.bio}</p>}
         <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={(e) => changeAvatar(e.target.files?.[0])} />
         <button className="btn btn-sm" style={{ marginTop: 16 }} disabled={uploading} onClick={() => fileRef.current?.click()}>
@@ -105,7 +106,7 @@ export default function ProfilePage() {
       )}
 
       <div style={{ display: 'flex', gap: 10 }}>
-        <button className="btn" style={{ flex: 1 }} onClick={() => navigate('/settings')}>{t('profile.openSettings')}</button>
+        <button className="btn" style={{ flex: 1 }} onClick={() => navigate('/settings')}><IconSettings size={16} /> {t('profile.openSettings')}</button>
         <button className="btn btn-danger" style={{ flex: 1 }} onClick={doSignOut}>{t('profile.signOut')}</button>
       </div>
     </div>

@@ -3,16 +3,18 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar } from './ui'
+import { IconChats, IconGroups, IconChannel, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
+import type { ComponentType } from 'react'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n/translations'
 
-const NAV: { to: string; labelKey: TranslationKey; icon: string }[] = [
-  { to: '/chats', labelKey: 'nav.chats', icon: '💬' },
-  { to: '/groups', labelKey: 'nav.groups', icon: '👥' },
-  { to: '/channels', labelKey: 'nav.channels', icon: '📣' },
-  { to: '/search', labelKey: 'nav.search', icon: '⌕' },
-  { to: '/profile', labelKey: 'nav.profile', icon: '◯' },
-  { to: '/settings', labelKey: 'nav.settings', icon: '⚙' },
+const NAV: { to: string; labelKey: TranslationKey; icon: ComponentType<IconProps> }[] = [
+  { to: '/chats', labelKey: 'nav.chats', icon: IconChats },
+  { to: '/groups', labelKey: 'nav.groups', icon: IconGroups },
+  { to: '/channels', labelKey: 'nav.channels', icon: IconChannel },
+  { to: '/search', labelKey: 'nav.search', icon: IconSearch },
+  { to: '/profile', labelKey: 'nav.profile', icon: IconProfile },
+  { to: '/settings', labelKey: 'nav.settings', icon: IconSettings },
 ]
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -39,7 +41,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <>
       {NAV.map((n) => (
         <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${cls}`}>
-          <span style={{ fontSize: 19, lineHeight: 1 }}>{n.icon}</span>
+          {(() => { const NavIcon = n.icon; return <NavIcon size={20} /> })()}
           <span>{t(n.labelKey)}</span>
           {n.to === '/chats' && unread > 0 && <span className="nav-badge">{unread > 99 ? '99+' : unread}</span>}
         </NavLink>
@@ -50,7 +52,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="logo-badge">N</div>
+        <div className="logo-badge"><NexoMark size={26} /></div>
         {items('desktop')}
         <div className="sidebar-spacer" />
         {profile && (
@@ -62,7 +64,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <div className="main-area">
         {api.mode === 'local' && (
           <div className="demo-banner" role="note">
-            <span>⚠</span>
+            <span style={{ display: 'inline-flex', flexShrink: 0, marginTop: 1 }}><IconAlert size={16} /></span>
             <span>{t('banner.demo')}</span>
           </div>
         )}

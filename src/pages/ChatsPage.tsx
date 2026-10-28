@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { Avatar, EmptyState, ErrorBox, Modal, UserPicker, fmtTime } from '../components/ui'
 import { useI18n } from '../i18n'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
 export default function ChatsPage() {
   const { profile } = useAuth()
@@ -53,15 +54,15 @@ export default function ChatsPage() {
           <h1 className="page-title">{t('chats.title')}</h1>
           <p className="page-sub">{t('chats.sub')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowNew(true)}>{t('chats.new')}</button>
+        <button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.new')}</button>
       </div>
 
       <ErrorBox error={error} />
       {loading ? (
         <div className="center-loader"><div className="spinner" />{t('chats.loading')}</div>
       ) : items.length === 0 ? (
-        <EmptyState icon="💬" title={t('chats.emptyTitle')} text={t('chats.emptyText')}>
-          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowNew(true)}>{t('chats.startFirst')}</button></div>
+        <EmptyState icon={<IconChats size={30} />} title={t('chats.emptyTitle')} text={t('chats.emptyText')}>
+          <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.startFirst')}</button></div>
         </EmptyState>
       ) : (
         <div className="list">
@@ -72,7 +73,7 @@ export default function ChatsPage() {
                 <span className="row-title">{other.display_name}
                   <span style={{ color: 'var(--text-3)', fontWeight: 500, fontSize: 12.5 }}>@{other.username}</span></span>
                 <span className="row-preview">
-                  {lastMessage ? (lastMessage.sender_id === profile?.id ? `${t('common.you')}: ` : '') + (lastMessage.body || (lastMessage.attachment_url ? `📎 ${t('common.attachment')}` : '')) : t('chats.sayHello')}
+                  {lastMessage ? (lastMessage.sender_id === profile?.id ? `${t('common.you')}: ` : '') + (lastMessage.body || (lastMessage.attachment_url ? t('common.attachment') : '')) : t('chats.sayHello')}
                 </span>
               </span>
               <span className="row-meta">
