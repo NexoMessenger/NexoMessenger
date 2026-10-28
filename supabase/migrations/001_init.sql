@@ -165,43 +165,76 @@ alter table public.channel_posts enable row level security;
 alter table public.attachments enable row level security;
 alter table public.user_settings enable row level security;
 
+drop policy if exists "profiles readable" on public.profiles;
 create policy "profiles readable" on public.profiles for select using (true);
+drop policy if exists "profiles update own" on public.profiles;
 create policy "profiles update own" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+drop policy if exists "profiles insert own" on public.profiles;
 create policy "profiles insert own" on public.profiles for insert with check (auth.uid() = id);
 
+drop policy if exists "conv read member" on public.conversations;
 create policy "conv read member" on public.conversations for select using (public.is_conv_member(id));
+drop policy if exists "conv create auth" on public.conversations;
 create policy "conv create auth" on public.conversations for insert with check (auth.uid() is not null);
+drop policy if exists "cm read member" on public.conversation_members;
 create policy "cm read member" on public.conversation_members for select using (public.is_conv_member(conversation_id) or user_id = auth.uid());
+drop policy if exists "cm insert" on public.conversation_members;
 create policy "cm insert" on public.conversation_members for insert with check (auth.uid() is not null);
+drop policy if exists "cm update own" on public.conversation_members;
 create policy "cm update own" on public.conversation_members for update using (user_id = auth.uid());
+drop policy if exists "msg read member" on public.messages;
 create policy "msg read member" on public.messages for select using (public.is_conv_member(conversation_id));
+drop policy if exists "msg insert member" on public.messages;
 create policy "msg insert member" on public.messages for insert with check (public.is_conv_member(conversation_id) and sender_id = auth.uid());
+drop policy if exists "msg update own read" on public.messages;
 create policy "msg update own read" on public.messages for update using (public.is_conv_member(conversation_id));
 
+drop policy if exists "groups read" on public.groups;
 create policy "groups read" on public.groups for select using (is_public or public.is_group_member(id) or owner_id = auth.uid());
+drop policy if exists "groups create" on public.groups;
 create policy "groups create" on public.groups for insert with check (owner_id = auth.uid());
+drop policy if exists "groups update owner/admin" on public.groups;
 create policy "groups update owner/admin" on public.groups for update using (owner_id = auth.uid() or public.is_group_admin(id));
+drop policy if exists "gm read" on public.group_members;
 create policy "gm read" on public.group_members for select using (public.is_group_member(group_id) or user_id = auth.uid());
+drop policy if exists "gm insert member-or-admin" on public.group_members;
 create policy "gm insert member-or-admin" on public.group_members for insert with check (auth.uid() is not null and (user_id = auth.uid() or public.is_group_admin(group_id)));
+drop policy if exists "gm delete self-or-admin" on public.group_members;
 create policy "gm delete self-or-admin" on public.group_members for delete using (user_id = auth.uid() or public.is_group_admin(group_id));
+drop policy if exists "gm update admin" on public.group_members;
 create policy "gm update admin" on public.group_members for update using (public.is_group_admin(group_id));
+drop policy if exists "gmsg read member" on public.group_messages;
 create policy "gmsg read member" on public.group_messages for select using (public.is_group_member(group_id));
+drop policy if exists "gmsg insert member" on public.group_messages;
 create policy "gmsg insert member" on public.group_messages for insert with check (public.is_group_member(group_id) and sender_id = auth.uid());
 
+drop policy if exists "channels read" on public.channels;
 create policy "channels read" on public.channels for select using (is_public or public.is_channel_member(id) or owner_id = auth.uid());
+drop policy if exists "channels create" on public.channels;
 create policy "channels create" on public.channels for insert with check (owner_id = auth.uid());
+drop policy if exists "channels update owner/admin" on public.channels;
 create policy "channels update owner/admin" on public.channels for update using (owner_id = auth.uid() or exists(select 1 from public.channel_members where channel_id = id and user_id = auth.uid() and role in ('owner','admin')));
+drop policy if exists "chm read" on public.channel_members;
 create policy "chm read" on public.channel_members for select using (public.is_channel_member(channel_id) or user_id = auth.uid());
+drop policy if exists "chm insert self-or-poster" on public.channel_members;
 create policy "chm insert self-or-poster" on public.channel_members for insert with check (auth.uid() is not null and (user_id = auth.uid() or public.can_post_to_channel(channel_id)));
+drop policy if exists "chm delete self-or-poster" on public.channel_members;
 create policy "chm delete self-or-poster" on public.channel_members for delete using (user_id = auth.uid() or public.can_post_to_channel(channel_id));
+drop policy if exists "chm update poster" on public.channel_members;
 create policy "chm update poster" on public.channel_members for update using (public.can_post_to_channel(channel_id));
+drop policy if exists "posts read public-or-member" on public.channel_posts;
 create policy "posts read public-or-member" on public.channel_posts for select using (
   exists(select 1 from public.channels c where c.id = channel_id and c.is_public) or public.is_channel_member(channel_id));
+drop policy if exists "posts insert authorized" on public.channel_posts;
 create policy "posts insert authorized" on public.channel_posts for insert with check (public.can_post_to_channel(channel_id) and author_id = auth.uid());
+drop policy if exists "posts delete author-or-owner" on public.channel_posts;
 create policy "posts delete author-or-owner" on public.channel_posts for delete using (author_id = auth.uid());
 
+drop policy if exists "att read own" on public.attachments;
 create policy "att read own" on public.attachments for select using (owner_id = auth.uid());
+drop policy if exists "att insert own" on public.attachments;
 create policy "att insert own" on public.attachments for insert with check (owner_id = auth.uid());
+drop policy if exists "settings own" on public.user_settings;
 create policy "settings own" on public.user_settings for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Auto-create profile row on signup (username/display from user_metadata, fallback generated)
@@ -226,12 +259,24 @@ create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
 -- Realtime
-alter publication supabase_realtime add table public.messages, public.group_messages, public.channel_posts, public.profiles;
+do $$
+declare t text;
+begin
+  foreach t in array array['messages','group_messages','channel_posts','profiles'] loop
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
 
 -- Storage buckets (run once; also create in Dashboard > Storage if this fails on your plan)
 insert into storage.buckets (id, name, public) values ('attachments','attachments', false) on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('avatars','avatars', true) on conflict (id) do nothing;
+drop policy if exists "attachments read own folder" on storage.objects;
 create policy "attachments read own folder" on storage.objects for select using (bucket_id='attachments' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "attachments write own folder" on storage.objects;
 create policy "attachments write own folder" on storage.objects for insert with check (bucket_id='attachments' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "avatars public read" on storage.objects;
 create policy "avatars public read" on storage.objects for select using (bucket_id='avatars');
+drop policy if exists "avatars write own folder" on storage.objects;
 create policy "avatars write own folder" on storage.objects for insert with check (bucket_id='avatars' and (storage.foldername(name))[1] = auth.uid()::text);
