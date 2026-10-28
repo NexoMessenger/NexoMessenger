@@ -33,6 +33,19 @@ export interface Message {
   attachment_url: string
   attachment_name: string
   attachment_type: string
+  attachment_duration?: number
+  created_at: string
+}
+
+export type ReactionScope = 'direct' | 'group'
+
+export interface Reaction {
+  id: string
+  scope: ReactionScope
+  conversation_id: string
+  message_id: string
+  user_id: string
+  emoji: string
   created_at: string
 }
 
@@ -101,6 +114,7 @@ export interface AttachmentInfo {
   url: string
   name: string
   type: string
+  duration?: number
 }
 
 export type Unsubscribe = () => void

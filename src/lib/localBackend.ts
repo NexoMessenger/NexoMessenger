@@ -1,5 +1,5 @@
 import type {
-  Channel, ChannelMember, ChannelPost, ConvMember, Conversation,
+  Channel, ChannelMember, ChannelPost, ConvMember, Conversation, Reaction,
   Group, GroupMember, GroupMessage, Message, Profile, UserSettings,
 } from './types'
 
@@ -30,6 +30,7 @@ export interface LocalDB {
   channels: Channel[]
   channelMembers: ChannelMember[]
   posts: ChannelPost[]
+  reactions: Reaction[]
   settings: UserSettings[]
   sessionUserId: string | null
 }
@@ -89,21 +90,30 @@ function seed(): LocalDB {
     channels: [news],
     channelMembers: [{ channel_id: 'c_news', user_id: 'u_assistant', role: 'owner', can_post: true, joined_at: t }],
     posts: [{ id: uid(), channel_id: 'c_news', author_id: 'u_assistant', body: 'Welcome to NEXO Messenger. This is a public channel — subscribe to receive broadcasts.', attachment_url: '', attachment_name: '', attachment_type: '', created_at: t }],
-    settings: [], sessionUserId: null,
+    settings: [], reactions: [], sessionUserId: null,
   }
 }
 
 export function loadDB(): LocalDB {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw) as LocalDB
+    if (raw) {
+      const db = JSON.parse(raw) as LocalDB
+      // Backfill collections added in later versions (existing user data is preserved).
+      if (!Array.isArray(db.reactions)) db.reactions = []
+      return db
+    }
   } catch { /* fall through to seed */ }
   const db = seed()
   saveDB(db, false)
   return db
 }
 export function saveDB(db: LocalDB, notify = true) {
-  localStorage.setItem(KEY, JSON.stringify(db))
+  const raw = JSON.stringify(db)
+  // No-op write guard: identical state must not re-notify listeners.
+  // (Prevents realtime feedback loops: load -> mark-read -> emit -> load -> ...)
+  try { if (localStorage.getItem(KEY) === raw) return } catch { /* storage unavailable */ }
+  localStorage.setItem(KEY, raw)
   if (notify) emit()
 }
 
