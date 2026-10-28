@@ -61,6 +61,16 @@ supabase/migrations/001_init.sql   schema + RLS + storage + realtime
 .env.example                       placeholder keys only — no secrets in git
 ```
 
+## Live demo (GitHub Pages)
+
+Published automatically from `main` by `.github/workflows/deploy-pages.yml`:
+**https://nexomessenger.github.io/NexoMessenger/** — demo login `demo@nexo.app` / `demo1234`.
+
+Without Supabase repository Variables the published site runs in Local Demo Mode.
+To switch it to the real backend, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+under Settings → Secrets and variables → Actions → **Variables**, then re-run the
+"Deploy NEXO Messenger to GitHub Pages" workflow (every push to `main` also redeploys).
+
 ## Security notes
 
 - Row Level Security on every table: users cannot read private conversations/groups they don't belong to, cannot post to channels without authorization, cannot edit other profiles, and cannot self-grant admin roles (role changes require owner/admin policies).
