@@ -35,8 +35,9 @@ jobs:
 
       - name: SSH preflight (connection, disk, dirs)
         run: |
+          echo "Target: $VPS (secret values are masked by GitHub)"
           for i in 1 2 3; do
-            ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" \
+            ssh -v -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" \
               "echo SSH_OK; whoami; df -h / | tail -1; mkdir -p /var/www/nexo/dist /var/www/nexo/server" && exit 0
             echo "SSH attempt $i failed, retrying in 10s..."
             sleep 10
