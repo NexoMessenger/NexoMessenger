@@ -88,6 +88,8 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   'Listing not found.': 'error.listingNotFound',
   'Daily bonus is not ready yet.': 'error.bonusNotReady',
   'Access denied.': 'error.accessDenied',
+  'Invalid code.': 'error.promoInvalid',
+  'This code has already been used.': 'error.promoUsed',
 }
 
 /** Map known backend/API error messages to localized UI strings. */

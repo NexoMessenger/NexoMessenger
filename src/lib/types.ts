@@ -172,7 +172,7 @@ export interface OwnedGift {
 
 export interface GiftTxn {
   id: ID
-  kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send'
+  kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send' | 'promo'
   amount: number
   note: string
   created_at: string

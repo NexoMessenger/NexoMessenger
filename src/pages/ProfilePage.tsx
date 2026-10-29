@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar, ErrorBox, errText } from '../components/ui'
 import { useI18n } from '../i18n'
-import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconGift, NexCoin } from '../components/icons'
+import { fmtNex } from '../lib/giftCatalog'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -19,6 +20,26 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoBusy, setPromoBusy] = useState(false)
+  const [promoError, setPromoError] = useState('')
+  const [promoMsg, setPromoMsg] = useState('')
+  const [nexBalance, setNexBalance] = useState<number | null>(null)
+
+  useEffect(() => {
+    api.getGiftState().then((st) => setNexBalance(st.balance)).catch(() => undefined)
+  }, [])
+
+  const redeemPromo = async () => {
+    setPromoBusy(true); setPromoError(''); setPromoMsg('')
+    try {
+      const { amount, balance } = await api.redeemPromoCode(promoCode)
+      setNexBalance(balance)
+      setPromoCode('')
+      setPromoMsg(t('promo.success', { amount: fmtNex(amount) }))
+    } catch (e) { setPromoError(errText(e, t)) }
+    finally { setPromoBusy(false) }
+  }
 
   if (!profile) return <div className="page"><div className="center-loader"><div className="spinner" />{t('profile.loading')}</div></div>
 
@@ -62,6 +83,29 @@ export default function ProfilePage() {
 
       <ErrorBox error={error} />
       {notice && <div className="notice-box">{notice}</div>}
+
+      <div className="settings-group glass card" style={{ padding: '16px 20px', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <div className="sw-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
+            <IconGift size={18} /> {t('promo.title')}
+          </div>
+          {nexBalance !== null && (
+            <span className="nex-amount"><NexCoin size={18} /><span>{fmtNex(nexBalance)}</span><span className="nex-balance-label">NEX</span></span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <input className="input" style={{ flex: 1, textTransform: 'uppercase' }} placeholder={t('promo.placeholder')}
+            value={promoCode} onChange={(e) => setPromoCode(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && promoCode.trim() && !promoBusy) redeemPromo() }}
+            autoCapitalize="characters" autoCorrect="off" spellCheck={false} />
+          <button className="btn btn-primary" disabled={promoBusy || !promoCode.trim()} onClick={redeemPromo}>
+            {promoBusy ? t('common.loading') : t('promo.redeem')}
+          </button>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>{t('promo.hint')}</div>
+        {promoError && <div style={{ marginTop: 10 }}><ErrorBox error={promoError} /></div>}
+        {promoMsg && <div className="notice-box" style={{ marginTop: 10 }}>{promoMsg}</div>}
+      </div>
 
       <div className="profile-hero glass card">
         <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={profile} size={92} showOnline /></div>

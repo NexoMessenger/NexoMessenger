@@ -133,13 +133,24 @@ const GIFT_MODELS = [
 const GIFT_WELCOME_BONUS = 1000
 const GIFT_DAILY_BONUS = 250
 const GIFT_BONUS_INTERVAL_MS = 24 * 60 * 60 * 1000
+// One-time promo codes (mirror src/lib/giftData.ts; keep in sync).
+const PROMO_CODES = [
+  { code: 'NEXO-MEGA-K7Q2', amount: 10000 }, { code: 'NEXO-MEGA-R4XD', amount: 10000 },
+  { code: 'NEXO-STAR-P9TA', amount: 5000 }, { code: 'NEXO-STAR-W3KE', amount: 5000 },
+  { code: 'NEXO-MOON-D8ZH', amount: 2500 }, { code: 'NEXO-MOON-B6NF', amount: 2500 },
+  { code: 'NEXO-GIFT-X2QR', amount: 1000 }, { code: 'NEXO-GIFT-M5VC', amount: 1000 },
+  { code: 'NEXO-GIFT-T9HA', amount: 1000 }, { code: 'NEXO-GIFT-K4JW', amount: 1000 },
+  { code: 'NEXO-BONUS-S7PD', amount: 500 }, { code: 'NEXO-BONUS-F2YG', amount: 500 },
+  { code: 'NEXO-BONUS-Q8ME', amount: 500 }, { code: 'NEXO-BONUS-H3XT', amount: 500 },
+]
+const normalizePromoCode = (raw) => String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
 
 function giftSeedState() {
   const items = []
   GIFT_MODELS.filter((m) => m.kind === 'collectible').forEach((m, mi) => {
     for (let i = 0; i < 4; i++) items.push({ id: uid(), serial: 12040 + mi * 7919 + i * 104729, model_key: m.key, owner_id: null })
   })
-  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1, stocked: GIFT_MODELS.filter((m) => m.kind === 'collectible').map((m) => m.key) }
+  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1, stocked: GIFT_MODELS.filter((m) => m.kind === 'collectible').map((m) => m.key), promo: PROMO_CODES.map((p) => ({ ...p, redeemed_by: null, redeemed_at: '' })) }
 }
 // Backfill for databases created before Gifts existed (user data preserved).
 if (!db.gifts || !Array.isArray(db.gifts.items)) { db.gifts = giftSeedState(); persist() }
@@ -158,6 +169,18 @@ if (!Array.isArray(db.gifts.stocked)) {
     }
   })
   if (stockedChanged) persist()
+}
+// Promo codes added to the catalog later appear in existing DBs (unredeemed).
+if (!Array.isArray(db.gifts.promo)) db.gifts.promo = []
+{
+  let promoChanged = false
+  for (const pc of PROMO_CODES) {
+    if (!db.gifts.promo.some((x) => x.code === pc.code)) {
+      db.gifts.promo.push({ ...pc, redeemed_by: null, redeemed_at: '' })
+      promoChanged = true
+    }
+  }
+  if (promoChanged) persist()
 }
 
 const giftModelOf = (key) => GIFT_MODELS.find((m) => m.key === key)
@@ -732,6 +755,21 @@ app.post('/api/gifts/send-regular', auth, (req, res) => {
   giftTxn(me, 'regular_send', 0, `${model.name} → @${to.username}`)
   persist(); touch('direct', convId); touchGlobal()
   res.json({ conversationId: convId })
+})
+
+app.post('/api/gifts/redeem', auth, rateLimitAuth, (req, res) => {
+  const norm = normalizePromoCode(req.body?.code)
+  if (!norm) return fail(res, 400, 'Invalid code.')
+  const entry = db.gifts.promo.find((x) => normalizePromoCode(x.code) === norm)
+  if (!entry) return fail(res, 404, 'Invalid code.')
+  if (entry.redeemed_by) return fail(res, 409, 'This code has already been used.')
+  const w = giftWallet(req.me.id)
+  w.balance += entry.amount
+  entry.redeemed_by = req.me.id
+  entry.redeemed_at = now()
+  giftTxn(req.me.id, 'promo', entry.amount, 'Promo code')
+  persist(); touchGlobal()
+  res.json({ amount: entry.amount, balance: w.balance })
 })
 
 app.post('/api/gifts/claim-bonus', auth, (req, res) => {
