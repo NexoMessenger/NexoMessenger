@@ -155,6 +155,8 @@ function giftSeedState() {
 // Backfill for databases created before Gifts existed (user data preserved).
 if (!db.gifts || !Array.isArray(db.gifts.items)) { db.gifts = giftSeedState(); persist() }
 if (!Array.isArray(db.profilePosts)) { db.profilePosts = []; persist() }
+// The profile archive tab was removed; make sure nothing stays hidden.
+if (db.profilePosts.some((p) => p.archived)) { db.profilePosts.forEach((p) => { p.archived = false }); persist() }
 // Models added to the catalog later get their store stock exactly once
 // (tracked in `stocked`), so sold-out models are never restocked.
 if (!Array.isArray(db.gifts.stocked)) {
@@ -735,7 +737,10 @@ app.get('/api/users/:id/collectibles', auth, (req, res) => {
   if (!db.profiles.some((p) => p.id === target)) return fail(res, 404, 'User not found.')
   const items = db.gifts.items.filter((i) => i.owner_id === target)
     .map((item) => ({ item, model: giftModelPublic(item.model_key), listing: activeListing(item.id) }))
-  res.json({ items })
+  const regular = Object.entries(db.gifts.regular[target] || {})
+    .filter(([, qty]) => qty > 0)
+    .map(([key, qty]) => ({ model: giftModelOf(key), qty })).filter((x) => x.model)
+  res.json({ items, regular })
 })
 
 app.get('/api/gifts/state', auth, (req, res) => {

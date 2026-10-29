@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
-import type { AttachmentInfo, OwnedGift, ProfilePost } from '../lib/types'
+import type { AttachmentInfo, ProfilePost, UserGifts } from '../lib/types'
 import { useI18n } from '../i18n'
 import { AttachmentView, ErrorBox, Modal, errText } from './ui'
 import { IconFile, IconGift, IconImage, IconPlus, IconTrash } from './icons'
 import { giftArt } from '../lib/giftCatalog'
 
-type Tab = 'posts' | 'archive' | 'gifts'
+type Tab = 'posts' | 'gifts'
 
 function PostTile({ post, onOpen }: { post: ProfilePost; onOpen: () => void }) {
   const isImg = post.attachment_type.startsWith('image/')
@@ -28,15 +29,17 @@ function PostTile({ post, onOpen }: { post: ProfilePost; onOpen: () => void }) {
 }
 
 /**
- * Tabbed profile showcase: Publications / Archive (owner only) / Gifts.
- * Used on the own Profile page and in other users' profile cards, so
- * publications are real backend data everywhere — not a static mockup.
+ * Tabbed profile showcase: Publications / Gifts (regular gifts and
+ * collectible NFTs in one flat grid — no collections). Used on the own
+ * Profile page and in other users' profile cards, so everything shown
+ * is real backend data everywhere — not a static mockup.
  */
 export default function ProfileShowcase({ userId, isOwn }: { userId: string; isOwn: boolean }) {
   const { t, locale } = useI18n()
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('posts')
   const [posts, setPosts] = useState<ProfilePost[] | null>(null)
-  const [gifts, setGifts] = useState<OwnedGift[] | null>(null)
+  const [gifts, setGifts] = useState<UserGifts | null>(null)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<ProfilePost | null>(null)
   const [creating, setCreating] = useState(false)
@@ -46,17 +49,17 @@ export default function ProfileShowcase({ userId, isOwn }: { userId: string; isO
     const req = ++reqRef.current
     setError('')
     try {
-      const list = tab === 'archive' ? await api.listArchivedProfilePosts(userId) : await api.listProfilePosts(userId)
+      const list = await api.listProfilePosts(userId)
       if (reqRef.current === req) setPosts(list)
     } catch (e) {
       if (reqRef.current === req) { setError(errText(e, t)); setPosts([]) }
     }
-  }, [userId, tab, t])
+  }, [userId, t])
 
   useEffect(() => {
     if (tab === 'gifts') {
       if (gifts === null) {
-        api.listUserCollectibles(userId).then(setGifts).catch((e) => { setError(errText(e, t)); setGifts([]) })
+        api.listUserGifts(userId).then(setGifts).catch((e) => { setError(errText(e, t)); setGifts({ items: [], regular: [] }) })
       }
       return
     }
@@ -65,25 +68,20 @@ export default function ProfileShowcase({ userId, isOwn }: { userId: string; isO
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, userId, loadPosts])
 
-  const afterChange = (post: ProfilePost | null) => {
-    setSelected(null)
-    if (post) setPosts((prev) => (prev ? prev.filter((p) => p.id !== post.id) : prev))
-    else void loadPosts()
-  }
+  const giftCount = (gifts?.items.length || 0) + (gifts?.regular.length || 0)
 
   return (
     <div className="showcase">
       <div className="profile-tabs" role="tablist">
         <button role="tab" aria-selected={tab === 'posts'} className={tab === 'posts' ? 'active' : ''} onClick={() => setTab('posts')}>{t('posts.publications')}</button>
-        {isOwn && <button role="tab" aria-selected={tab === 'archive'} className={tab === 'archive' ? 'active' : ''} onClick={() => setTab('archive')}>{t('posts.archive')}</button>}
         <button role="tab" aria-selected={tab === 'gifts'} className={tab === 'gifts' ? 'active' : ''} onClick={() => setTab('gifts')}>{t('posts.gifts')}</button>
       </div>
 
-      <ErrorBox error={tab === 'gifts' ? '' : error} />
+      <ErrorBox error={error} />
 
-      {tab !== 'gifts' && (
+      {tab === 'posts' && (
         <>
-          {isOwn && tab === 'posts' && (
+          {isOwn && (
             <button className="btn btn-primary showcase-add" onClick={() => setCreating(true)}>
               <IconPlus size={16} /> {t('posts.add')}
             </button>
@@ -93,8 +91,8 @@ export default function ProfileShowcase({ userId, isOwn }: { userId: string; isO
           ) : posts.length === 0 ? (
             <div className="empty-state" style={{ padding: '26px 10px' }}>
               <div className="empty-icon"><IconImage size={26} /></div>
-              <h3>{tab === 'archive' ? t('posts.emptyArchive') : t('posts.empty')}</h3>
-              {tab === 'posts' && <p>{isOwn ? t('posts.emptyHintOwn') : t('posts.emptyHint')}</p>}
+              <h3>{t('posts.empty')}</h3>
+              <p>{isOwn ? t('posts.emptyHintOwn') : t('posts.emptyHint')}</p>
             </div>
           ) : (
             <div className="posts-grid">
@@ -105,32 +103,53 @@ export default function ProfileShowcase({ userId, isOwn }: { userId: string; isO
       )}
 
       {tab === 'gifts' && (
-        gifts === null ? (
-          <div className="center-loader"><div className="spinner" />{t('common.loading')}</div>
-        ) : gifts.length === 0 ? (
-          <div className="empty-state" style={{ padding: '26px 10px' }}>
-            <div className="empty-icon"><IconGift size={26} /></div>
-            <h3>{t('posts.noGifts')}</h3>
-          </div>
-        ) : (
-          <div className="showcase-gifts">
-            {gifts.map((g) => (
-              <div key={g.item.id} className="showcase-gift glass">
-                {giftArt(g.model.key)
-                  ? <img src={giftArt(g.model.key)} alt={g.model.name} loading="lazy" />
-                  : <div className="showcase-gift-fallback"><IconGift size={26} /></div>}
-                <div className="showcase-gift-name">{g.model.name}</div>
-                <div className="showcase-gift-sub">#{g.item.serial}</div>
-              </div>
-            ))}
-          </div>
-        )
+        <>
+          {gifts === null ? (
+            <div className="center-loader"><div className="spinner" />{t('common.loading')}</div>
+          ) : giftCount === 0 ? (
+            <div className="empty-state" style={{ padding: '26px 10px' }}>
+              <div className="empty-icon"><IconGift size={26} /></div>
+              <h3>{t('posts.noGifts')}</h3>
+            </div>
+          ) : (
+            <div className="showcase-gifts">
+              {gifts!.items.map((g) => (
+                <div key={g.item.id} className="showcase-gift glass">
+                  <div className="showcase-gift-art">
+                    {giftArt(g.model.key)
+                      ? <img src={giftArt(g.model.key)} alt={g.model.name} loading="lazy" />
+                      : <div className="showcase-gift-fallback"><IconGift size={30} /></div>}
+                    <span className="gift-ribbon">#{g.item.serial}</span>
+                  </div>
+                  <div className="showcase-gift-name">{g.model.name}</div>
+                  <div className="showcase-gift-sub">{g.model.collection}</div>
+                </div>
+              ))}
+              {gifts!.regular.map((g) => (
+                <div key={g.model.key} className="showcase-gift glass">
+                  <div className="showcase-gift-art">
+                    {giftArt(g.model.key)
+                      ? <img src={giftArt(g.model.key)} alt={g.model.name} loading="lazy" />
+                      : <div className="showcase-gift-fallback"><IconGift size={30} /></div>}
+                  </div>
+                  <div className="showcase-gift-name">{g.model.name}</div>
+                  <div className="showcase-gift-sub">×{g.qty}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {isOwn && gifts !== null && (
+            <button className="btn btn-primary btn-block" style={{ marginTop: 14 }} onClick={() => navigate('/gifts')}>
+              <IconGift size={16} /> {t('posts.sendGifts')}
+            </button>
+          )}
+        </>
       )}
 
       {selected && (
         <PostDetail post={selected} isOwn={isOwn} locale={locale}
           onClose={() => setSelected(null)}
-          onChanged={() => afterChange(selected)} />
+          onDeleted={() => { setPosts((prev) => (prev ? prev.filter((p) => p.id !== selected.id) : prev)); setSelected(null) }} />
       )}
 
       {creating && (
@@ -141,21 +160,23 @@ export default function ProfileShowcase({ userId, isOwn }: { userId: string; isO
   )
 }
 
-function PostDetail({ post, isOwn, locale, onClose, onChanged }: {
+function PostDetail({ post, isOwn, locale, onClose, onDeleted }: {
   post: ProfilePost
   isOwn: boolean
   locale: string
   onClose: () => void
-  onChanged: () => void
+  onDeleted: () => void
 }) {
   const { t } = useI18n()
   const [busy, setBusy] = useState(false)
   const [armed, setArmed] = useState(false)
   const [error, setError] = useState('')
 
-  const act = async (fn: () => Promise<void>) => {
+  const del = async () => {
+    if (!armed) { setArmed(true); return }
     setBusy(true); setError('')
-    try { await fn(); onChanged() } catch (e) { setError(errText(e, t)); setBusy(false) }
+    try { await api.deletePost(post.id, post.user_id); onDeleted() }
+    catch (e) { setError(errText(e, t)); setBusy(false) }
   }
 
   return (
@@ -165,16 +186,9 @@ function PostDetail({ post, isOwn, locale, onClose, onChanged }: {
         {post.body && <p className="post-detail-body">{post.body}</p>}
         <ErrorBox error={error} />
         {isOwn && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button className="btn" style={{ flex: 1 }} disabled={busy}
-              onClick={() => void act(() => api.setPostArchived(post.id, post.user_id, !post.archived))}>
-              {post.archived ? t('posts.unarchive') : t('posts.archiveAction')}
-            </button>
-            <button className="btn btn-danger" style={{ flex: 1 }} disabled={busy}
-              onClick={() => { if (!armed) { setArmed(true); return } void act(() => api.deletePost(post.id, post.user_id)) }}>
-              <IconTrash size={15} /> {armed ? t('msg.deleteConfirm') : t('posts.delete')}
-            </button>
-          </div>
+          <button className="btn btn-danger btn-block" style={{ marginTop: 12 }} disabled={busy} onClick={() => void del()}>
+            <IconTrash size={15} /> {armed ? t('msg.deleteConfirm') : t('posts.delete')}
+          </button>
         )}
       </div>
     </Modal>

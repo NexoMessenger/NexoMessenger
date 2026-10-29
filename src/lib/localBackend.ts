@@ -149,6 +149,8 @@ export function loadDB(): LocalDB {
       // Backfill collections added in later versions (existing user data is preserved).
       if (!Array.isArray(db.reactions)) db.reactions = []
       if (!Array.isArray(db.profilePosts)) db.profilePosts = []
+      // Profile archive was removed; un-hide anything archived before.
+      db.profilePosts.forEach((p) => { p.archived = false })
       if (!db.gifts || !Array.isArray(db.gifts.items)) db.gifts = giftSeedState()
       backfillGiftStock(db)
       // Promo codes added later appear in existing DBs too (unredeemed).

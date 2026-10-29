@@ -894,12 +894,21 @@ body::after {
 .post-create-preview { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .post-create-preview img, .post-create-preview video { max-height: 220px; border-radius: 14px; }
 
-.showcase-gifts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
-.showcase-gift { border-radius: 16px; padding: 10px 8px; text-align: center; }
-.showcase-gift img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 11px; display: block; }
+.showcase-gifts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+.showcase-gift { border-radius: 18px; padding: 10px; text-align: center; }
+.showcase-gift-art { position: relative; border-radius: 13px; overflow: hidden; }
+.showcase-gift-art img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
 .showcase-gift-fallback {
-  width: 100%; aspect-ratio: 1; border-radius: 11px; display: grid; place-items: center;
+  width: 100%; aspect-ratio: 1; display: grid; place-items: center;
   background: linear-gradient(150deg, rgba(167,139,250,0.28), rgba(96,60,180,0.16)); color: #d6bcfa;
+}
+/* Diagonal corner ribbon with the collectible's number, like a prize tag. */
+.gift-ribbon {
+  position: absolute; top: 17px; right: -38px; transform: rotate(45deg);
+  padding: 3px 42px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.6px;
+  color: #fff; white-space: nowrap; pointer-events: none;
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  box-shadow: 0 4px 14px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.35);
 }
 .showcase-gift-name { font-size: 12px; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .showcase-gift-sub { font-size: 11px; color: var(--text-3); }

@@ -3,7 +3,7 @@ import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, 
 import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS } from './giftData'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
-  GiftItem, MarketEntry, Message, OwnedGift, Profile, ProfilePost, Reaction, ReactionScope, UserSettings,
+  MarketEntry, Message, OwnedGift, Profile, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
 } from './types'
 
 export const mode = backendMode
@@ -553,20 +553,6 @@ export async function listProfilePosts(userId: string): Promise<ProfilePost[]> {
     .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
 }
 
-/** Own archived posts (owner-only everywhere). */
-export async function listArchivedProfilePosts(userId: string): Promise<ProfilePost[]> {
-  if (isSrv()) return (await srv<{ posts: ProfilePost[] }>(`/api/users/${userId}/posts?archived=1`)).posts
-  if (isSb()) {
-    const { data, error } = await supabase!.from('profile_posts').select('*')
-      .eq('user_id', userId).eq('archived', true).order('created_at', { ascending: false }).limit(200)
-    if (error) err(error.message)
-    return (data as ProfilePost[]) || []
-  }
-  const db = loadDB()
-  return db.profilePosts.filter((p) => p.user_id === userId && p.archived)
-    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-}
-
 export async function createPost(userId: string, body: string, att?: AttachmentInfo): Promise<ProfilePost> {
   body = body.trim()
   if (!body && !att) err('Post is empty.')
@@ -623,17 +609,21 @@ export async function deletePost(postId: string, userId: string): Promise<void> 
   saveDB(db)
 }
 
-/** Collectible NFTs owned by any user (public showcase for profiles). */
-export async function listUserCollectibles(userId: string): Promise<OwnedGift[]> {
-  if (isSrv()) return (await srv<{ items: OwnedGift[] }>(`/api/users/${userId}/collectibles`)).items
+/** Public gift showcase of any user: collectible NFTs + regular gifts. */
+export async function listUserGifts(userId: string): Promise<UserGifts> {
+  if (isSrv()) return srv<UserGifts>(`/api/users/${userId}/collectibles`)
   if (isSb()) {
-    const { data, error } = await supabase!.from('gift_items').select('*').eq('owner_id', userId).limit(200)
+    const { data, error } = await supabase!.rpc('profile_gifts', { p_user: userId })
     if (error) err(error.message)
-    return ((data as GiftItem[]) || []).map((item) => ({ item, model: giftModel(item.model_key), listing: null }))
+    return data as UserGifts
   }
   const db = loadDB()
-  return db.gifts.items.filter((i) => i.owner_id === userId)
+  const items = db.gifts.items.filter((i) => i.owner_id === userId)
     .map((item) => ({ item, model: giftModel(item.model_key), listing: localListingOf(db, item.id) }))
+  const regular = Object.entries(db.gifts.regular[userId] || {})
+    .filter(([, qty]) => qty > 0)
+    .map(([key, qty]) => ({ model: giftModel(key), qty }))
+  return { items, regular }
 }
 
 /* ============================== MESSAGE EDIT / DELETE ============================== */
