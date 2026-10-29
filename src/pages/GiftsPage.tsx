@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import { useI18n, type TranslationKey } from '../i18n'
 import * as api from '../lib/api'
 import type { GiftItem, GiftListing, GiftModel, GiftState, MarketEntry, OwnedGift, Profile } from '../lib/types'
-import { giftArt, fmtNex, fmtSerial, REGULAR_GRADIENT } from '../lib/giftCatalog'
+import { giftArt, GIFT_VIDEO, fmtNex, fmtSerial, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { GIFT_COLLECTIONS, COLLECTIBLE_MODELS, REGULAR_MODELS } from '../lib/giftData'
 import { Avatar, EmptyState, ErrorBox, Modal, UserPicker, errText } from '../components/ui'
 import {
@@ -61,6 +61,7 @@ export default function GiftsPage() {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState('')
   const [selected, setSelected] = useState<Selection | null>(null)
+  const [reveal, setReveal] = useState<Selection | null>(null)
   const [listTarget, setListTarget] = useState<OwnedGift | null>(null)
   const [topUpOpen, setTopUpOpen] = useState(false)
   const [sendTarget, setSendTarget] = useState<GiftModel | null>(null)
@@ -116,6 +117,16 @@ export default function GiftsPage() {
 
   const hasFilters = Boolean(q || collection || modelKey || source !== 'all' || maxPrice)
   const clearFilters = () => { setQ(''); setCollection(''); setModelKey(''); setSource('all'); setMaxPrice('') }
+
+  /** Gifts with a reveal animation (e.g. NEXO Riders) play it first,
+   *  then the standard details sheet opens. */
+  const openSelection = (sel: Selection) => {
+    if (GIFT_VIDEO[sel.model.key]) setReveal(sel)
+    else setSelected(sel)
+  }
+  const finishReveal = () => {
+    if (reveal) { setSelected(reveal); setReveal(null) }
+  }
 
   const doBuy = async (sel: Selection) => {
     setBusy('buy')
@@ -230,7 +241,7 @@ export default function GiftsPage() {
                 <div className="gift-grid">
                   {state?.myItems.map(({ item, model, listing }) => (
                     <article key={item.id} className="gift-card glass gift-clickable"
-                      onClick={() => setSelected({ item, model, listing, seller: listing ? profile : null, price: listing?.price ?? null })}>
+                      onClick={() => openSelection({ item, model, listing, seller: listing ? profile : null, price: listing?.price ?? null })}>
                       <div className="gift-art">
                         <GiftArtView modelKey={model.key} />
                         <span className="gift-serial">{fmtSerial(item.serial)}</span>
@@ -335,7 +346,7 @@ export default function GiftsPage() {
             <div className="gift-grid">
               {filteredMarket.map((entry) => (
                 <article key={entry.item.id} className="gift-card glass gift-clickable"
-                  onClick={() => setSelected({ item: entry.item, model: entry.model, listing: entry.listing, seller: entry.seller, price: entry.price })}>
+                  onClick={() => openSelection({ item: entry.item, model: entry.model, listing: entry.listing, seller: entry.seller, price: entry.price })}>
                   <div className="gift-art">
                     <GiftArtView modelKey={entry.model.key} />
                     <span className="gift-serial">{fmtSerial(entry.item.serial)}</span>
@@ -358,6 +369,12 @@ export default function GiftsPage() {
         </>
       )}
 
+      {reveal && (
+        <div className="gift-reveal-overlay" onClick={finishReveal} role="dialog" aria-label={reveal.model.name}>
+          <video key={reveal.item.id} src={GIFT_VIDEO[reveal.model.key]} autoPlay playsInline
+            onEnded={finishReveal} onError={finishReveal} />
+        </div>
+      )}
       {selected && (
         <GiftDetailsModal
           sel={selected}

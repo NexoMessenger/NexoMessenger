@@ -28,6 +28,8 @@ export const GIFT_MODELS: GiftModel[] = [
   { key: 'eternal-candle', kind: 'collectible', collection: 'Glow Garden', name: 'Eternal Candle', pattern: 'Leaf Flame', background: 'Emerald Night', rarity_model: 3, rarity_pattern: 1, rarity_background: 2, total_supply: 14000, floor_price: 980 },
   { key: 'glow-mushroom', kind: 'collectible', collection: 'Glow Garden', name: 'Glow Cap', pattern: 'Firefly Windows', background: 'Plum Dusk', rarity_model: 2.5, rarity_pattern: 1, rarity_background: 1.8, total_supply: 11000, floor_price: 1230 },
   { key: 'star-frog', kind: 'collectible', collection: 'Glow Garden', name: 'Star Frog', pattern: 'Tiny Crown', background: 'Mint Starlight', rarity_model: 1, rarity_pattern: 0.4, rarity_background: 1, total_supply: 8000, floor_price: 2100 },
+  // Owner-provided artwork + reveal animation (assets/gifts/nexo-riders.*).
+  { key: 'nexo-riders', kind: 'collectible', collection: 'NEXO Riders', name: 'NEXO Riders', pattern: 'Emerald Chrome', background: 'Obsidian', rarity_model: 1, rarity_pattern: 0.5, rarity_background: 1.5, total_supply: 1000, floor_price: 5000 },
   // ---- Regular gifts (non-unique, sendable in chats) ----
   { key: 'ruby-rose', kind: 'regular', collection: 'Regular', name: 'Ruby Rose', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 25 },
   { key: 'heart-charm', kind: 'regular', collection: 'Regular', name: 'Heart Charm', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 30 },

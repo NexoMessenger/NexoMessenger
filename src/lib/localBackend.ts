@@ -28,6 +28,7 @@ export interface LocalGiftState {
   regular: Record<string, Record<string, number>>
   txns: (GiftTxn & { user_id: string })[]
   seq: number
+  stocked: string[]
 }
 
 export function giftSeedState(): LocalGiftState {
@@ -37,7 +38,23 @@ export function giftSeedState(): LocalGiftState {
       items.push({ id: uid(), serial: storeSerial(mi, i), model_key: m.key, owner_id: null })
     }
   })
-  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1 }
+  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1, stocked: COLLECTIBLE_MODELS.map((m) => m.key) }
+}
+
+/** Store stock for catalog models added later — granted exactly once per DB. */
+export function backfillGiftStock(db: LocalDB) {
+  const g = db.gifts
+  if (!Array.isArray(g.stocked)) {
+    g.stocked = COLLECTIBLE_MODELS.filter((m) => g.items.some((i) => i.model_key === m.key)).map((m) => m.key)
+  }
+  COLLECTIBLE_MODELS.forEach((m, mi) => {
+    if (!g.stocked.includes(m.key)) {
+      for (let i = 0; i < STORE_STOCK_PER_MODEL; i++) {
+        g.items.push({ id: uid(), serial: storeSerial(mi, i), model_key: m.key, owner_id: null })
+      }
+      g.stocked.push(m.key)
+    }
+  })
 }
 
 export interface LocalDB {
@@ -125,6 +142,7 @@ export function loadDB(): LocalDB {
       // Backfill collections added in later versions (existing user data is preserved).
       if (!Array.isArray(db.reactions)) db.reactions = []
       if (!db.gifts || !Array.isArray(db.gifts.items)) db.gifts = giftSeedState()
+      backfillGiftStock(db)
       return db
     }
   } catch { /* fall through to seed */ }

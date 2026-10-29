@@ -124,6 +124,7 @@ const GIFT_MODELS = [
   { key: 'eternal-candle', kind: 'collectible', collection: 'Glow Garden', name: 'Eternal Candle', pattern: 'Leaf Flame', background: 'Emerald Night', rarity_model: 3, rarity_pattern: 1, rarity_background: 2, total_supply: 14000, floor_price: 980 },
   { key: 'glow-mushroom', kind: 'collectible', collection: 'Glow Garden', name: 'Glow Cap', pattern: 'Firefly Windows', background: 'Plum Dusk', rarity_model: 2.5, rarity_pattern: 1, rarity_background: 1.8, total_supply: 11000, floor_price: 1230 },
   { key: 'star-frog', kind: 'collectible', collection: 'Glow Garden', name: 'Star Frog', pattern: 'Tiny Crown', background: 'Mint Starlight', rarity_model: 1, rarity_pattern: 0.4, rarity_background: 1, total_supply: 8000, floor_price: 2100 },
+  { key: 'nexo-riders', kind: 'collectible', collection: 'NEXO Riders', name: 'NEXO Riders', pattern: 'Emerald Chrome', background: 'Obsidian', rarity_model: 1, rarity_pattern: 0.5, rarity_background: 1.5, total_supply: 1000, floor_price: 5000 },
   { key: 'ruby-rose', kind: 'regular', collection: 'Regular', name: 'Ruby Rose', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 25 },
   { key: 'heart-charm', kind: 'regular', collection: 'Regular', name: 'Heart Charm', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 30 },
   { key: 'lucky-star', kind: 'regular', collection: 'Regular', name: 'Lucky Star', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 45 },
@@ -138,10 +139,26 @@ function giftSeedState() {
   GIFT_MODELS.filter((m) => m.kind === 'collectible').forEach((m, mi) => {
     for (let i = 0; i < 4; i++) items.push({ id: uid(), serial: 12040 + mi * 7919 + i * 104729, model_key: m.key, owner_id: null })
   })
-  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1 }
+  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1, stocked: GIFT_MODELS.filter((m) => m.kind === 'collectible').map((m) => m.key) }
 }
 // Backfill for databases created before Gifts existed (user data preserved).
 if (!db.gifts || !Array.isArray(db.gifts.items)) { db.gifts = giftSeedState(); persist() }
+// Models added to the catalog later get their store stock exactly once
+// (tracked in `stocked`), so sold-out models are never restocked.
+if (!Array.isArray(db.gifts.stocked)) {
+  db.gifts.stocked = GIFT_MODELS.filter((m) => m.kind === 'collectible' && db.gifts.items.some((i) => i.model_key === m.key)).map((m) => m.key)
+}
+{
+  let stockedChanged = false
+  GIFT_MODELS.filter((m) => m.kind === 'collectible').forEach((m, mi) => {
+    if (!db.gifts.stocked.includes(m.key)) {
+      for (let i = 0; i < 4; i++) db.gifts.items.push({ id: uid(), serial: 12040 + mi * 7919 + i * 104729, model_key: m.key, owner_id: null })
+      db.gifts.stocked.push(m.key)
+      stockedChanged = true
+    }
+  })
+  if (stockedChanged) persist()
+}
 
 const giftModelOf = (key) => GIFT_MODELS.find((m) => m.key === key)
 function giftTxn(userId, kind, amount, note) {
