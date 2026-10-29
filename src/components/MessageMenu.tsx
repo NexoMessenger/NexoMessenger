@@ -106,6 +106,11 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
 }) {
   const { t } = useI18n()
   const ref = useRef<HTMLDivElement>(null)
+  // The tap that OPENS the menu is still in progress when the backdrop
+  // appears, and its release (click / native contextmenu) lands on the
+  // backdrop. The backdrop may therefore only close when the closing
+  // tap's own pointerdown actually hit the backdrop itself.
+  const backdropPressed = useRef(false)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const [armed, setArmed] = useState(false)
   const { msg, rect } = target
@@ -141,7 +146,10 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
 
   return (
     <>
-      <div className="msg-menu-backdrop" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose() }} />
+      <div className="msg-menu-backdrop"
+        onPointerDown={() => { backdropPressed.current = true }}
+        onClick={() => { if (backdropPressed.current) onClose(); backdropPressed.current = false }}
+        onContextMenu={(e) => { e.preventDefault() }} />
       <div ref={ref} className="msg-menu glass" role="menu" aria-label={t('msg.menu')}
         style={pos ? { left: pos.left, top: pos.top } : { left: 8, top: 8, visibility: 'hidden' }}>
         <div className="msg-menu-emojis" role="group" aria-label={t('msg.react')}>
