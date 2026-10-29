@@ -70,7 +70,7 @@ export default function SettingsPage() {
               <button className="btn btn-sm" onClick={() => navigate('/profile')}>{t('settings.viewProfile')}</button>
             </div>
             <div className="switch-row">
-              <div><div className="sw-title">{t('settings.backendMode')}</div><div className="sw-sub">{api.mode === 'supabase' ? t('settings.backendSupabase') : t('settings.backendLocal')}</div></div>
+              <div><div className="sw-title">{t('settings.backendMode')}</div><div className="sw-sub">{api.mode === 'server' ? t('settings.backendServer') : api.mode === 'supabase' ? t('settings.backendSupabase') : t('settings.backendLocal')}</div></div>
               <span className="pill">{api.mode}</span>
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function SettingsPage() {
 
           <button className="btn btn-danger btn-block" onClick={doSignOut}>{t('settings.signOut')}</button>
           <p style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 12, marginTop: 16 }}>
-            {t('settings.footer')} {api.mode === 'supabase' ? t('settings.inDb') : t('settings.inBrowser')} · <button className="link-btn" onClick={refresh}>{t('settings.refreshSession')}</button>
+            {t('settings.footer')} {api.mode !== 'local' ? t('settings.inDb') : t('settings.inBrowser')} · <button className="link-btn" onClick={refresh}>{t('settings.refreshSession')}</button>
           </p>
         </>
       )}

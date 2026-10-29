@@ -6,13 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/index.mjs",
+    "start": "node server/index.mjs",
+    "build:server": "VITE_API_BASE=same-origin tsc -b && VITE_API_BASE=same-origin vite build",
+    "start:prod": "npm run build:server && node server/index.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
+    "express": "^5.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0"
+    "react-router-dom": "^6.26.0",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

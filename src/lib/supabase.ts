@@ -11,5 +11,15 @@ export const supabase: SupabaseClient | null = hasSupabase
     })
   : null
 
-/** "supabase" when env keys are present, otherwise the clearly-labelled local demo backend. */
-export const backendMode: 'supabase' | 'local' = hasSupabase ? 'supabase' : 'local'
+/**
+ * Website (self-hosted server) mode: when the build sets VITE_API_BASE
+ * ('same-origin' when the NEXO server serves this frontend itself, or an
+ * absolute API origin), ALL data/sessions/files live on that server —
+ * see server/index.mjs. This takes priority over Supabase/local demo.
+ */
+const apiBaseEnv = import.meta.env.VITE_API_BASE as string | undefined
+export const hasServer = apiBaseEnv !== undefined
+export const apiBase = apiBaseEnv === 'same-origin' ? '' : (apiBaseEnv || '')
+
+/** "server" = own website server, "supabase" = Supabase keys, else local demo. */
+export const backendMode: 'server' | 'supabase' | 'local' = hasServer ? 'server' : hasSupabase ? 'supabase' : 'local'

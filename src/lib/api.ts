@@ -1,4 +1,4 @@
-import { supabase, backendMode } from './supabase'
+import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply } from './localBackend'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, Group, GroupMessage,
@@ -8,12 +8,45 @@ import type {
 export const mode = backendMode
 const now = () => new Date().toISOString()
 const isSb = () => backendMode === 'supabase'
+const isSrv = () => backendMode === 'server'
+
+/* ===================== own-server transport ===================== */
+const TOKEN_KEY = 'nexo_server_token'
+const authListeners = new Set<() => void>()
+function getServerToken(): string | null { try { return localStorage.getItem(TOKEN_KEY) } catch { return null } }
+function setServerToken(t: string | null) {
+  try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY) } catch { /* noop */ }
+  authListeners.forEach((f) => f())
+}
+async function srv<T>(path: string, opts: { method?: string; body?: unknown; auth?: boolean } = {}): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const tok = getServerToken()
+  if (tok && opts.auth !== false) headers.Authorization = `Bearer ${tok}`
+  const res = await fetch(`${apiBase}${path}`, {
+    method: opts.method || 'GET', headers,
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  })
+  const data = (await res.json().catch(() => ({}))) as { error?: string }
+  if (!res.ok) err(data.error || `Request failed (${res.status})`)
+  return data as T
+}
+const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+  const r = new FileReader()
+  r.onload = () => resolve(String(r.result).split(',')[1] || '')
+  r.onerror = reject
+  r.readAsDataURL(file)
+})
 
 function err(msg: string): never { throw new Error(msg) }
 
 /* ============================== AUTH ============================== */
 
 export async function getCurrentProfile(): Promise<Profile | null> {
+  if (isSrv()) {
+    if (!getServerToken()) return null
+    try { return (await srv<{ profile: Profile }>('/api/me')).profile }
+    catch { setServerToken(null); return null }
+  }
   if (isSb()) {
     const { data } = await supabase!.auth.getSession()
     const user = data.session?.user
@@ -47,6 +80,11 @@ export async function signUp(email: string, password: string, username: string, 
   username = username.toLowerCase().trim().replace(/^@/, '')
   if (!/^[a-z0-9_.]{3,24}$/.test(username)) err('Username: 3–24 chars, lowercase letters, digits, _ or .')
   if (password.length < 6) err('Password must be at least 6 characters.')
+  if (isSrv()) {
+    const { token } = await srv<{ token: string }>('/api/auth/register', { method: 'POST', auth: false, body: { email, password, username, displayName } })
+    setServerToken(token)
+    return
+  }
   if (isSb()) {
     const { data: taken } = await supabase!.from('profiles').select('id').eq('username', username).maybeSingle()
     if (taken) err('That @username is already taken.')
@@ -74,6 +112,11 @@ export async function signUp(email: string, password: string, username: string, 
 }
 
 export async function signIn(email: string, password: string): Promise<void> {
+  if (isSrv()) {
+    const { token } = await srv<{ token: string }>('/api/auth/login', { method: 'POST', auth: false, body: { email, password } })
+    setServerToken(token)
+    return
+  }
   if (isSb()) {
     const { error } = await supabase!.auth.signInWithPassword({ email, password })
     if (error) err(error.message === 'Invalid login credentials' ? 'Invalid email or password.' : error.message)
@@ -91,6 +134,11 @@ export async function signIn(email: string, password: string): Promise<void> {
 }
 
 export async function signOutUser(): Promise<void> {
+  if (isSrv()) {
+    try { await srv('/api/auth/logout', { method: 'POST' }) } catch { /* token may already be gone */ }
+    setServerToken(null)
+    return
+  }
   if (isSb()) {
     const p = await getCurrentProfile()
     if (p) await supabase!.from('profiles').update({ is_online: false, last_seen: now() }).eq('id', p.id)
@@ -105,6 +153,7 @@ export async function signOutUser(): Promise<void> {
 }
 
 export async function resetPassword(email: string): Promise<void> {
+  if (isSrv()) err('Password reset by email is not available on this server yet. Ask the site admin to reset your password.')
   if (isSb()) {
     const { error } = await supabase!.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname })
     if (error) err(error.message)
@@ -115,6 +164,7 @@ export async function resetPassword(email: string): Promise<void> {
 }
 
 export async function signInWithGoogle(): Promise<void> {
+  if (isSrv()) err('Google sign-in is not configured on this server. Use email and password.')
   if (!isSb()) {
     err('Google sign-in is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, enable the Google provider in Supabase → Authentication → Providers, and add your redirect URL. See README → "Google OAuth setup".')
   }
@@ -126,6 +176,12 @@ export async function signInWithGoogle(): Promise<void> {
 }
 
 export function onAuthChange(cb: () => void): () => void {
+  if (isSrv()) {
+    authListeners.add(cb)
+    const onStorage = (e: StorageEvent) => { if (e.key === TOKEN_KEY) cb() }
+    window.addEventListener('storage', onStorage)
+    return () => { authListeners.delete(cb); window.removeEventListener('storage', onStorage) }
+  }
   if (isSb()) {
     const { data } = supabase!.auth.onAuthStateChange(() => cb())
     return () => data.subscription.unsubscribe()
@@ -136,6 +192,7 @@ export function onAuthChange(cb: () => void): () => void {
 /* ============================== PROFILES ============================== */
 
 export async function getProfile(id: string): Promise<Profile | null> {
+  if (isSrv()) { try { return (await srv<{ profile: Profile }>(`/api/users/${id}`)).profile } catch { return null } }
   if (isSb()) { const { data } = await supabase!.from('profiles').select('*').eq('id', id).maybeSingle(); return (data as Profile) ?? null }
   return loadDB().profiles.find((p) => p.id === id) ?? null
 }
@@ -143,6 +200,11 @@ export async function getProfile(id: string): Promise<Profile | null> {
 export async function getProfiles(ids: string[]): Promise<Record<string, Profile>> {
   const out: Record<string, Profile> = {}
   if (!ids.length) return out
+  if (isSrv()) {
+    const { profiles } = await srv<{ profiles: Profile[] }>(`/api/users?ids=${ids.join(',')}`)
+    profiles.forEach((p) => { out[p.id] = p })
+    return out
+  }
   if (isSb()) {
     const { data } = await supabase!.from('profiles').select('*').in('id', ids)
     ;(data || []).forEach((p: Profile) => { out[p.id] = p })
@@ -157,6 +219,10 @@ export async function updateProfile(id: string, patch: Partial<Profile>): Promis
   if (patch.username) {
     patch.username = patch.username.toLowerCase().trim().replace(/^@/, '')
     if (!/^[a-z0-9_.]{3,24}$/.test(patch.username)) err('Username: 3–24 chars, lowercase letters, digits, _ or .')
+  }
+  if (isSrv()) {
+    await srv('/api/me', { method: 'PATCH', body: { username: patch.username, display_name: patch.display_name, bio: patch.bio, avatar_url: patch.avatar_url } })
+    return
   }
   if (isSb()) {
     if (patch.username) {
@@ -176,6 +242,7 @@ export async function updateProfile(id: string, patch: Partial<Profile>): Promis
 }
 
 export async function setPresence(id: string, online: boolean) {
+  if (isSrv()) { try { await srv('/api/me/presence', { method: 'POST', body: { online } }) } catch { /* presence is best-effort */ } return }
   if (isSb()) { await supabase!.from('profiles').update({ is_online: online, last_seen: now() }).eq('id', id); return }
   const db = loadDB(); const p = db.profiles.find((x) => x.id === id)
   if (p) { p.is_online = online; p.last_seen = now(); saveDB(db) }
@@ -187,6 +254,7 @@ export async function searchUsers(rawQuery: string, excludeId: string, limit = 2
   // a query can never break the PostgREST .or() filter syntax.
   const q = rawQuery.trim().toLowerCase().replace(/^@+/, '').replace(/[%_,\\]/g, '')
   if (!q) return []
+  if (isSrv()) return (await srv<{ users: Profile[] }>(`/api/users/search?q=${encodeURIComponent(q)}&limit=${limit}`)).users
   if (isSb()) {
     const { data, error } = await supabase!.from('profiles')
       .select('id, username, display_name, avatar_url, bio, is_online, last_seen, created_at')
@@ -202,6 +270,7 @@ export async function searchUsers(rawQuery: string, excludeId: string, limit = 2
 export interface DirectListItem { conv: Conversation; other: Profile; lastMessage: Message | null; unread: number }
 
 export async function listDirectChats(me: string): Promise<DirectListItem[]> {
+  if (isSrv()) return (await srv<{ items: DirectListItem[] }>('/api/chats')).items
   if (isSb()) {
     const { data: cms } = await supabase!.from('conversation_members').select('*').eq('user_id', me)
     const convIds = (cms || []).map((c: { conversation_id: string }) => c.conversation_id)
@@ -235,6 +304,7 @@ export async function listDirectChats(me: string): Promise<DirectListItem[]> {
 
 export async function getOrCreateDirect(me: string, otherId: string): Promise<string> {
   if (me === otherId) err('You cannot message yourself.')
+  if (isSrv()) return (await srv<{ id: string }>('/api/chats/direct', { method: 'POST', body: { userId: otherId } })).id
   if (isSb()) {
     const mine = await listDirectChats(me)
     const existing = mine.find((i) => i.other.id === otherId)
@@ -266,6 +336,7 @@ export interface PageOpts { limit?: number; before?: string }
 /** Latest page of messages (ascending). Pass `before` (oldest created_at) to page backwards. */
 export async function listMessages(conversationId: string, opts: PageOpts = {}): Promise<Message[]> {
   const limit = opts.limit ?? 60
+  if (isSrv()) return (await srv<{ messages: Message[] }>(`/api/chats/${conversationId}/messages?limit=${limit}${opts.before ? `&before=${encodeURIComponent(opts.before)}` : ''}`)).messages
   if (isSb()) {
     let q = supabase!.from('messages').select('*').eq('conversation_id', conversationId)
     if (opts.before) q = q.lt('created_at', opts.before)
@@ -281,6 +352,7 @@ export async function listMessages(conversationId: string, opts: PageOpts = {}):
 export async function sendMessage(conversationId: string, senderId: string, body: string, att?: AttachmentInfo): Promise<void> {
   body = body.trim()
   if (!body && !att) err('Message is empty.')
+  if (isSrv()) { await srv(`/api/chats/${conversationId}/messages`, { method: 'POST', body: { body, attachment: att || null } }); return }
   if (isSb()) {
     const { error } = await supabase!.from('messages').insert({
       conversation_id: conversationId, sender_id: senderId, body,
@@ -299,6 +371,7 @@ export async function sendMessage(conversationId: string, senderId: string, body
 }
 
 export async function markDirectRead(conversationId: string, userId: string) {
+  if (isSrv()) { await srv(`/api/chats/${conversationId}/read`, { method: 'POST' }); return }
   if (isSb()) { await supabase!.from('conversation_members').update({ last_read_at: now() }).eq('conversation_id', conversationId).eq('user_id', userId); return }
   const db = loadDB(); const m = db.convMembers.find((x) => x.conversation_id === conversationId && x.user_id === userId)
   if (!m) return
@@ -311,6 +384,7 @@ export async function markDirectRead(conversationId: string, userId: string) {
 
 /** Peer's last_read_at for read receipts (lightweight single-row lookup). */
 export async function getPeerLastRead(conversationId: string, meId: string): Promise<string> {
+  if (isSrv()) return (await srv<{ last_read_at: string }>(`/api/chats/${conversationId}/peer-read`)).last_read_at
   if (isSb()) {
     const { data } = await supabase!.from('conversation_members').select('user_id,last_read_at').eq('conversation_id', conversationId)
     return (data || []).find((m: { user_id: string }) => m.user_id !== meId)?.last_read_at || ''
@@ -320,6 +394,7 @@ export async function getPeerLastRead(conversationId: string, meId: string): Pro
 }
 
 export async function getDirectPeer(conversationId: string, me: string): Promise<Profile | null> {
+  if (isSrv()) return (await srv<{ profile: Profile | null }>(`/api/chats/${conversationId}/peer`)).profile
   if (isSb()) {
     const { data } = await supabase!.from('conversation_members').select('user_id').eq('conversation_id', conversationId)
     const otherId = (data || []).find((m: { user_id: string }) => m.user_id !== me)?.user_id
@@ -335,6 +410,7 @@ export async function getDirectPeer(conversationId: string, me: string): Promise
 export interface GroupListItem { group: Group; unread: number; lastMessage: GroupMessage | null; memberCount: number; myRole: string }
 
 export async function listGroups(me: string): Promise<GroupListItem[]> {
+  if (isSrv()) return (await srv<{ items: GroupListItem[] }>('/api/groups')).items
   if (isSb()) {
     const { data: gms } = await supabase!.from('group_members').select('*').eq('user_id', me)
     const items: GroupListItem[] = []
@@ -362,6 +438,7 @@ export async function listGroups(me: string): Promise<GroupListItem[]> {
 
 export async function createGroup(me: string, name: string, description: string, isPublic: boolean, memberIds: string[]): Promise<string> {
   if (!name.trim()) err('Group name is required.')
+  if (isSrv()) return (await srv<{ id: string }>('/api/groups', { method: 'POST', body: { name, description, isPublic, memberIds } })).id
   if (isSb()) {
     const { data: g, error } = await supabase!.from('groups').insert({ name: name.trim(), description, is_public: isPublic, owner_id: me }).select().single()
     if (error) err(error.message)
@@ -380,11 +457,13 @@ export async function createGroup(me: string, name: string, description: string,
 }
 
 export async function getGroup(id: string): Promise<Group | null> {
+  if (isSrv()) { try { return (await srv<{ group: Group }>(`/api/groups/${id}`)).group } catch { return null } }
   if (isSb()) { const { data } = await supabase!.from('groups').select('*').eq('id', id).maybeSingle(); return (data as Group) ?? null }
   return loadDB().groups.find((g) => g.id === id) ?? null
 }
 
 export async function getGroupMembers(groupId: string): Promise<{ profile: Profile; role: string }[]> {
+  if (isSrv()) return (await srv<{ members: { profile: Profile; role: string }[] }>(`/api/groups/${groupId}/members`)).members
   if (isSb()) {
     const { data } = await supabase!.from('group_members').select('*').eq('group_id', groupId)
     const map = await getProfiles((data || []).map((m: { user_id: string }) => m.user_id))
@@ -395,6 +474,7 @@ export async function getGroupMembers(groupId: string): Promise<{ profile: Profi
 }
 
 export async function addGroupMember(groupId: string, userId: string) {
+  if (isSrv()) { await srv(`/api/groups/${groupId}/members`, { method: 'POST', body: { userId } }); return }
   if (isSb()) { const { error } = await supabase!.from('group_members').insert({ group_id: groupId, user_id: userId, role: 'member' }); if (error) err(error.message); return }
   const db = loadDB()
   if (!db.groupMembers.some((m) => m.group_id === groupId && m.user_id === userId))
@@ -403,17 +483,20 @@ export async function addGroupMember(groupId: string, userId: string) {
 }
 
 export async function removeGroupMember(groupId: string, userId: string) {
+  if (isSrv()) { await srv(`/api/groups/${groupId}/members/${userId}`, { method: 'DELETE' }); return }
   if (isSb()) { const { error } = await supabase!.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId); if (error) err(error.message); return }
   const db = loadDB(); db.groupMembers = db.groupMembers.filter((m) => !(m.group_id === groupId && m.user_id === userId)); saveDB(db)
 }
 
 export async function setGroupRole(groupId: string, userId: string, role: 'admin' | 'member') {
+  if (isSrv()) { await srv(`/api/groups/${groupId}/members/${userId}/role`, { method: 'PATCH', body: { role } }); return }
   if (isSb()) { const { error } = await supabase!.from('group_members').update({ role }).eq('group_id', groupId).eq('user_id', userId); if (error) err(error.message); return }
   const db = loadDB(); const m = db.groupMembers.find((x) => x.group_id === groupId && x.user_id === userId); if (m) m.role = role; saveDB(db)
 }
 
 export async function listGroupMessages(groupId: string, opts: PageOpts = {}): Promise<GroupMessage[]> {
   const limit = opts.limit ?? 60
+  if (isSrv()) return (await srv<{ messages: GroupMessage[] }>(`/api/groups/${groupId}/messages?limit=${limit}${opts.before ? `&before=${encodeURIComponent(opts.before)}` : ''}`)).messages
   if (isSb()) {
     let q = supabase!.from('group_messages').select('*').eq('group_id', groupId)
     if (opts.before) q = q.lt('created_at', opts.before)
@@ -428,6 +511,7 @@ export async function listGroupMessages(groupId: string, opts: PageOpts = {}): P
 
 export async function sendGroupMessage(groupId: string, senderId: string, body: string, att?: AttachmentInfo) {
   body = body.trim(); if (!body && !att) err('Message is empty.')
+  if (isSrv()) { await srv(`/api/groups/${groupId}/messages`, { method: 'POST', body: { body, attachment: att || null } }); return }
   if (isSb()) {
     const { error } = await supabase!.from('group_messages').insert({ group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0 })
     if (error) err(error.message)
@@ -441,6 +525,7 @@ export async function sendGroupMessage(groupId: string, senderId: string, body: 
 }
 
 export async function markGroupRead(groupId: string, userId: string) {
+  if (isSrv()) { await srv(`/api/groups/${groupId}/read`, { method: 'POST' }); return }
   if (isSb()) { await supabase!.from('group_members').update({ last_read_at: now() }).eq('group_id', groupId).eq('user_id', userId); return }
   const db = loadDB(); const m = db.groupMembers.find((x) => x.group_id === groupId && x.user_id === userId)
   if (!m) return
@@ -452,6 +537,7 @@ export async function markGroupRead(groupId: string, userId: string) {
 /* ============================== REACTIONS ============================== */
 
 export async function listReactions(scope: ReactionScope, conversationId: string): Promise<Reaction[]> {
+  if (isSrv()) return (await srv<{ reactions: Reaction[] }>(`/api/reactions?scope=${scope}&room=${conversationId}`)).reactions
   if (isSb()) {
     const { data, error } = await supabase!.from('message_reactions').select('*').eq('scope', scope).eq('conversation_id', conversationId).order('created_at', { ascending: true }).limit(1000)
     if (error) err(error.message)
@@ -462,6 +548,7 @@ export async function listReactions(scope: ReactionScope, conversationId: string
 
 /** Add / change / remove (same emoji again) the user's single reaction to a message. */
 export async function toggleReaction(scope: ReactionScope, conversationId: string, messageId: string, userId: string, emoji: string): Promise<void> {
+  if (isSrv()) { await srv('/api/reactions/toggle', { method: 'POST', body: { scope, conversationId, messageId, emoji } }); return }
   if (isSb()) {
     const { data: existing } = await supabase!.from('message_reactions').select('*')
       .eq('message_id', messageId).eq('user_id', userId).maybeSingle()
@@ -487,6 +574,7 @@ export async function toggleReaction(scope: ReactionScope, conversationId: strin
 
 export async function searchPublicGroups(q: string, limit = 20): Promise<Group[]> {
   q = q.trim().toLowerCase(); if (!q) return []
+  if (isSrv()) return (await srv<{ groups: Group[] }>(`/api/groups/search?q=${encodeURIComponent(q)}`)).groups.slice(0, limit)
   if (isSb()) { const { data } = await supabase!.from('groups').select('*').eq('is_public', true).ilike('name', `%${q}%`).limit(limit); return (data as Group[]) || [] }
   return loadDB().groups.filter((g) => g.is_public && g.name.toLowerCase().includes(q)).slice(0, limit)
 }
@@ -496,6 +584,7 @@ export async function searchPublicGroups(q: string, limit = 20): Promise<Group[]
 export interface ChannelListItem { channel: Channel; subscribers: number; myRole: string | null; canPost: boolean }
 
 export async function listChannels(me: string): Promise<ChannelListItem[]> {
+  if (isSrv()) return (await srv<{ items: ChannelListItem[] }>('/api/channels')).items
   if (isSb()) {
     const { data: cms } = await supabase!.from('channel_members').select('*').eq('user_id', me)
     const { data: pub } = await supabase!.from('channels').select('*').eq('is_public', true)
@@ -524,6 +613,7 @@ export async function listChannels(me: string): Promise<ChannelListItem[]> {
 
 export async function createChannel(me: string, name: string, description: string, isPublic: boolean): Promise<string> {
   if (!name.trim()) err('Channel name is required.')
+  if (isSrv()) return (await srv<{ id: string }>('/api/channels', { method: 'POST', body: { name, description, isPublic } })).id
   if (isSb()) {
     const { data: ch, error } = await supabase!.from('channels').insert({ name: name.trim(), description, is_public: isPublic, owner_id: me }).select().single()
     if (error) err(error.message)
@@ -539,11 +629,13 @@ export async function createChannel(me: string, name: string, description: strin
 }
 
 export async function getChannel(id: string): Promise<Channel | null> {
+  if (isSrv()) { try { return (await srv<{ channel: Channel }>(`/api/channels/${id}`)).channel } catch { return null } }
   if (isSb()) { const { data } = await supabase!.from('channels').select('*').eq('id', id).maybeSingle(); return (data as Channel) ?? null }
   return loadDB().channels.find((c) => c.id === id) ?? null
 }
 
 export async function subscribeChannel(channelId: string, userId: string) {
+  if (isSrv()) { await srv(`/api/channels/${channelId}/subscribe`, { method: 'POST' }); return }
   if (isSb()) { const { error } = await supabase!.from('channel_members').insert({ channel_id: channelId, user_id: userId, role: 'subscriber', can_post: false }); if (error && !error.message.includes('duplicate')) err(error.message); return }
   const db = loadDB()
   if (!db.channelMembers.some((m) => m.channel_id === channelId && m.user_id === userId))
@@ -552,11 +644,13 @@ export async function subscribeChannel(channelId: string, userId: string) {
 }
 
 export async function unsubscribeChannel(channelId: string, userId: string) {
+  if (isSrv()) { await srv(`/api/channels/${channelId}/unsubscribe`, { method: 'POST' }); return }
   if (isSb()) { const { error } = await supabase!.from('channel_members').delete().eq('channel_id', channelId).eq('user_id', userId); if (error) err(error.message); return }
   const db = loadDB(); db.channelMembers = db.channelMembers.filter((m) => !(m.channel_id === channelId && m.user_id === userId)); saveDB(db)
 }
 
 export async function getChannelMembers(channelId: string): Promise<{ profile: Profile; role: string; can_post: boolean }[]> {
+  if (isSrv()) return (await srv<{ members: { profile: Profile; role: string; can_post: boolean }[] }>(`/api/channels/${channelId}/members`)).members
   if (isSb()) {
     const { data } = await supabase!.from('channel_members').select('*').eq('channel_id', channelId)
     const map = await getProfiles((data || []).map((m: { user_id: string }) => m.user_id))
@@ -567,11 +661,13 @@ export async function getChannelMembers(channelId: string): Promise<{ profile: P
 }
 
 export async function setChannelPoster(channelId: string, userId: string, canPost: boolean) {
+  if (isSrv()) { await srv(`/api/channels/${channelId}/members/${userId}/poster`, { method: 'PATCH', body: { canPost } }); return }
   if (isSb()) { const { error } = await supabase!.from('channel_members').update({ can_post: canPost }).eq('channel_id', channelId).eq('user_id', userId); if (error) err(error.message); return }
   const db = loadDB(); const m = db.channelMembers.find((x) => x.channel_id === channelId && x.user_id === userId); if (m) m.can_post = canPost; saveDB(db)
 }
 
 export async function listPosts(channelId: string): Promise<ChannelPost[]> {
+  if (isSrv()) return (await srv<{ posts: ChannelPost[] }>(`/api/channels/${channelId}/posts`)).posts
   if (isSb()) {
     const { data, error } = await supabase!.from('channel_posts').select('*').eq('channel_id', channelId).order('created_at', { ascending: true }).limit(300)
     if (error) err(error.message)
@@ -582,6 +678,7 @@ export async function listPosts(channelId: string): Promise<ChannelPost[]> {
 
 export async function sendPost(channelId: string, authorId: string, body: string, att?: AttachmentInfo) {
   body = body.trim(); if (!body && !att) err('Post is empty.')
+  if (isSrv()) { await srv(`/api/channels/${channelId}/posts`, { method: 'POST', body: { body, attachment: att || null } }); return }
   if (isSb()) {
     const { error } = await supabase!.from('channel_posts').insert({ channel_id: channelId, author_id: authorId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '' })
     if (error) err(error.message)
@@ -594,6 +691,7 @@ export async function sendPost(channelId: string, authorId: string, body: string
 
 export async function searchPublicChannels(q: string, limit = 20): Promise<Channel[]> {
   q = q.trim().toLowerCase(); if (!q) return []
+  if (isSrv()) return (await srv<{ channels: Channel[] }>(`/api/channels/search?q=${encodeURIComponent(q)}`)).channels.slice(0, limit)
   if (isSb()) { const { data } = await supabase!.from('channels').select('*').eq('is_public', true).ilike('name', `%${q}%`).limit(limit); return (data as Channel[]) || [] }
   return loadDB().channels.filter((c) => c.is_public && c.name.toLowerCase().includes(q)).slice(0, limit)
 }
@@ -609,6 +707,12 @@ export function validateFile(file: File, localMode: boolean) {
 }
 
 export async function uploadFile(file: File, userId: string): Promise<AttachmentInfo> {
+  if (isSrv()) {
+    validateFile(file, false)
+    const data = await fileToBase64(file)
+    const up = await srv<{ url: string }>('/api/upload', { method: 'POST', body: { name: file.name, type: file.type, data } })
+    return { url: up.url, name: file.name, type: file.type }
+  }
   const isImage = validateFile(file, !isSb())
   if (isSb()) {
     const bucket = isImage && file.name.match(/\.(png|jpe?g|gif|webp)$/i) && file.size < 5 * 1024 * 1024 ? 'attachments' : 'attachments'
@@ -627,6 +731,12 @@ export async function uploadFile(file: File, userId: string): Promise<Attachment
 }
 
 export async function uploadAvatar(file: File, userId: string): Promise<string> {
+  if (isSrv()) {
+    if (!IMAGE_TYPES.includes(file.type)) err('Avatar must be a PNG, JPG, GIF or WebP image.')
+    if (file.size > 5 * 1024 * 1024) err('Avatar image is too large.')
+    const data = await fileToBase64(file)
+    return (await srv<{ url: string }>('/api/avatar', { method: 'POST', body: { name: file.name, type: file.type, data } })).url
+  }
   if (!IMAGE_TYPES.includes(file.type)) err('Avatar must be a PNG, JPG, GIF or WebP image.')
   if (file.size > (isSb() ? 5 : 2.5) * 1024 * 1024) err('Avatar image is too large.')
   if (isSb()) {
@@ -643,6 +753,7 @@ export async function uploadAvatar(file: File, userId: string): Promise<string> 
 /* ============================== SETTINGS ============================== */
 
 export async function getSettings(userId: string): Promise<UserSettings> {
+  if (isSrv()) return (await srv<{ settings: UserSettings }>('/api/settings')).settings
   if (isSb()) {
     const { data } = await supabase!.from('user_settings').select('*').eq('user_id', userId).maybeSingle()
     if (data) return data as UserSettings
@@ -657,6 +768,7 @@ export async function getSettings(userId: string): Promise<UserSettings> {
 }
 
 export async function updateSettings(userId: string, patch: Partial<UserSettings>) {
+  if (isSrv()) { await srv('/api/settings', { method: 'PUT', body: patch }); return }
   if (isSb()) { const { error } = await supabase!.from('user_settings').update({ ...patch, updated_at: now() }).eq('user_id', userId); if (error) err(error.message); return }
   const db = loadDB(); const s = db.settings.find((x) => x.user_id === userId)
   if (s) Object.assign(s, patch, { updated_at: now() }); saveDB(db)
@@ -664,8 +776,61 @@ export async function updateSettings(userId: string, patch: Partial<UserSettings
 
 /* ============================== REALTIME ============================== */
 
-/** Subscribe to any relevant data change. Local: storage/broadcast. Supabase: postgres changes. */
+/* ---- own-server WebSocket hub (rooms + global + typing) ---- */
+let wsSock: WebSocket | null = null
+let wsReconnect: number | undefined
+const wsRoomCbs = new Map<string, Set<() => void>>()
+const wsTypingCbs = new Map<string, Set<{ meId: string; cb: (name: string) => void }>>()
+
+function wsUrl(): string {
+  const tok = encodeURIComponent(getServerToken() || '')
+  if (apiBase) return `${apiBase.replace(/^http/, 'ws')}/ws?token=${tok}`
+  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  return `${proto}://${window.location.host}/ws?token=${tok}`
+}
+function wsSendSub(key: string) {
+  if (!wsSock || wsSock.readyState !== WebSocket.OPEN || key === 'global') return
+  const [kind, id] = key.split(/:(.+)/)
+  try { wsSock.send(JSON.stringify({ t: 'sub', kind, id })) } catch { /* noop */ }
+}
+function ensureWs() {
+  if (!isSrv() || wsSock || typeof window === 'undefined') return
+  if (!wsRoomCbs.size && !wsTypingCbs.size) return
+  try { wsSock = new WebSocket(wsUrl()) } catch { wsSock = null; return }
+  wsSock.onopen = () => { wsRoomCbs.forEach((_, key) => wsSendSub(key)) }
+  wsSock.onmessage = (e) => {
+    try {
+      const m = JSON.parse(String(e.data)) as { t: string; kind?: string; id?: string; scope?: string; userId?: string; name?: string }
+      if (m.t === 'changed') {
+        wsRoomCbs.get('global')?.forEach((cb) => cb())
+        if (m.kind && m.id) wsRoomCbs.get(`${m.kind}:${m.id}`)?.forEach((cb) => cb())
+      } else if (m.t === 'typing' && m.scope) {
+        wsTypingCbs.get(m.scope)?.forEach(({ meId, cb }) => { if (m.userId !== meId) cb(m.name || '') })
+      }
+    } catch { /* ignore malformed frames */ }
+  }
+  wsSock.onclose = () => {
+    wsSock = null
+    if ((wsRoomCbs.size || wsTypingCbs.size) && getServerToken()) {
+      window.clearTimeout(wsReconnect)
+      wsReconnect = window.setTimeout(() => ensureWs(), 2000)
+    }
+  }
+  wsSock.onerror = () => { try { wsSock?.close() } catch { /* noop */ } }
+}
+function wsSubRoom(key: string, cb: () => void): () => void {
+  if (!wsRoomCbs.has(key)) wsRoomCbs.set(key, new Set())
+  wsRoomCbs.get(key)!.add(cb)
+  ensureWs(); wsSendSub(key)
+  return () => {
+    wsRoomCbs.get(key)?.delete(cb)
+    if (wsRoomCbs.get(key)?.size === 0) wsRoomCbs.delete(key)
+  }
+}
+
+/** Subscribe to any relevant data change. Local: storage/broadcast. Supabase: postgres changes. Server: WebSocket. */
 export function subscribeRoom(kind: 'direct' | 'group' | 'channel', id: string, cb: () => void): () => void {
+  if (isSrv()) return wsSubRoom(`${kind}:${id}`, cb)
   if (isSb()) {
     const table = kind === 'direct' ? 'messages' : kind === 'group' ? 'group_messages' : 'channel_posts'
     const col = kind === 'direct' ? 'conversation_id' : kind === 'group' ? 'group_id' : 'channel_id'
@@ -679,6 +844,7 @@ export function subscribeRoom(kind: 'direct' | 'group' | 'channel', id: string, 
 }
 
 export function subscribeGlobal(cb: () => void): () => void {
+  if (isSrv()) return wsSubRoom('global', cb)
   if (isSb()) {
     const ch = supabase!.channel('nexo-global')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => cb())
@@ -695,6 +861,13 @@ let typingBc: BroadcastChannel | null = null
 try { typingBc = new BroadcastChannel('nexo_typing') } catch { typingBc = null }
 
 export function sendTyping(scope: string, from: Profile) {
+  if (isSrv()) {
+    ensureWs()
+    if (wsSock && wsSock.readyState === WebSocket.OPEN) {
+      try { wsSock.send(JSON.stringify({ t: 'typing', scope, name: from.display_name })) } catch { /* noop */ }
+    }
+    return
+  }
   if (isSb()) {
     const ch = supabase!.channel(`typing-${scope}`)
     ch.subscribe((status) => { if (status === 'SUBSCRIBED') { ch.send({ type: 'broadcast', event: 'typing', payload: { userId: from.id, name: from.display_name, at: Date.now() } }) } })
@@ -705,6 +878,16 @@ export function sendTyping(scope: string, from: Profile) {
 }
 
 export function subscribeTyping(scope: string, meId: string, cb: (name: string) => void): () => void {
+  if (isSrv()) {
+    if (!wsTypingCbs.has(scope)) wsTypingCbs.set(scope, new Set())
+    const entry = { meId, cb }
+    wsTypingCbs.get(scope)!.add(entry)
+    ensureWs()
+    return () => {
+      wsTypingCbs.get(scope)?.delete(entry)
+      if (wsTypingCbs.get(scope)?.size === 0) wsTypingCbs.delete(scope)
+    }
+  }
   if (isSb()) {
     const ch = supabase!.channel(`typing-${scope}`)
       .on('broadcast', { event: 'typing' }, ({ payload }) => {

@@ -1,0 +1,22 @@
+# systemd unit for the self-hosted NEXO website server.
+# 1) Copy the repo to /opt/NexoMessenger (or edit WorkingDirectory below).
+# 2) sudo cp deploy/nexo.service /etc/systemd/system/nexo.service
+# 3) sudo systemctl daemon-reload && sudo systemctl enable --now nexo
+# 4) Check: systemctl status nexo   and open http://<server-ip>/
+[Unit]
+Description=NEXO Messenger website server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/NexoMessenger
+ExecStart=/usr/bin/node server/index.mjs
+Environment=NODE_ENV=production
+Environment=HOST=0.0.0.0
+Environment=PORT=80
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

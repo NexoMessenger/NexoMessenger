@@ -100,7 +100,7 @@ export default function ProfilePage() {
             <div><div className="sw-title">{t('profile.accountId')}</div><div className="sw-sub" style={{ wordBreak: 'break-all' }}>{profile.id}</div></div>
           </div>
           <div className="switch-row">
-            <div><div className="sw-title">{t('profile.backend')}</div><div className="sw-sub">{api.mode === 'supabase' ? t('profile.backendSupabase') : t('profile.backendLocal')}</div></div>
+            <div><div className="sw-title">{t('profile.backend')}</div><div className="sw-sub">{api.mode === 'server' ? t('profile.backendServer') : api.mode === 'supabase' ? t('profile.backendSupabase') : t('profile.backendLocal')}</div></div>
           </div>
         </div>
       )}

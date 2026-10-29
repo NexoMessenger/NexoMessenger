@@ -21,6 +21,37 @@ The app uses `HashRouter` and a relative Vite `base`, so the production build ca
 
 Demo account (Local Demo Mode only): `demo@nexo.app` / `demo1234`
 
+## Own website server (self-hosted, e.g. http://31.77.169.93)
+
+The project can run as a real website on your own server — no Supabase and no
+browser-local data. One Node process serves the site **and** stores accounts,
+sessions, messages and files on the server (`server/data/`), with WebSocket
+realtime. People on different devices find each other by `@username` and see
+the same groups.
+
+```bash
+git pull                 # or clone the repo
+npm ci
+npm run build:server     # builds the frontend in website mode
+PORT=80 node server/index.mjs
+```
+
+Then open `http://<server-ip>/`. Users register once on the site; demo
+accounts from Local Demo Mode do not migrate (they lived in browsers).
+
+Run it permanently with PM2 (`pm2 start ecosystem.config.cjs`) or systemd
+(`deploy/nexo.service`). Keep `server/data/` backed up — that folder **is**
+the database. Never commit it and never expose it over HTTP (the server only
+serves `dist/` and `/api/files/<random-name>` uploads).
+
+### По-русски, коротко
+
+1. На сервере: `git pull`, `npm ci`, `npm run build:server`
+2. Запуск: `PORT=80 node server/index.mjs` (или `pm2 start ecosystem.config.cjs`)
+3. Сайт открывается как `http://31.77.169.93/` — все регистрируются заново один раз,
+   дальше поиск по `@username`, лички и группы работают между реальными людьми.
+4. Папка `server/data/` — это вся база. Делай её бэкапы.
+
 ## Make friends visible to each other (required for real use)
 
 If people on **different phones** cannot find each other by `@username` and
