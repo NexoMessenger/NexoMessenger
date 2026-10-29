@@ -107,7 +107,7 @@ export interface ChannelPost {
 
 export interface UserSettings {
   user_id: ID
-  theme: 'nexoglass' | 'midnight' | 'graphite'
+  theme: 'nexoglass' | 'midnight' | 'graphite' | 'lime' | 'light' | 'coffee' | 'sakura' | 'ocean' | 'sunset'
   notifications_enabled: boolean
   privacy_profile: 'public' | 'private'
   language?: string

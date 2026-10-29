@@ -4,13 +4,19 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { UserSettings } from '../lib/types'
 import { ErrorBox, errText } from '../components/ui'
-import { useI18n } from '../i18n'
+import { useI18n, type TranslationKey } from '../i18n'
 import { LOCALES } from '../i18n/translations'
 
-const THEMES: { id: UserSettings['theme']; label: string; hint: string }[] = [
-  { id: 'nexoglass', label: 'NEXO Glass', hint: 'Default black glassmorphism' },
-  { id: 'midnight', label: 'Midnight', hint: 'Deep blue-black glass' },
-  { id: 'graphite', label: 'Graphite', hint: 'Neutral warm graphite' },
+const THEMES: { id: UserSettings['theme']; labelKey: TranslationKey; hintKey: TranslationKey; swatches: [string, string, string] }[] = [
+  { id: 'nexoglass', labelKey: 'settings.themeDark', hintKey: 'settings.themeDarkHint', swatches: ['#050507', '#8b5cf6', '#f0abfc'] },
+  { id: 'lime', labelKey: 'settings.themeLime', hintKey: 'settings.themeLimeHint', swatches: ['#050805', '#84cc16', '#bef264'] },
+  { id: 'light', labelKey: 'settings.themeLight', hintKey: 'settings.themeLightHint', swatches: ['#ffffff', '#7c3aed', '#c026d3'] },
+  { id: 'coffee', labelKey: 'settings.themeCoffee', hintKey: 'settings.themeCoffeeHint', swatches: ['#120b06', '#d97706', '#fbbf24'] },
+  { id: 'sakura', labelKey: 'settings.themeSakura', hintKey: 'settings.themeSakuraHint', swatches: ['#150711', '#ec4899', '#f9a8d4'] },
+  { id: 'ocean', labelKey: 'settings.themeOcean', hintKey: 'settings.themeOceanHint', swatches: ['#020914', '#0284c7', '#7dd3fc'] },
+  { id: 'sunset', labelKey: 'settings.themeSunset', hintKey: 'settings.themeSunsetHint', swatches: ['#14060d', '#f97316', '#fda4af'] },
+  { id: 'midnight', labelKey: 'settings.themeMidnight', hintKey: 'settings.themeMidnightHint', swatches: ['#04060d', '#3b82f6', '#93c5fd'] },
+  { id: 'graphite', labelKey: 'settings.themeGraphite', hintKey: 'settings.themeGraphiteHint', swatches: ['#080808', '#71717a', '#d4d4d8'] },
 ]
 
 export default function SettingsPage() {
@@ -35,13 +41,20 @@ export default function SettingsPage() {
     if (!profile || !settings) return
     const next = { ...settings, ...patch }
     setSettings(next); setSaving(true); setError(''); setNotice('')
+    if (patch.theme) {
+      document.documentElement.dataset.theme = patch.theme
+      try { localStorage.setItem('nexo_theme', patch.theme) } catch { /* ignore */ }
+    }
     try {
       await api.updateSettings(profile.id, patch)
-      if (patch.theme) document.documentElement.dataset.theme = patch.theme
       setNotice(t('settings.saved'))
     } catch (e) {
       setError(errText(e, t))
       setSettings(settings)
+      if (patch.theme) {
+        document.documentElement.dataset.theme = settings.theme
+        try { localStorage.setItem('nexo_theme', settings.theme) } catch { /* ignore */ }
+      }
     } finally { setSaving(false) }
   }
 
@@ -80,9 +93,16 @@ export default function SettingsPage() {
             <div style={{ padding: '14px 0 6px' }}>
               <div className="sw-title" style={{ fontWeight: 620, fontSize: 14.5 }}>{t('settings.theme')}</div>
               <div className="sw-sub" style={{ color: 'var(--text-3)', fontSize: 12.5, margin: '2px 0 12px' }}>{t('settings.themeSub')}</div>
-              <div className="seg">
-                {THEMES.map((t) => (
-                  <button key={t.id} className={settings.theme === t.id ? 'active' : ''} onClick={() => save({ theme: t.id })} title={t.hint}>{t.label}</button>
+              <div className="theme-grid">
+                {THEMES.map((theme) => (
+                  <button key={theme.id} type="button" className={`theme-card ${settings.theme === theme.id ? 'active' : ''}`}
+                    onClick={() => save({ theme: theme.id })} aria-pressed={settings.theme === theme.id}>
+                    <span className="theme-swatches">
+                      {theme.swatches.map((color) => <span key={color} className="theme-swatch" style={{ background: color }} />)}
+                    </span>
+                    <span className="theme-card-name">{t(theme.labelKey)}{settings.theme === theme.id && <span className="theme-check">{t('settings.themeActive')}</span>}</span>
+                    <span className="theme-card-hint">{t(theme.hintKey)}</span>
+                  </button>
                 ))}
               </div>
             </div>

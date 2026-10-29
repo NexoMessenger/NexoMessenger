@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!profile) return
     api.getSettings(profile.id).then((s) => {
       document.documentElement.dataset.theme = s.theme
+      try { localStorage.setItem('nexo_theme', s.theme) } catch { /* ignore */ }
     }).catch(() => undefined)
   }, [profile])
 

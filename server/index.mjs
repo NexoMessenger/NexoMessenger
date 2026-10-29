@@ -344,7 +344,10 @@ app.get('/api/settings', auth, (req, res) => {
   res.json({ settings: s })
 })
 
+const SETTINGS_THEMES = new Set(['nexoglass', 'midnight', 'graphite', 'lime', 'light', 'coffee', 'sakura', 'ocean', 'sunset'])
+
 app.put('/api/settings', auth, (req, res) => {
+  if (req.body?.theme !== undefined && !SETTINGS_THEMES.has(req.body.theme)) return fail(res, 400, 'Unknown theme.')
   let s = db.settings.find((x) => x.user_id === req.me.id)
   if (!s) { s = { user_id: req.me.id, theme: 'nexoglass', notifications_enabled: true, privacy_profile: 'public', updated_at: now() }; db.settings.push(s) }
   Object.assign(s, req.body || {}, { user_id: req.me.id, updated_at: now() })
