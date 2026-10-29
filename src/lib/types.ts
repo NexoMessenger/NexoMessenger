@@ -186,6 +186,12 @@ export interface ProfilePost {
   created_at: string
 }
 
+/** A user's public gift showcase: collectible NFTs + regular gift stock. */
+export interface UserGifts {
+  items: OwnedGift[]
+  regular: { model: GiftModel; qty: number }[]
+}
+
 export interface GiftTxn {
   id: ID
   kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send' | 'promo'
