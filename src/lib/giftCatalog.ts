@@ -8,6 +8,8 @@ import eternalCandle from '../assets/gifts/eternal-candle.jpg'
 import glowMushroom from '../assets/gifts/glow-mushroom.jpg'
 import starFrog from '../assets/gifts/star-frog.jpg'
 import rubyRose from '../assets/gifts/ruby-rose.jpg'
+import nexoRidersCover from '../assets/gifts/nexo-riders.png'
+import nexoRidersVideo from '../assets/gifts/nexo-riders.webm'
 
 /** Illustrated artwork per gift model key (bundled with the app). */
 export const GIFT_ART: Record<string, string> = {
@@ -21,6 +23,12 @@ export const GIFT_ART: Record<string, string> = {
   'glow-mushroom': glowMushroom,
   'star-frog': starFrog,
   'ruby-rose': rubyRose,
+  'nexo-riders': nexoRidersCover,
+}
+
+/** Reveal animation per gift model key (played once when the NFT is opened). */
+export const GIFT_VIDEO: Record<string, string> = {
+  'nexo-riders': nexoRidersVideo,
 }
 
 export const giftArt = (key: string): string | undefined => GIFT_ART[key]
