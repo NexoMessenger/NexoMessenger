@@ -155,6 +155,15 @@ export const IconStar = (p: IconProps) => (
 export const IconGem = (p: IconProps) => (
   <svg {...base(p)}><path d="M7 3.5h10l3.5 5L12 20.5 3.5 8.5 7 3.5Z" strokeLinejoin="round" /><path d="M3.5 8.5h17M12 20.5 8.8 8.5l2.2-5 2.2 5L12 20.5" strokeLinejoin="round" /></svg>
 )
+export const IconCopy = (p: IconProps) => (
+  <svg {...base(p)}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6.5A1.5 1.5 0 0 1 6.5 5H15" /></svg>
+)
+export const IconReply = (p: IconProps) => (
+  <svg {...base(p)}><path d="M9.5 5.5 4 11l5.5 5.5" /><path d="M4 11h10a6 6 0 0 1 6 6v1.5" /></svg>
+)
+export const IconForward = (p: IconProps) => (
+  <svg {...base(p)}><path d="M13 4.5 20.5 12 13 19.5v-4.3c-5-.1-8 1.5-9.5 4.8C3.6 12.6 7 8.9 13 8.6V4.5Z" strokeLinejoin="round" /></svg>
+)
 export const IconFilter = (p: IconProps) => (
   <svg {...base(p)}><path d="M4 5.5h16M7 12h10M10 18.5h4" /></svg>
 )

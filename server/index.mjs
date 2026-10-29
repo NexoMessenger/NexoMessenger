@@ -422,11 +422,35 @@ app.post('/api/chats/:id/messages', auth, (req, res) => {
   const body = String(req.body?.body || '').trim()
   const att = req.body?.attachment || null
   if (!body && !att) return fail(res, 400, 'Message is empty.')
-  const msg = { id: uid(), conversation_id: req.params.id, sender_id: req.me.id, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, created_at: now() }
+  const replyTo = String(req.body?.replyTo || '')
+  const msg = { id: uid(), conversation_id: req.params.id, sender_id: req.me.id, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, reply_to: replyTo && db.messages.some((x) => x.id === replyTo && x.conversation_id === req.params.id) ? replyTo : '', edited_at: '', created_at: now() }
   db.messages.push(msg)
   const conv = db.conversations.find((c) => c.id === req.params.id); if (conv) conv.last_message_at = msg.created_at
   persist(); touch('direct', req.params.id); touchGlobal()
   res.json({ message: msg })
+})
+
+app.patch('/api/chats/:id/messages/:mid', auth, (req, res) => {
+  if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  const msg = db.messages.find((x) => x.id === req.params.mid && x.conversation_id === req.params.id)
+  if (!msg) return fail(res, 404, 'Message not found.')
+  if (msg.sender_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  const body = String(req.body?.body || '').trim()
+  if (!body) return fail(res, 400, 'Message is empty.')
+  msg.body = body; msg.edited_at = now()
+  persist(); touch('direct', req.params.id); touchGlobal()
+  res.json({ message: msg })
+})
+
+app.delete('/api/chats/:id/messages/:mid', auth, (req, res) => {
+  if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  const msg = db.messages.find((x) => x.id === req.params.mid && x.conversation_id === req.params.id)
+  if (!msg) return fail(res, 404, 'Message not found.')
+  if (msg.sender_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.messages = db.messages.filter((x) => x.id !== msg.id)
+  db.reactions = db.reactions.filter((r) => !(r.scope === 'direct' && r.message_id === msg.id))
+  persist(); touch('direct', req.params.id); touchGlobal()
+  res.json({ ok: true })
 })
 
 app.post('/api/chats/:id/read', auth, (req, res) => {
@@ -537,11 +561,35 @@ app.post('/api/groups/:id/messages', auth, (req, res) => {
   const body = String(req.body?.body || '').trim()
   const att = req.body?.attachment || null
   if (!body && !att) return fail(res, 400, 'Message is empty.')
-  const msg = { id: uid(), group_id: req.params.id, sender_id: req.me.id, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, created_at: now() }
+  const replyTo = String(req.body?.replyTo || '')
+  const msg = { id: uid(), group_id: req.params.id, sender_id: req.me.id, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, reply_to: replyTo && db.groupMessages.some((x) => x.id === replyTo && x.group_id === req.params.id) ? replyTo : '', edited_at: '', created_at: now() }
   db.groupMessages.push(msg)
   const g = db.groups.find((x) => x.id === req.params.id); if (g) g.last_message_at = msg.created_at
   persist(); touch('group', req.params.id); touchGlobal()
   res.json({ message: msg })
+})
+
+app.patch('/api/groups/:id/messages/:mid', auth, (req, res) => {
+  if (!groupMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  const msg = db.groupMessages.find((x) => x.id === req.params.mid && x.group_id === req.params.id)
+  if (!msg) return fail(res, 404, 'Message not found.')
+  if (msg.sender_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  const body = String(req.body?.body || '').trim()
+  if (!body) return fail(res, 400, 'Message is empty.')
+  msg.body = body; msg.edited_at = now()
+  persist(); touch('group', req.params.id); touchGlobal()
+  res.json({ message: msg })
+})
+
+app.delete('/api/groups/:id/messages/:mid', auth, (req, res) => {
+  if (!groupMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  const msg = db.groupMessages.find((x) => x.id === req.params.mid && x.group_id === req.params.id)
+  if (!msg) return fail(res, 404, 'Message not found.')
+  if (msg.sender_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.groupMessages = db.groupMessages.filter((x) => x.id !== msg.id)
+  db.reactions = db.reactions.filter((r) => !(r.scope === 'group' && r.message_id === msg.id))
+  persist(); touch('group', req.params.id); touchGlobal()
+  res.json({ ok: true })
 })
 
 app.post('/api/groups/:id/read', auth, (req, res) => {

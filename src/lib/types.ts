@@ -34,6 +34,10 @@ export interface Message {
   attachment_name: string
   attachment_type: string
   attachment_duration?: number
+  /** Id of the message this one replies to (quote), when set. */
+  reply_to?: string
+  /** ISO timestamp of the last edit (sender-only), when edited. */
+  edited_at?: string
   created_at: string
 }
 

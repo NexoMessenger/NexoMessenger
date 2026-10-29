@@ -350,22 +350,24 @@ export async function listMessages(conversationId: string, opts: PageOpts = {}):
   return all.sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-limit)
 }
 
-export async function sendMessage(conversationId: string, senderId: string, body: string, att?: AttachmentInfo): Promise<void> {
+export async function sendMessage(conversationId: string, senderId: string, body: string, att?: AttachmentInfo, replyTo?: string): Promise<void> {
   body = body.trim()
   if (!body && !att) err('Message is empty.')
-  if (isSrv()) { await srv(`/api/chats/${conversationId}/messages`, { method: 'POST', body: { body, attachment: att || null } }); return }
+  if (isSrv()) { await srv(`/api/chats/${conversationId}/messages`, { method: 'POST', body: { body, attachment: att || null, replyTo: replyTo || '' } }); return }
   if (isSb()) {
     const { error } = await supabase!.from('messages').insert({
       conversation_id: conversationId, sender_id: senderId, body,
       attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '',
       attachment_duration: att?.duration || 0,
+      // reply_to exists after migration 008; omit the field beforehand.
+      ...(replyTo ? { reply_to: replyTo } : {}),
     })
     if (error) err(error.message)
     await supabase!.from('conversations').update({ last_message_at: now() }).eq('id', conversationId)
     return
   }
   const db = loadDB()
-  db.messages.push({ id: uid(), conversation_id: conversationId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, created_at: now() })
+  db.messages.push({ id: uid(), conversation_id: conversationId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, reply_to: replyTo || '', edited_at: '', created_at: now() })
   const conv = db.conversations.find((c) => c.id === conversationId); if (conv) conv.last_message_at = now()
   saveDB(db)
   maybeAssistantReply(db, conversationId, senderId)
@@ -510,17 +512,17 @@ export async function listGroupMessages(groupId: string, opts: PageOpts = {}): P
   return all.sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-limit)
 }
 
-export async function sendGroupMessage(groupId: string, senderId: string, body: string, att?: AttachmentInfo) {
+export async function sendGroupMessage(groupId: string, senderId: string, body: string, att?: AttachmentInfo, replyTo?: string) {
   body = body.trim(); if (!body && !att) err('Message is empty.')
-  if (isSrv()) { await srv(`/api/groups/${groupId}/messages`, { method: 'POST', body: { body, attachment: att || null } }); return }
+  if (isSrv()) { await srv(`/api/groups/${groupId}/messages`, { method: 'POST', body: { body, attachment: att || null, replyTo: replyTo || '' } }); return }
   if (isSb()) {
-    const { error } = await supabase!.from('group_messages').insert({ group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0 })
+    const { error } = await supabase!.from('group_messages').insert({ group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, ...(replyTo ? { reply_to: replyTo } : {}) })
     if (error) err(error.message)
     await supabase!.from('groups').update({ last_message_at: now() }).eq('id', groupId)
     return
   }
   const db = loadDB()
-  db.groupMessages.push({ id: uid(), group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, created_at: now() })
+  db.groupMessages.push({ id: uid(), group_id: groupId, sender_id: senderId, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, reply_to: replyTo || '', edited_at: '', created_at: now() })
   const g = db.groups.find((x) => x.id === groupId); if (g) g.last_message_at = now()
   saveDB(db)
 }
@@ -533,6 +535,57 @@ export async function markGroupRead(groupId: string, userId: string) {
   const hasUnread = db.groupMessages.some((x) => x.group_id === groupId && x.sender_id !== userId && x.created_at > m.last_read_at)
   if (!hasUnread) return
   m.last_read_at = now(); saveDB(db)
+}
+
+/* ============================== MESSAGE EDIT / DELETE ============================== */
+
+/** Edit own message text. Every backend re-checks authorship server-side. */
+export async function editMessage(scope: ReactionScope, roomId: string, messageId: string, userId: string, body: string): Promise<void> {
+  body = body.trim()
+  if (!body) err('Message is empty.')
+  if (isSrv()) {
+    const path = scope === 'direct' ? `/api/chats/${roomId}/messages/${messageId}` : `/api/groups/${roomId}/messages/${messageId}`
+    await srv(path, { method: 'PATCH', body: { body } })
+    return
+  }
+  if (isSb()) {
+    const table = scope === 'direct' ? 'messages' : 'group_messages'
+    const { error } = await supabase!.from(table).update({ body, edited_at: now() }).eq('id', messageId).eq('sender_id', userId)
+    if (error) err(error.message)
+    return
+  }
+  const db = loadDB()
+  const list = scope === 'direct' ? db.messages : db.groupMessages
+  const msg = list.find((x) => x.id === messageId)
+  if (!msg) err('Message not found.')
+  if (msg!.sender_id !== userId) err('Access denied.')
+  msg!.body = body
+  msg!.edited_at = now()
+  saveDB(db)
+}
+
+/** Delete own message (its reactions go with it). Authorship is re-checked. */
+export async function deleteMessage(scope: ReactionScope, roomId: string, messageId: string, userId: string): Promise<void> {
+  if (isSrv()) {
+    const path = scope === 'direct' ? `/api/chats/${roomId}/messages/${messageId}` : `/api/groups/${roomId}/messages/${messageId}`
+    await srv(path, { method: 'DELETE' })
+    return
+  }
+  if (isSb()) {
+    const table = scope === 'direct' ? 'messages' : 'group_messages'
+    const { error } = await supabase!.from(table).delete().eq('id', messageId).eq('sender_id', userId)
+    if (error) err(error.message)
+    return
+  }
+  const db = loadDB()
+  const list = scope === 'direct' ? db.messages : db.groupMessages
+  const msg = list.find((x) => x.id === messageId)
+  if (!msg) err('Message not found.')
+  if (msg!.sender_id !== userId) err('Access denied.')
+  if (scope === 'direct') db.messages = db.messages.filter((x) => x.id !== messageId)
+  else db.groupMessages = db.groupMessages.filter((x) => x.id !== messageId)
+  db.reactions = db.reactions.filter((r) => !(r.scope === scope && r.message_id === messageId))
+  saveDB(db)
 }
 
 /* ============================== REACTIONS ============================== */

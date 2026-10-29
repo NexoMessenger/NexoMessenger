@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Reaction } from '../lib/types'
 import { IconPlay, IconPause } from './icons'
 
-export const REACTION_SET = ['❤️', '😂', '😮', '😢', '🔥', '👍']
+export const REACTION_SET = ['❤️', '😂', '🔥', '😮', '😢', '👍', '👎', '🎉']
 
 export function fmtDuration(sec: number) {
   if (!isFinite(sec) || sec < 0) sec = 0
@@ -25,10 +25,57 @@ export function toggleReactionLocal(
   }]
 }
 
+/* ------------------------- reaction burst effects ------------------------- */
+
+export interface BurstSpec { id: number; x: number; y: number; emoji: string }
+
+const BURST_GLYPHS: Record<string, string[]> = {
+  '❤️': ['❤️', '💗', '💖', '💜', '❤️', '💓', '❤️', '💗'],
+  '🔥': ['🔥', '✨', '🔥', '✨', '🧡', '🔥', '✨', '🔥'],
+  '😂': ['😂', '🤣', '😂', '🤣', '😂', '🤣', '😂', '🤣'],
+  '🎉': ['🎉', '✨', '🎊', '⭐', '✨', '🎉', '✨', '🎊'],
+}
+
+export const reducedMotion = (): boolean => {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch { return false }
+}
+
+/**
+ * Short celebratory particle burst shown where a reaction is added.
+ * Pure transform/opacity animation, pointer-transparent, auto-removed by
+ * the parent after ~750ms, and fully disabled for reduced-motion users.
+ */
+export function ReactionBursts({ bursts }: { bursts: BurstSpec[] }) {
+  if (!bursts.length || reducedMotion()) return null
+  return (
+    <>
+      {bursts.map((b) => {
+        const glyphs = BURST_GLYPHS[b.emoji] || Array(8).fill(b.emoji)
+        return (
+          <div key={b.id} className="reaction-burst" style={{ left: b.x, top: b.y }} aria-hidden="true">
+            {glyphs.map((g, i) => {
+              const dx = (i % 2 === 0 ? -1 : 1) * (12 + ((i * 29) % 40))
+              const dy = -(20 + ((i * 37) % 52))
+              const rot = ((i * 53) % 70) - 35
+              const size = 10 + ((i * 7) % 8)
+              return (
+                <span key={i} style={{
+                  ['--dx' as string]: `${dx}px`, ['--dy' as string]: `${dy}px`,
+                  ['--rot' as string]: `${rot}deg`, fontSize: size, animationDelay: `${(i % 4) * 24}ms`,
+                }}>{g}</span>
+              )
+            })}
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 export function ReactionBar({ reactions, meId, onToggle }: {
   reactions: Reaction[]
   meId: string
-  onToggle: (emoji: string) => void
+  onToggle: (emoji: string, ev: { clientX: number; clientY: number }) => void
 }) {
   const grouped = useMemo(() => {
     const map = new Map<string, { count: number; mine: boolean }>()
@@ -44,7 +91,7 @@ export function ReactionBar({ reactions, meId, onToggle }: {
   return (
     <div className="reaction-bar">
       {grouped.map(([emoji, g]) => (
-        <button key={emoji} className={`reaction-chip ${g.mine ? 'mine' : ''}`} onClick={() => onToggle(emoji)}
+        <button key={emoji} className={`reaction-chip ${g.mine ? 'mine' : ''}`} onClick={(ev) => onToggle(emoji, ev)}
           aria-pressed={g.mine} aria-label={`${emoji} ${g.count}`}>
           <span>{emoji}</span><span className="reaction-count">{g.count}</span>
         </button>
