@@ -3,7 +3,7 @@ import type {
   GiftItem, GiftListing, GiftTxn,
   Group, GroupMember, GroupMessage, Message, Profile, UserSettings,
 } from './types'
-import { COLLECTIBLE_MODELS, STORE_STOCK_PER_MODEL, storeSerial } from './giftData'
+import { COLLECTIBLE_MODELS, PROMO_CODES, STORE_STOCK_PER_MODEL, storeSerial } from './giftData'
 
 /**
  * LOCAL DEMO BACKEND — used ONLY when Supabase env vars are missing.
@@ -29,6 +29,7 @@ export interface LocalGiftState {
   txns: (GiftTxn & { user_id: string })[]
   seq: number
   stocked: string[]
+  promo: { code: string; amount: number; redeemed_by: string | null; redeemed_at: string }[]
 }
 
 export function giftSeedState(): LocalGiftState {
@@ -38,7 +39,11 @@ export function giftSeedState(): LocalGiftState {
       items.push({ id: uid(), serial: storeSerial(mi, i), model_key: m.key, owner_id: null })
     }
   })
-  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1, stocked: COLLECTIBLE_MODELS.map((m) => m.key) }
+  return {
+    wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1,
+    stocked: COLLECTIBLE_MODELS.map((m) => m.key),
+    promo: PROMO_CODES.map((p) => ({ ...p, redeemed_by: null, redeemed_at: '' })),
+  }
 }
 
 /** Store stock for catalog models added later — granted exactly once per DB. */
@@ -143,6 +148,13 @@ export function loadDB(): LocalDB {
       if (!Array.isArray(db.reactions)) db.reactions = []
       if (!db.gifts || !Array.isArray(db.gifts.items)) db.gifts = giftSeedState()
       backfillGiftStock(db)
+      // Promo codes added later appear in existing DBs too (unredeemed).
+      if (!Array.isArray(db.gifts.promo)) db.gifts.promo = []
+      for (const pc of PROMO_CODES) {
+        if (!db.gifts.promo.some((x) => x.code === pc.code)) {
+          db.gifts.promo.push({ ...pc, redeemed_by: null, redeemed_at: '' })
+        }
+      }
       return db
     }
   } catch { /* fall through to seed */ }

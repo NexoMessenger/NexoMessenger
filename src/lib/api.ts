@@ -1,6 +1,6 @@
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
-import { giftModel, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS } from './giftData'
+import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS } from './giftData'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
   MarketEntry, Message, Profile, Reaction, ReactionScope, UserSettings,
@@ -1084,6 +1084,31 @@ export async function sendRegularGift(giftKey: string, toUserId: string): Promis
   const convId = await getOrCreateDirect(me!, toUserId)
   await sendMessage(convId, me!, model.name, { url: giftKey, name: model.name, type: 'gift/nexo' })
   return convId
+}
+
+/** Redeem a one-time promo code for NEX. The backend decides everything —
+ *  the frontend only sends the typed code. */
+export async function redeemPromoCode(code: string): Promise<{ amount: number; balance: number }> {
+  if (!normalizePromoCode(code)) err('Invalid code.')
+  if (isSrv()) return srv<{ amount: number; balance: number }>('/api/gifts/redeem', { method: 'POST', body: { code } })
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('redeem_promo', { p_code: code })
+    if (error) err(error.message)
+    return data as { amount: number; balance: number }
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const norm = normalizePromoCode(code)
+  const entry = db.gifts.promo.find((x) => normalizePromoCode(x.code) === norm)
+  if (!entry) err('Invalid code.')
+  if (entry!.redeemed_by) err('This code has already been used.')
+  const w = localGiftWallet(db, me)
+  w.balance += entry!.amount
+  entry!.redeemed_by = me
+  entry!.redeemed_at = now()
+  db.gifts.txns.push({ id: uid(), user_id: me, kind: 'promo', amount: entry!.amount, note: 'Promo code', created_at: now() })
+  saveDB(db)
+  return { amount: entry!.amount, balance: w.balance }
 }
 
 export async function claimGiftBonus(): Promise<{ balance: number }> {
