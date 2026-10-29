@@ -83,7 +83,7 @@ jobs:
           send_dir dist "$DEPLOY_DIR/dist"
           send_dir server "$DEPLOY_DIR/server"
           for i in 1 2 3; do
-            tar czf - package.json package-lock.json ecosystem.config.cjs | ssh -o StrictHostKeyChecking=accept-new "$VPS" "tar xzf - -C '$DEPLOY_DIR'" && break
+            tar czf - package.json package-lock.json ecosystem.config.cjs deploy/fix-port80.sh | ssh -o StrictHostKeyChecking=accept-new "$VPS" "tar xzf - -C '$DEPLOY_DIR'" && break
             echo "config upload attempt $i failed, retrying in 10s..."
             sleep 10
           done
@@ -188,6 +188,9 @@ jobs:
           curl -sf http://127.0.0.1:$NEXO_PORT/api/health
           echo ""
           echo "NEXO server is up on port $NEXO_PORT (dir: $DEPLOY_DIR)"
+          if [ "${NGINX_OK:-1}" = "0" ]; then
+            echo "::warning::Port 80 still serves the OLD static copy (workflow has no rights to reconfigure nginx). The real site works on port 8080. To fix port 80 once, run on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
+          fi
           REMOTE
 
       - name: Verify public site answers as server mode
