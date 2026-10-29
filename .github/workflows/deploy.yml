@@ -69,20 +69,24 @@ jobs:
           echo "DEPLOY_DIR=$DIR" >> "$GITHUB_ENV"
           echo "Using deploy dir: $DIR"
 
-      - name: Upload website + server to VPS (rsync, with retries)
+      - name: Upload website + server to VPS (tar over SSH, with retries)
         run: |
           echo "Uploading to $VPS:$DEPLOY_DIR"
-          upload() {
+          send_dir() {
             for i in 1 2 3; do
-              rsync -az --delete -e "ssh -o StrictHostKeyChecking=accept-new" "$@" && return 0
-              echo "rsync attempt $i failed, retrying in 10s..."
+              tar czf - -C "$1" . | ssh -o StrictHostKeyChecking=accept-new "$VPS" "mkdir -p '$2' && find '$2' -mindepth 1 -delete 2>/dev/null; tar xzf - -C '$2'" && return 0
+              echo "upload of $1 attempt $i failed, retrying in 10s..."
               sleep 10
             done
             return 1
           }
-          upload dist/ "$VPS:$DEPLOY_DIR/dist/"
-          upload server/ "$VPS:$DEPLOY_DIR/server/"
-          rsync -az -e "ssh -o StrictHostKeyChecking=accept-new" package.json package-lock.json ecosystem.config.cjs "$VPS:$DEPLOY_DIR/"
+          send_dir dist "$DEPLOY_DIR/dist"
+          send_dir server "$DEPLOY_DIR/server"
+          for i in 1 2 3; do
+            tar czf - package.json package-lock.json ecosystem.config.cjs | ssh -o StrictHostKeyChecking=accept-new "$VPS" "tar xzf - -C '$DEPLOY_DIR'" && break
+            echo "config upload attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Install deps and (re)start NEXO server on VPS
         run: |
