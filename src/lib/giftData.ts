@@ -14,6 +14,10 @@ import type { GiftModel } from './types'
 export const GIFT_WELCOME_BONUS = 1000
 export const GIFT_DAILY_BONUS = 250
 export const GIFT_BONUS_INTERVAL_MS = 24 * 60 * 60 * 1000
+/** Fee charged to the sender when transferring a collectible to another user. */
+export const GIFT_TRANSFER_FEE = 25
+/** Flat fee the store keeps when buying a regular gift back. */
+export const GIFT_SELL_FEE = 2
 
 export const GIFT_MODELS: GiftModel[] = [
   // ---- Arcane Pets (collectible) ----

@@ -84,6 +84,8 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   'This gift is already listed.': 'error.giftAlreadyListed',
   'Price must be a positive whole number.': 'error.giftPriceInvalid',
   'No gifts left to send.': 'error.giftNoneLeft',
+  'No gifts left to sell.': 'error.noGiftsToSell',
+  'You cannot transfer to yourself.': 'error.transferSelf',
   'Gift not found.': 'error.giftNotFound',
   'Listing not found.': 'error.listingNotFound',
   'Daily bonus is not ready yet.': 'error.bonusNotReady',

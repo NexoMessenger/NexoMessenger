@@ -1,6 +1,6 @@
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
-import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS } from './giftData'
+import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS, GIFT_TRANSFER_FEE, GIFT_SELL_FEE } from './giftData'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
   MarketEntry, Message, OwnedGift, Profile, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
@@ -1205,13 +1205,68 @@ export async function buyRegularGift(giftKey: string): Promise<{ balance: number
 }
 
 /** Send an owned regular gift into a direct chat (gift message attachment). */
+/** Sell one regular gift back to the store: price minus the flat fee. */
+export async function sellRegularGift(giftKey: string): Promise<{ balance: number; credit: number; qty: number }> {
+  const model = giftModel(giftKey)
+  if (isSrv()) return srv('/api/gifts/sell-regular', { method: 'POST', body: { giftKey } })
+  const me = (await getCurrentProfile())?.id
+  if (!me) err('Session expired. Please sign in again.')
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('sell_regular', { p_key: giftKey })
+    if (error) err(error.message)
+    return data as { balance: number; credit: number; qty: number }
+  }
+  const db = loadDB()
+  const inv = db.gifts.regular[me!] || {}
+  if ((inv[giftKey] || 0) < 1) err('No gifts left to sell.')
+  const credit = model.floor_price - GIFT_SELL_FEE
+  if (credit <= 0) err('This gift cannot be sold.')
+  inv[giftKey] -= 1
+  db.gifts.regular[me!] = inv
+  const w = localGiftWallet(db, me!)
+  w.balance += credit
+  db.gifts.txns.push({ id: uid(), user_id: me!, kind: 'regular_sell', amount: credit, note: model.name, created_at: now() })
+  saveDB(db)
+  return { balance: w.balance, credit, qty: inv[giftKey] }
+}
+
+/** Transfer a collectible to another user; the sender pays the flat fee. */
+export async function transferGift(itemId: string, toUserId: string): Promise<{ balance: number }> {
+  if (isSrv()) return srv('/api/gifts/transfer', { method: 'POST', body: { itemId, toUserId } })
+  const me = (await getCurrentProfile())?.id
+  if (!me) err('Session expired. Please sign in again.')
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('transfer_gift', { p_item: itemId, p_to: toUserId })
+    if (error) err(error.message)
+    return data as { balance: number }
+  }
+  const db = loadDB()
+  const item = db.gifts.items.find((i) => i.id === itemId)
+  if (!item) err('Gift not found.')
+  if (item!.owner_id !== me) err('You do not own this gift.')
+  const to = db.profiles.find((p) => p.id === toUserId)
+  if (!to) err('Profile not found.')
+  if (toUserId === me) err('You cannot transfer to yourself.')
+  const w = localGiftWallet(db, me!)
+  if (w.balance < GIFT_TRANSFER_FEE) err('Not enough NEX.')
+  const model = giftModel(item!.model_key)
+  const from = db.profiles.find((p) => p.id === me!)
+  w.balance -= GIFT_TRANSFER_FEE
+  db.gifts.listings = db.gifts.listings.filter((l) => l.item_id !== itemId)
+  item!.owner_id = toUserId
+  db.gifts.txns.push({ id: uid(), user_id: me!, kind: 'transfer', amount: -GIFT_TRANSFER_FEE, note: `${model.name} #${item!.serial} → @${to!.username}`, created_at: now() })
+  db.gifts.txns.push({ id: uid(), user_id: toUserId, kind: 'transfer', amount: 0, note: `${model.name} #${item!.serial} ← @${from?.username ?? ''}`, created_at: now() })
+  saveDB(db)
+  return { balance: w.balance }
+}
+
 export async function sendRegularGift(giftKey: string, toUserId: string): Promise<string> {
   const model = giftModel(giftKey)
   if (isSrv()) return (await srv<{ conversationId: string }>('/api/gifts/send-regular', { method: 'POST', body: { giftKey, toUserId } })).conversationId
   const me = (await getCurrentProfile())?.id
   if (!me) err('Session expired. Please sign in again.')
   if (isSb()) {
-    const { error } = await supabase!.rpc('take_regular', { p_key: giftKey })
+    const { error } = await supabase!.rpc('send_regular', { p_key: giftKey, p_to: toUserId })
     if (error) err(error.message)
   } else {
     const db = loadDB()
@@ -1219,8 +1274,13 @@ export async function sendRegularGift(giftKey: string, toUserId: string): Promis
     if ((inv[giftKey] || 0) < 1) err('No gifts left to send.')
     inv[giftKey] -= 1
     db.gifts.regular[me!] = inv
+    // The recipient receives the gift into their own inventory/showcase.
+    if (!db.gifts.regular[toUserId]) db.gifts.regular[toUserId] = {}
+    db.gifts.regular[toUserId][giftKey] = (db.gifts.regular[toUserId][giftKey] || 0) + 1
     const to = db.profiles.find((p) => p.id === toUserId)
+    const from = db.profiles.find((p) => p.id === me!)
     db.gifts.txns.push({ id: uid(), user_id: me!, kind: 'regular_send', amount: 0, note: `${model.name} → @${to?.username ?? ''}`, created_at: now() })
+    db.gifts.txns.push({ id: uid(), user_id: toUserId, kind: 'regular_send', amount: 0, note: `${model.name} ← @${from?.username ?? ''}`, created_at: now() })
     saveDB(db)
   }
   const convId = await getOrCreateDirect(me!, toUserId)

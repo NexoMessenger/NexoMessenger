@@ -12,6 +12,7 @@ import ChannelsPage from './pages/ChannelsPage'
 import ChannelRoomPage from './pages/ChannelRoomPage'
 import SearchPage from './pages/SearchPage'
 import ProfilePage from './pages/ProfilePage'
+import UserPage from './pages/UserPage'
 import SettingsPage from './pages/SettingsPage'
 import GiftsPage from './pages/GiftsPage'
 import { NexoMark } from './components/icons'
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/channel/:id" element={<Protected><ChannelRoomPage /></Protected>} />
             <Route path="/search" element={<Protected><SearchPage /></Protected>} />
             <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
+            <Route path="/user/:id" element={<Protected><UserPage /></Protected>} />
             <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
             <Route path="/gifts" element={<Protected><GiftsPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />

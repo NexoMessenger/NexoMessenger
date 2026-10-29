@@ -151,7 +151,7 @@ export default function ProfilePage() {
       )}
 
       <div className="settings-group glass card" style={{ marginBottom: 14 }}>
-        <ProfileShowcase userId={profile.id} isOwn />
+        <ProfileShowcase userId={profile.id} isOwn owner={profile} />
       </div>
 
       <div style={{ display: 'flex', gap: 10 }}>
