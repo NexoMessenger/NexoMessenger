@@ -9,6 +9,7 @@ import { IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconRe
 import { AttachmentView, Avatar, fmtClock, fmtLastSeen, errText } from '../components/ui'
 import { ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
 import { ForwardPicker, MessageContextMenu, copyText, useMessageMenu, type MenuTarget, type MessageAction } from '../components/MessageMenu'
+import UserProfileModal from '../components/UserProfileModal'
 
 const PAGE = 60
 
@@ -34,6 +35,7 @@ export default function ChatRoomPage() {
   const [forwardMsg, setForwardMsg] = useState<Message | null>(null)
   const [bursts, setBursts] = useState<BurstSpec[]>([])
   const [toast, setToast] = useState('')
+  const [viewPeer, setViewPeer] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const toastTimer = useRef<number>()
   const typingTimeout = useRef<number>()
@@ -181,11 +183,13 @@ export default function ChatRoomPage() {
     <div className="room-wrap">
       <div className="room-head">
         <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label={t('common.back')}><IconBack size={18} /></button>
-        {peer ? <Avatar profile={peer} size={42} showOnline /> : <span className="avatar" style={{ width: 42, height: 42 }}>?</span>}
-        <div className="row-main">
-          <div className="row-title">{peer ? peer.display_name : t('room.conversation')}</div>
-          <div className="row-preview">{peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</div>
-        </div>
+        <button className="room-head-profile" onClick={() => peer && setViewPeer(true)} aria-label={t('profile.view')}>
+          {peer ? <Avatar profile={peer} size={42} showOnline /> : <span className="avatar" style={{ width: 42, height: 42 }}>?</span>}
+          <span className="row-main">
+            <span className="row-title">{peer ? peer.display_name : t('room.conversation')}</span>
+            <span className="row-preview">{peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
+          </span>
+        </button>
       </div>
 
       {error && (
@@ -220,7 +224,11 @@ export default function ChatRoomPage() {
             <div key={m.id} style={{ display: 'contents' }}>
               {showDay && <div className="day-label">{new Date(m.created_at).toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}</div>}
               <div className={`msg-row ${mine ? 'mine' : 'theirs'}`} {...bindMenu(m)}>
-                {!mine && peer && <Avatar profile={peer} size={30} />}
+                {!mine && peer && (
+                  <span className="msg-avatar-btn" onClick={() => setViewPeer(true)} role="button" aria-label={t('profile.view')}>
+                    <Avatar profile={peer} size={30} />
+                  </span>
+                )}
                 <div className="msg-col">
                   <div className="bubble">
                     {m.reply_to && (() => {
@@ -298,6 +306,8 @@ export default function ChatRoomPage() {
             showToast(t('msg.forwarded'))
           }} />
       )}
+
+      {viewPeer && peer && <UserProfileModal userId={peer.id} onClose={() => setViewPeer(false)} />}
 
       <ReactionBursts bursts={bursts} />
       {toast && <div className="msg-toast" role="status">{toast}</div>}

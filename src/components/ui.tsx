@@ -90,6 +90,9 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   'Access denied.': 'error.accessDenied',
   'Invalid code.': 'error.promoInvalid',
   'Message not found.': 'error.messageNotFound',
+  'Post is empty.': 'error.postEmpty',
+  'Post not found.': 'error.postNotFound',
+  'Post is too long.': 'error.postTooLong',
   'This code has already been used.': 'error.promoUsed',
 }
 

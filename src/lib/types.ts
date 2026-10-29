@@ -174,6 +174,18 @@ export interface OwnedGift {
   listing: GiftListing | null
 }
 
+/** A publication on a user profile: photo/video and/or text, archivable. */
+export interface ProfilePost {
+  id: ID
+  user_id: ID
+  body: string
+  attachment_url: string
+  attachment_name: string
+  attachment_type: string
+  archived: boolean
+  created_at: string
+}
+
 export interface GiftTxn {
   id: ID
   kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send' | 'promo'

@@ -6,6 +6,7 @@ import { Avatar, ErrorBox, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconGift, NexCoin } from '../components/icons'
 import { fmtNex } from '../lib/giftCatalog'
+import ProfileShowcase from '../components/ProfileShowcase'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -148,6 +149,10 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      <div className="settings-group glass card" style={{ marginBottom: 14 }}>
+        <ProfileShowcase userId={profile.id} isOwn />
+      </div>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn" style={{ flex: 1 }} onClick={() => navigate('/settings')}><IconSettings size={16} /> {t('profile.openSettings')}</button>

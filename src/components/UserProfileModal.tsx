@@ -6,6 +6,7 @@ import { useAuth } from '../lib/AuthContext'
 import { useI18n } from '../i18n'
 import { Avatar, Modal, errText } from './ui'
 import { IconChats, IconClose } from './icons'
+import ProfileShowcase from './ProfileShowcase'
 
 /**
  * Public profile card for a found user (search results, group members, …).
@@ -78,6 +79,7 @@ export default function UserProfileModal({ userId, onClose }: { userId: string; 
           )}
         </div>
       )}
+      {user && <ProfileShowcase userId={user.id} isOwn={Boolean(me && user.id === me.id)} />}
     </Modal>
   )
 }
