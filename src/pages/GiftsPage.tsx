@@ -5,7 +5,7 @@ import { useI18n, type TranslationKey } from '../i18n'
 import * as api from '../lib/api'
 import type { GiftItem, GiftListing, GiftModel, GiftState, MarketEntry, OwnedGift, Profile } from '../lib/types'
 import { giftArt, GIFT_VIDEO, fmtNex, fmtSerial, REGULAR_GRADIENT } from '../lib/giftCatalog'
-import { GIFT_COLLECTIONS, COLLECTIBLE_MODELS, REGULAR_MODELS } from '../lib/giftData'
+import { GIFT_COLLECTIONS, COLLECTIBLE_MODELS, REGULAR_MODELS, GIFT_TRANSFER_FEE } from '../lib/giftData'
 import { Avatar, EmptyState, ErrorBox, Modal, UserPicker, errText } from '../components/ui'
 import {
   IconBack, IconFilter, IconGem, IconGift, IconHeart, IconPlus, IconSearch, IconStar, NexCoin,
@@ -62,6 +62,7 @@ export default function GiftsPage() {
   const [busy, setBusy] = useState('')
   const [selected, setSelected] = useState<Selection | null>(null)
   const [listTarget, setListTarget] = useState<OwnedGift | null>(null)
+  const [transferTarget, setTransferTarget] = useState<OwnedGift | null>(null)
   const [topUpOpen, setTopUpOpen] = useState(false)
   const [sendTarget, setSendTarget] = useState<GiftModel | null>(null)
 
@@ -371,6 +372,10 @@ export default function GiftsPage() {
             const owned = state?.myItems.find((o) => o.item.id === selected.item.id)
             if (owned) { setSelected(null); setListTarget(owned) }
           }}
+          onTransferClick={() => {
+            const owned = state?.myItems.find((o) => o.item.id === selected.item.id)
+            if (owned) { setSelected(null); setTransferTarget(owned) }
+          }}
           onGetNex={() => { setSelected(null); setTopUpOpen(true) }}
         />
       )}
@@ -379,6 +384,14 @@ export default function GiftsPage() {
           owned={listTarget}
           onClose={() => setListTarget(null)}
           onDone={async () => { setListTarget(null); await load(true); flash(t('gifts.listed')) }}
+        />
+      )}
+      {transferTarget && (
+        <TransferGiftModal
+          owned={transferTarget}
+          meId={profile.id}
+          onClose={() => setTransferTarget(null)}
+          onDone={async () => { setTransferTarget(null); await load(true); flash(t('gifts.transferred')) }}
         />
       )}
       {topUpOpen && state && (
@@ -395,7 +408,7 @@ export default function GiftsPage() {
 
 /* ============================== details sheet ============================== */
 
-function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, onListClick, onGetNex }: {
+function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, onListClick, onTransferClick, onGetNex }: {
   sel: Selection
   meId: string
   balance: number
@@ -404,6 +417,7 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
   onBuy: (sel: Selection) => Promise<void>
   onUnlist: (sel: Selection) => Promise<void>
   onListClick: () => void
+  onTransferClick: () => void
   onGetNex: () => void
 }) {
   const { t } = useI18n()
@@ -482,16 +496,19 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
       )}
 
       {isMine ? (
-        listing ? (
-          <>
-            <div className="notice-box">{t('gifts.listedFor')} <NexAmount amount={listing.price} size={15} /></div>
-            <button className="btn btn-danger btn-block" disabled={busy === 'unlist'} onClick={() => onUnlist(sel)}>
-              {t('gifts.removeListing')}
-            </button>
-          </>
-        ) : (
-          <button className="btn btn-primary btn-block" onClick={onListClick}>{t('gifts.listForSale')}</button>
-        )
+        <>
+          {listing ? (
+            <>
+              <div className="notice-box">{t('gifts.listedFor')} <NexAmount amount={listing.price} size={15} /></div>
+              <button className="btn btn-danger btn-block" disabled={busy === 'unlist'} onClick={() => onUnlist(sel)}>
+                {t('gifts.removeListing')}
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-primary btn-block" onClick={onListClick}>{t('gifts.listForSale')}</button>
+          )}
+          <button className="btn btn-block" style={{ marginTop: 8 }} onClick={onTransferClick}>{t('gifts.transfer')}</button>
+        </>
       ) : price !== null ? (
         <>
           <button className="btn btn-primary btn-block gift-buy-big" disabled={busy === 'buy'} onClick={buy}>
@@ -617,6 +634,48 @@ function TopUpModal({ state, onClose, onClaimed }: {
       </button>
       <p className="gift-note">{t('gifts.welcomeNote')}</p>
       <p className="gift-note">{t('gifts.virtualNote')}</p>
+    </Modal>
+  )
+}
+
+
+/* ============================== transfer collectible ============================== */
+
+function TransferGiftModal({ owned, meId, onClose, onDone }: {
+  owned: OwnedGift
+  meId: string
+  onClose: () => void
+  onDone: () => Promise<void>
+}) {
+  const { t } = useI18n()
+  const [picked, setPicked] = useState<Profile[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const transfer = async () => {
+    if (!picked[0]) return
+    setBusy(true)
+    setError('')
+    try {
+      await api.transferGift(owned.item.id, picked[0].id)
+      await onDone()
+    } catch (e) {
+      setError(errText(e, t))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal title={t('gifts.transferTitle')} onClose={onClose}>
+      <div className="gift-detail-art small"><GiftArtView modelKey={owned.model.key} iconSize={72} /></div>
+      <div className="gift-detail-name">{owned.model.name} <span>{fmtSerial(owned.item.serial)}</span></div>
+      <p className="gift-note">{t('gifts.transferFee')}</p>
+      <UserPicker meId={meId} selected={picked}
+        onToggle={(p) => setPicked((prev) => (prev.some((x) => x.id === p.id) ? [] : [p]))} />
+      <ErrorBox error={error} />
+      <button className="btn btn-primary btn-block" style={{ marginTop: 10 }} disabled={busy || !picked[0]} onClick={transfer}>
+        {busy ? t('common.loading') : `${t('gifts.transfer')} · ${fmtNex(GIFT_TRANSFER_FEE)} NEX`}
+      </button>
     </Modal>
   )
 }

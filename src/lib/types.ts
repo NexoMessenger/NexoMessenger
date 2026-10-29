@@ -194,7 +194,7 @@ export interface UserGifts {
 
 export interface GiftTxn {
   id: ID
-  kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send' | 'promo'
+  kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send' | 'regular_sell' | 'transfer' | 'promo'
   amount: number
   note: string
   created_at: string

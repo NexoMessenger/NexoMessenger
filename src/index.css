@@ -912,3 +912,31 @@ body::after {
 }
 .showcase-gift-name { font-size: 12px; font-weight: 700; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .showcase-gift-sub { font-size: 11px; color: var(--text-3); }
+
+/* ---------- full-screen public profile page ---------- */
+.user-profile-page { max-width: 880px; }
+.user-profile-head { align-items: center; gap: 12px; }
+.user-profile-head .page-title { margin: 0; }
+.user-profile-hero { overflow: hidden; }
+.user-profile-hero .username-line { color: var(--accent-2); font-size: 14.5px; }
+.user-profile-bio-full {
+  color: var(--text-2); font-size: 14.5px; line-height: 1.6;
+  max-width: 520px; margin: 16px auto 0; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.user-profile-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  max-width: 520px; margin: 20px auto 0; padding-top: 14px;
+  border-top: 1px solid var(--border); font-size: 13px; text-align: left;
+}
+.user-profile-meta span { color: var(--text-3); }
+.user-profile-meta strong { font-weight: 650; text-align: right; }
+
+/* Gift tiles in a profile are real buttons now. */
+button.showcase-gift {
+  appearance: none; width: 100%; border: 0; color: inherit; font: inherit;
+  cursor: pointer; transition: transform .16s ease, border-color .16s ease;
+}
+button.showcase-gift:hover { transform: translateY(-2px); }
+button.showcase-gift:active { transform: scale(.985); }
+button.showcase-gift:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gift-detail-art { position: relative; }

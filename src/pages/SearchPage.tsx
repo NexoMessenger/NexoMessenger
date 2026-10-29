@@ -4,7 +4,6 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Channel, Group, Profile } from '../lib/types'
 import { Avatar, ErrorBox, EmptyState, GroupAvatar, errText } from '../components/ui'
-import UserProfileModal from '../components/UserProfileModal'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
@@ -20,7 +19,6 @@ export default function SearchPage() {
   const [error, setError] = useState('')
   const [searched, setSearched] = useState(false)
   const [busy, setBusy] = useState('')
-  const [viewUser, setViewUser] = useState<Profile | null>(null)
   const timer = useRef<number>()
   const seqRef = useRef(0)
 
@@ -104,7 +102,7 @@ export default function SearchPage() {
           <div className="list">
             {people.map((p) => (
               <div key={p.id} className="row-card glass" role="button" tabIndex={0} title={t('profile.view')}
-                onClick={() => setViewUser(p)} onKeyDown={(e) => { if (e.key === 'Enter') setViewUser(p) }}>
+                onClick={() => navigate(`/user/${p.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/user/${p.id}`) }}>
                 <Avatar profile={p} size={44} showOnline />
                 <span className="row-main">
                   <span className="row-title">{p.display_name}</span>
@@ -139,7 +137,6 @@ export default function SearchPage() {
         </>
       )}
 
-      {viewUser && <UserProfileModal userId={viewUser.id} onClose={() => setViewUser(null)} />}
       {channels.length > 0 && (
         <>
           <div className="section-label">{t('search.publicChannels')}</div>

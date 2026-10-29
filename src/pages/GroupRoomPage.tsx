@@ -7,7 +7,6 @@ import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconBack, IconGroups, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
 import { AttachmentView, Avatar, GroupAvatar, Modal, UserPicker, fmtClock, errText } from '../components/ui'
-import UserProfileModal from '../components/UserProfileModal'
 import { ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
 import { ForwardPicker, MessageContextMenu, copyText, useMessageMenu, type MenuTarget, type MessageAction } from '../components/MessageMenu'
 
@@ -33,7 +32,6 @@ export default function GroupRoomPage() {
   const [showInfo, setShowInfo] = useState(false)
   const [addPick, setAddPick] = useState<Profile[]>([])
   const [memberError, setMemberError] = useState(false)
-  const [viewUser, setViewUser] = useState<Profile | null>(null)
   const [menuTarget, setMenuTarget] = useState<MenuTarget<GroupMessage> | null>(null)
   const [replyTo, setReplyTo] = useState<GroupMessage | null>(null)
   const [editing, setEditing] = useState<GroupMessage | null>(null)
@@ -326,7 +324,7 @@ export default function GroupRoomPage() {
             {members.map(({ profile: p, role }) => (
               <div key={p.id} className="row-card glass member-row">
                 <span className="member-main" role="button" tabIndex={0} title={t('profile.view')}
-                  onClick={() => setViewUser(p)} onKeyDown={(e) => { if (e.key === 'Enter') setViewUser(p) }}>
+                  onClick={() => navigate(`/user/${p.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/user/${p.id}`) }}>
                   <Avatar profile={p} size={40} showOnline />
                   <span className="row-main">
                     <span className="row-title">{p.display_name}</span>
@@ -365,7 +363,6 @@ export default function GroupRoomPage() {
           {myRole === 'owner' && <p style={{ color: 'var(--text-3)', fontSize: 12.5, textAlign: 'center', marginTop: 14 }}>{t('groups.ownerNote')}</p>}
         </Modal>
       )}
-      {viewUser && <UserProfileModal userId={viewUser.id} onClose={() => setViewUser(null)} />}
     </div>
   )
 }

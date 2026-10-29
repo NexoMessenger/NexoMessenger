@@ -133,6 +133,8 @@ const GIFT_MODELS = [
 const GIFT_WELCOME_BONUS = 1000
 const GIFT_DAILY_BONUS = 250
 const GIFT_BONUS_INTERVAL_MS = 24 * 60 * 60 * 1000
+const GIFT_TRANSFER_FEE = 25 // sender fee for transferring a collectible
+const GIFT_SELL_FEE = 2 // store fee when buying a regular gift back
 // One-time promo codes (mirror src/lib/giftData.ts; keep in sync).
 const PROMO_CODES = [
   { code: 'NEXO-MEGA-K7Q2', amount: 10000 }, { code: 'NEXO-MEGA-R4XD', amount: 10000 },
@@ -858,12 +860,55 @@ app.post('/api/gifts/send-regular', auth, (req, res) => {
     )
     convId = conv.id
   }
+  // The recipient actually receives the gift into their inventory, so it
+  // shows up in their profile showcase (previously it silently vanished).
+  if (!db.gifts.regular[toId]) db.gifts.regular[toId] = {}
+  db.gifts.regular[toId][model.key] = (db.gifts.regular[toId][model.key] || 0) + 1
   const msg = { id: uid(), conversation_id: convId, sender_id: me, body: model.name, attachment_url: model.key, attachment_name: model.name, attachment_type: 'gift/nexo', attachment_duration: 0, created_at: now() }
   db.messages.push(msg)
   const conv = db.conversations.find((c) => c.id === convId); if (conv) conv.last_message_at = msg.created_at
   giftTxn(me, 'regular_send', 0, `${model.name} → @${to.username}`)
+  giftTxn(toId, 'regular_send', 0, `${model.name} ← @${req.me.username}`)
   persist(); touch('direct', convId); touchGlobal()
   res.json({ conversationId: convId })
+})
+
+app.post('/api/gifts/sell-regular', auth, (req, res) => {
+  const me = req.me.id
+  const model = giftModelOf(String(req.body?.giftKey || ''))
+  if (!model || model.kind !== 'regular') return fail(res, 404, 'Gift not found.')
+  const inv = db.gifts.regular[me] || {}
+  if ((inv[model.key] || 0) < 1) return fail(res, 400, 'No gifts left to sell.')
+  const credit = model.floor_price - GIFT_SELL_FEE
+  if (credit <= 0) return fail(res, 400, 'This gift cannot be sold.')
+  inv[model.key] -= 1
+  db.gifts.regular[me] = inv
+  const w = giftWallet(me)
+  w.balance += credit
+  giftTxn(me, 'regular_sell', credit, model.name)
+  persist(); touchGlobal()
+  res.json({ balance: w.balance, credit, qty: inv[model.key] })
+})
+
+app.post('/api/gifts/transfer', auth, (req, res) => {
+  const me = req.me.id
+  const item = db.gifts.items.find((i) => i.id === String(req.body?.itemId || ''))
+  if (!item) return fail(res, 404, 'Gift not found.')
+  if (item.owner_id !== me) return fail(res, 403, 'You do not own this gift.')
+  const toId = String(req.body?.toUserId || '')
+  const to = profileOf(toId)
+  if (!to) return fail(res, 404, 'Profile not found.')
+  if (toId === me) return fail(res, 400, 'You cannot transfer to yourself.')
+  const w = giftWallet(me)
+  if (w.balance < GIFT_TRANSFER_FEE) return fail(res, 402, 'Not enough NEX.')
+  const model = giftModelOf(item.model_key)
+  w.balance -= GIFT_TRANSFER_FEE
+  db.gifts.listings = db.gifts.listings.filter((l) => l.item_id !== item.id)
+  item.owner_id = toId
+  giftTxn(me, 'transfer', -GIFT_TRANSFER_FEE, `${model.name} #${item.serial} → @${to.username}`)
+  giftTxn(toId, 'transfer', 0, `${model.name} #${item.serial} ← @${req.me.username}`)
+  persist(); touchGlobal()
+  res.json({ balance: w.balance, fee: GIFT_TRANSFER_FEE })
 })
 
 app.post('/api/gifts/redeem', auth, rateLimitAuth, (req, res) => {
