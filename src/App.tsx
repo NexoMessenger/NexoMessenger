@@ -13,6 +13,7 @@ import ChannelRoomPage from './pages/ChannelRoomPage'
 import SearchPage from './pages/SearchPage'
 import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
+import GiftsPage from './pages/GiftsPage'
 import { NexoMark } from './components/icons'
 import type { ReactNode } from 'react'
 
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/search" element={<Protected><SearchPage /></Protected>} />
             <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
             <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
+            <Route path="/gifts" element={<Protected><GiftsPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </HashRouter>

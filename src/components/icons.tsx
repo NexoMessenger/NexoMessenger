@@ -146,3 +146,33 @@ export const IconFlipCamera = (p: IconProps) => (
 export const IconClock = (p: IconProps) => (
   <svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="M12 7v5.2l3.4 2" /></svg>
 )
+export const IconGift = (p: IconProps) => (
+  <svg {...base(p)}><rect x="3.5" y="7.5" width="17" height="4" rx="1" /><path d="M5 11.5h14V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V11.5Z" strokeLinejoin="round" /><path d="M12 7.5V21.5M12 7.5S7.8 7.6 6.6 5.9A2.35 2.35 0 0 1 10.4 3.6c1 .7 1.6 3.9 1.6 3.9Zm0 0s4.2.1 5.4-1.6A2.35 2.35 0 0 0 13.6 3.6c-1 .7-1.6 3.9-1.6 3.9Z" strokeLinejoin="round" /></svg>
+)
+export const IconStar = (p: IconProps) => (
+  <svg {...base(p)}><path d="m12 3.2 2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6L3.2 9.6l6.1-.8L12 3.2Z" strokeLinejoin="round" /></svg>
+)
+export const IconGem = (p: IconProps) => (
+  <svg {...base(p)}><path d="M7 3.5h10l3.5 5L12 20.5 3.5 8.5 7 3.5Z" strokeLinejoin="round" /><path d="M3.5 8.5h17M12 20.5 8.8 8.5l2.2-5 2.2 5L12 20.5" strokeLinejoin="round" /></svg>
+)
+export const IconFilter = (p: IconProps) => (
+  <svg {...base(p)}><path d="M4 5.5h16M7 12h10M10 18.5h4" /></svg>
+)
+
+/** NEX token: premium blue coin with a glowing "N". Virtual in-app currency. */
+export function NexCoin({ size = 20 }: { size?: number }) {
+  const gid = `nex-${size}`
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false" style={{ flexShrink: 0, filter: 'drop-shadow(0 0 6px rgba(56,150,255,0.45))' }}>
+      <defs>
+        <linearGradient id={gid} x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#7DD3FC" /><stop offset="0.5" stopColor="#2F8CFF" /><stop offset="1" stopColor="#1D4ED8" />
+        </linearGradient>
+      </defs>
+      <circle cx="24" cy="24" r="20" fill={`url(#${gid})`} />
+      <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.55)" strokeWidth="1.6" />
+      <circle cx="24" cy="24" r="15.5" stroke="rgba(255,255,255,0.4)" strokeWidth="1.2" strokeDasharray="3 4" />
+      <path d="M17.5 31.5v-15l13 15v-15" stroke="#fff" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}

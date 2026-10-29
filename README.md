@@ -63,6 +63,9 @@ nothing syncs between phones. The fix is connecting the shared backend once:
 2. In **SQL Editor**, run these files in order: `001_init.sql`,
    `002_language.sql`, `003_reactions_media_stickers.sql`,
    `004_cross_user_sync.sql` (from `supabase/migrations/`).
+5. **NEXO Gifts (optional, Supabase mode):** run `supabase/migrations/005_gifts.sql`
+   to add the gifts/NEX tables, RLS policies and the atomic marketplace RPCs.
+   Not needed in own-server mode — the Node server handles gifts itself.
 3. In Supabase → **Project Settings → API**, copy the **Project URL** and the
    **anon public** key (never the `service_role` key).
 4. In GitHub → repo **Settings → Secrets and variables → Actions →
@@ -76,6 +79,18 @@ nothing syncs between phones. The fix is connecting the shared backend once:
 After that, everyone registers **once more** on the live site (Local Demo
 accounts live only in each phone's browser and do not migrate), and then
 search by `@username`, direct chats and shared groups sync in realtime.
+
+## NEXO Gifts & NEX marketplace
+
+The **Gifts** tab (bottom nav / sidebar) contains Regular Gifts, your
+Collectible NFTs collection, and the **NEXO Gifts** marketplace. **NEX** is a
+virtual in-app currency (no real-world value, not exchangeable for cash):
+new accounts get a 1,000 NEX welcome bonus and a 250 NEX daily bonus.
+Collectibles are unique numbered items: buy them from the NEXO Store or from
+other users, list your own for sale, and send regular gifts into chats.
+All balance/ownership changes are executed atomically by the backend
+(own-server endpoints `/api/gifts/*`, Supabase RPCs from migration 005, or
+the local demo store) — the frontend never sets balances or sellers.
 
 ## Supabase setup (production)
 

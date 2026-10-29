@@ -1,8 +1,9 @@
 import { supabase, backendMode, apiBase } from './supabase'
-import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply } from './localBackend'
+import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
+import { giftModel, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS } from './giftData'
 import type {
-  AttachmentInfo, Channel, ChannelPost, Conversation, Group, GroupMessage,
-  Message, Profile, Reaction, ReactionScope, UserSettings,
+  AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
+  MarketEntry, Message, Profile, Reaction, ReactionScope, UserSettings,
 } from './types'
 
 export const mode = backendMode
@@ -902,4 +903,203 @@ export function subscribeTyping(scope: string, meId: string, cb: (name: string) 
   }
   typingBc.addEventListener('message', handler)
   return () => typingBc!.removeEventListener('message', handler)
+}
+
+
+/* ============================== GIFTS / NEX ============================== */
+// NEX is a virtual in-app currency (no real-world value). Every balance or
+// ownership change is executed by the backend (server / Supabase RPC /
+// local store) — the frontend only ever sends an item id and, for listings,
+// the asking price the owner typed.
+
+function localGiftWallet(db: LocalDB, userId: string) {
+  let w = db.gifts.wallets[userId]
+  if (!w) {
+    w = { balance: GIFT_WELCOME_BONUS, last_bonus_at: '' }
+    db.gifts.wallets[userId] = w
+    db.gifts.txns.push({ id: uid(), user_id: userId, kind: 'welcome', amount: GIFT_WELCOME_BONUS, note: 'Welcome bonus', created_at: now() })
+  }
+  return w
+}
+const localListingOf = (db: LocalDB, itemId: string) => db.gifts.listings.find((l) => l.item_id === itemId) ?? null
+
+function localGiftState(db: LocalDB, me: string): GiftState {
+  const w = localGiftWallet(db, me)
+  const bonusReadyAt = w.last_bonus_at ? new Date(w.last_bonus_at).getTime() + GIFT_BONUS_INTERVAL_MS : 0
+  return {
+    balance: w.balance,
+    nextBonusAt: bonusReadyAt > Date.now() ? new Date(bonusReadyAt).toISOString() : null,
+    bonusAmount: GIFT_DAILY_BONUS,
+    myItems: db.gifts.items.filter((i) => i.owner_id === me)
+      .map((item) => ({ item, model: { ...giftModel(item.model_key), issued: db.gifts.items.filter((x) => x.model_key === item.model_key).length }, listing: localListingOf(db, item.id) })),
+    myRegular: Object.entries(db.gifts.regular[me] || {}).filter(([, q]) => q > 0)
+      .map(([key, qty]) => ({ model: giftModel(key), qty })),
+    transactions: db.gifts.txns.filter((t) => t.user_id === me).slice(-30).reverse()
+      .map(({ id, kind, amount, note, created_at }) => ({ id, kind, amount, note, created_at })),
+  }
+}
+
+function localMe(db: LocalDB): string {
+  if (!db.sessionUserId) err('Session expired. Please sign in again.')
+  return db.sessionUserId!
+}
+
+export async function getGiftState(): Promise<GiftState> {
+  if (isSrv()) return srv<GiftState>('/api/gifts/state')
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('gifts_state')
+    if (error) err(error.message)
+    return data as GiftState
+  }
+  const db = loadDB()
+  const state = localGiftState(db, localMe(db))
+  saveDB(db)
+  return state
+}
+
+export async function getGiftMarket(): Promise<MarketEntry[]> {
+  if (isSrv()) return (await srv<{ entries: MarketEntry[] }>('/api/gifts/market')).entries
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('gifts_market')
+    if (error) err(error.message)
+    return (data as { entries: MarketEntry[] }).entries
+  }
+  const db = loadDB()
+  const entries: MarketEntry[] = []
+  for (const item of db.gifts.items) {
+    const model = { ...giftModel(item.model_key), issued: db.gifts.items.filter((x) => x.model_key === item.model_key).length }
+    const listing = localListingOf(db, item.id)
+    if (listing) entries.push({ item, model, listing, seller: db.profiles.find((p) => p.id === listing.seller_id) ?? null, price: listing.price })
+    else if (item.owner_id === null) entries.push({ item, model, listing: null, seller: null, price: model.floor_price })
+  }
+  return entries
+}
+
+export async function buyGift(itemId: string): Promise<{ balance: number }> {
+  if (isSrv()) return srv<{ balance: number }>('/api/gifts/buy', { method: 'POST', body: { itemId } })
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('buy_gift', { p_item: itemId })
+    if (error) err(error.message)
+    return data as { balance: number }
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const item = db.gifts.items.find((i) => i.id === itemId)
+  if (!item) err('Gift not found.')
+  const model = giftModel(item!.model_key)
+  const listing = localListingOf(db, item!.id)
+  if (item!.owner_id === me) err('This gift is already yours.')
+  if (!listing && item!.owner_id !== null) err('This gift is not for sale.')
+  const price = listing ? listing.price : model.floor_price
+  const w = localGiftWallet(db, me)
+  if (w.balance < price) err('Not enough NEX.')
+  w.balance -= price
+  if (listing) {
+    localGiftWallet(db, listing.seller_id).balance += price
+    db.gifts.txns.push({ id: uid(), user_id: listing.seller_id, kind: 'sale', amount: price, note: `${model.name} #${item!.serial}`, created_at: now() })
+    db.gifts.listings = db.gifts.listings.filter((l) => l.id !== listing.id)
+  }
+  item!.owner_id = me
+  db.gifts.txns.push({ id: uid(), user_id: me, kind: 'purchase', amount: -price, note: `${model.name} #${item!.serial}`, created_at: now() })
+  saveDB(db)
+  return { balance: w.balance }
+}
+
+export async function listGift(itemId: string, price: number): Promise<GiftListing> {
+  if (!Number.isInteger(price) || price <= 0 || price > 1000000000) err('Price must be a positive whole number.')
+  if (isSrv()) return (await srv<{ listing: GiftListing }>('/api/gifts/list', { method: 'POST', body: { itemId, price } })).listing
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('list_gift', { p_item: itemId, p_price: price })
+    if (error) err(error.message)
+    return (data as { listing: GiftListing }).listing
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const item = db.gifts.items.find((i) => i.id === itemId)
+  if (!item) err('Gift not found.')
+  if (item!.owner_id !== me) err('You do not own this gift.')
+  if (localListingOf(db, itemId)) err('This gift is already listed.')
+  const listing: GiftListing = { id: uid(), item_id: itemId, seller_id: me, price, created_at: now() }
+  db.gifts.listings.push(listing)
+  saveDB(db)
+  return listing
+}
+
+export async function unlistGift(listingId: string): Promise<void> {
+  if (isSrv()) { await srv('/api/gifts/unlist', { method: 'POST', body: { listingId } }); return }
+  if (isSb()) {
+    const { error } = await supabase!.rpc('unlist_gift', { p_listing: listingId })
+    if (error) err(error.message)
+    return
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const listing = db.gifts.listings.find((l) => l.id === listingId)
+  if (!listing) err('Listing not found.')
+  if (listing!.seller_id !== me) err('Access denied.')
+  db.gifts.listings = db.gifts.listings.filter((l) => l.id !== listingId)
+  saveDB(db)
+}
+
+export async function buyRegularGift(giftKey: string): Promise<{ balance: number }> {
+  if (isSrv()) return srv<{ balance: number }>('/api/gifts/buy-regular', { method: 'POST', body: { giftKey } })
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('buy_regular', { p_key: giftKey })
+    if (error) err(error.message)
+    return data as { balance: number }
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const model = giftModel(giftKey)
+  if (model.kind !== 'regular') err('Gift not found.')
+  const w = localGiftWallet(db, me)
+  if (w.balance < model.floor_price) err('Not enough NEX.')
+  w.balance -= model.floor_price
+  if (!db.gifts.regular[me]) db.gifts.regular[me] = {}
+  db.gifts.regular[me][giftKey] = (db.gifts.regular[me][giftKey] || 0) + 1
+  db.gifts.txns.push({ id: uid(), user_id: me, kind: 'regular_buy', amount: -model.floor_price, note: model.name, created_at: now() })
+  saveDB(db)
+  return { balance: w.balance }
+}
+
+/** Send an owned regular gift into a direct chat (gift message attachment). */
+export async function sendRegularGift(giftKey: string, toUserId: string): Promise<string> {
+  const model = giftModel(giftKey)
+  if (isSrv()) return (await srv<{ conversationId: string }>('/api/gifts/send-regular', { method: 'POST', body: { giftKey, toUserId } })).conversationId
+  const me = (await getCurrentProfile())?.id
+  if (!me) err('Session expired. Please sign in again.')
+  if (isSb()) {
+    const { error } = await supabase!.rpc('take_regular', { p_key: giftKey })
+    if (error) err(error.message)
+  } else {
+    const db = loadDB()
+    const inv = db.gifts.regular[me!] || {}
+    if ((inv[giftKey] || 0) < 1) err('No gifts left to send.')
+    inv[giftKey] -= 1
+    db.gifts.regular[me!] = inv
+    const to = db.profiles.find((p) => p.id === toUserId)
+    db.gifts.txns.push({ id: uid(), user_id: me!, kind: 'regular_send', amount: 0, note: `${model.name} → @${to?.username ?? ''}`, created_at: now() })
+    saveDB(db)
+  }
+  const convId = await getOrCreateDirect(me!, toUserId)
+  await sendMessage(convId, me!, model.name, { url: giftKey, name: model.name, type: 'gift/nexo' })
+  return convId
+}
+
+export async function claimGiftBonus(): Promise<{ balance: number }> {
+  if (isSrv()) return srv<{ balance: number }>('/api/gifts/claim-bonus', { method: 'POST' })
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('claim_bonus')
+    if (error) err(error.message)
+    return data as { balance: number }
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const w = localGiftWallet(db, me)
+  if (w.last_bonus_at && Date.now() - new Date(w.last_bonus_at).getTime() < GIFT_BONUS_INTERVAL_MS) err('Daily bonus is not ready yet.')
+  w.balance += GIFT_DAILY_BONUS
+  w.last_bonus_at = now()
+  db.gifts.txns.push({ id: uid(), user_id: me, kind: 'bonus', amount: GIFT_DAILY_BONUS, note: 'Daily bonus', created_at: now() })
+  saveDB(db)
+  return { balance: w.balance }
 }

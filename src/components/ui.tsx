@@ -5,6 +5,8 @@ import { useI18n, type TranslationKey } from '../i18n'
 import { IconClose, IconSearch, IconFile } from './icons'
 import { AudioBubble, VideoCircle } from './MessageExtras'
 import { FoxSticker } from './FoxStickers'
+import { giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
+import { IconGem, IconGift, IconHeart, IconStar } from './icons'
 
 export function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'N'
@@ -75,6 +77,17 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   'Channel name is required.': 'error.channelNameRequired',
   'You cannot message yourself.': 'error.cannotMessageSelf',
   'Profile not found.': 'error.profileNotFound',
+  'Not enough NEX.': 'error.notEnoughNex',
+  'This gift is not for sale.': 'error.giftNotForSale',
+  'This gift is already yours.': 'error.giftAlreadyYours',
+  'You do not own this gift.': 'error.giftNotOwned',
+  'This gift is already listed.': 'error.giftAlreadyListed',
+  'Price must be a positive whole number.': 'error.giftPriceInvalid',
+  'No gifts left to send.': 'error.giftNoneLeft',
+  'Gift not found.': 'error.giftNotFound',
+  'Listing not found.': 'error.listingNotFound',
+  'Daily bonus is not ready yet.': 'error.bonusNotReady',
+  'Access denied.': 'error.accessDenied',
 }
 
 /** Map known backend/API error messages to localized UI strings. */
@@ -175,6 +188,20 @@ export function isImageType(t: string) { return t.startsWith('image/') }
 
 export function AttachmentView({ url, name, type, duration }: { url: string; name: string; type: string; duration?: number }) {
   if (!url) return null
+  if (type === 'gift/nexo') {
+    const art = giftArt(url)
+    const FallbackIcon = url === 'heart-charm' ? IconHeart : url === 'lucky-star' ? IconStar : url === 'nex-gem' ? IconGem : IconGift
+    return (
+      <div className="gift-msg">
+        {art ? <img src={art} alt="" /> : (
+          <span className="gift-art-fallback" style={{ background: REGULAR_GRADIENT[url] || REGULAR_GRADIENT['nex-gem'] }}>
+            <FallbackIcon size={54} />
+          </span>
+        )}
+        <span className="gift-msg-label"><IconGift size={13} /> {name || 'Gift'}</span>
+      </div>
+    )
+  }
   if (type === 'sticker/nexo-fox') {
     return <div className="sticker-msg"><FoxSticker variant={url} size={132} /></div>
   }
