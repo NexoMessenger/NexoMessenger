@@ -79,7 +79,7 @@ function seed() {
     channels: [news],
     channelMembers: [{ channel_id: 'c_news', user_id: 'u_assistant', role: 'owner', can_post: true, joined_at: t }],
     posts: [{ id: uid(), channel_id: 'c_news', author_id: 'u_assistant', body: 'Welcome to NEXO Messenger. This is a public channel — subscribe to receive broadcasts.', attachment_url: '', attachment_name: '', attachment_type: '', created_at: t }],
-    reactions: [], settings: [], sessions: [],
+    reactions: [], settings: [], sessions: [], profilePosts: [],
   }
 }
 
@@ -154,6 +154,7 @@ function giftSeedState() {
 }
 // Backfill for databases created before Gifts existed (user data preserved).
 if (!db.gifts || !Array.isArray(db.gifts.items)) { db.gifts = giftSeedState(); persist() }
+if (!Array.isArray(db.profilePosts)) { db.profilePosts = []; persist() }
 // Models added to the catalog later get their store stock exactly once
 // (tracked in `stocked`), so sold-out models are never restocked.
 if (!Array.isArray(db.gifts.stocked)) {
@@ -679,9 +680,64 @@ app.post('/api/channels/:id/posts', auth, (req, res) => {
   res.json({ post })
 })
 
+/* ---------- profile publications ---------- */
+const publicPost = (p) => ({ ...p })
+const postOf = (pid) => db.profilePosts.find((x) => x.id === pid)
+
+app.get('/api/users/:id/posts', auth, (req, res) => {
+  const target = req.params.id
+  if (!db.profiles.some((p) => p.id === target)) return fail(res, 404, 'User not found.')
+  const archived = req.query.archived === '1'
+  if (archived && req.me.id !== target) return fail(res, 403, 'Access denied.')
+  const list = db.profilePosts.filter((p) => p.user_id === target && Boolean(p.archived) === archived)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).map(publicPost)
+  res.json({ posts: list })
+})
+
+app.post('/api/posts', auth, (req, res) => {
+  const body = String(req.body?.body || '').trim()
+  const att = req.body?.attachment || null
+  if (!body && !att?.url) return fail(res, 400, 'Post is empty.')
+  if (body.length > 2000) return fail(res, 400, 'Post is too long.')
+  const post = {
+    id: uid(), user_id: req.me.id, body,
+    attachment_url: att?.url || '', attachment_name: String(att?.name || '').slice(0, 200),
+    attachment_type: String(att?.type || '').slice(0, 100), archived: false, created_at: now(),
+  }
+  db.profilePosts.push(post)
+  persist()
+  res.json({ post })
+})
+
+app.patch('/api/posts/:id', auth, (req, res) => {
+  const post = postOf(req.params.id)
+  if (!post) return fail(res, 404, 'Post not found.')
+  if (post.user_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  if (typeof req.body?.archived === 'boolean') post.archived = req.body.archived
+  persist()
+  res.json({ post })
+})
+
+app.delete('/api/posts/:id', auth, (req, res) => {
+  const post = postOf(req.params.id)
+  if (!post) return fail(res, 404, 'Post not found.')
+  if (post.user_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.profilePosts = db.profilePosts.filter((x) => x.id !== post.id)
+  persist()
+  res.json({ ok: true })
+})
+
 /* ---------- gifts / NEX marketplace ---------- */
 // All money movement happens here, server-side, in one synchronous step:
 // the frontend never supplies balances, prices of record, or seller identity.
+app.get('/api/users/:id/collectibles', auth, (req, res) => {
+  const target = req.params.id
+  if (!db.profiles.some((p) => p.id === target)) return fail(res, 404, 'User not found.')
+  const items = db.gifts.items.filter((i) => i.owner_id === target)
+    .map((item) => ({ item, model: giftModelPublic(item.model_key), listing: activeListing(item.id) }))
+  res.json({ items })
+})
+
 app.get('/api/gifts/state', auth, (req, res) => {
   const me = req.me.id
   const w = giftWallet(me)

@@ -3,7 +3,7 @@ import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, 
 import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS } from './giftData'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
-  MarketEntry, Message, Profile, Reaction, ReactionScope, UserSettings,
+  GiftItem, MarketEntry, Message, OwnedGift, Profile, ProfilePost, Reaction, ReactionScope, UserSettings,
 } from './types'
 
 export const mode = backendMode
@@ -535,6 +535,105 @@ export async function markGroupRead(groupId: string, userId: string) {
   const hasUnread = db.groupMessages.some((x) => x.group_id === groupId && x.sender_id !== userId && x.created_at > m.last_read_at)
   if (!hasUnread) return
   m.last_read_at = now(); saveDB(db)
+}
+
+/* ============================== PROFILE PUBLICATIONS ============================== */
+
+/** Public (non-archived) posts of a profile, newest first. */
+export async function listProfilePosts(userId: string): Promise<ProfilePost[]> {
+  if (isSrv()) return (await srv<{ posts: ProfilePost[] }>(`/api/users/${userId}/posts`)).posts
+  if (isSb()) {
+    const { data, error } = await supabase!.from('profile_posts').select('*')
+      .eq('user_id', userId).eq('archived', false).order('created_at', { ascending: false }).limit(200)
+    if (error) err(error.message)
+    return (data as ProfilePost[]) || []
+  }
+  const db = loadDB()
+  return db.profilePosts.filter((p) => p.user_id === userId && !p.archived)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+}
+
+/** Own archived posts (owner-only everywhere). */
+export async function listArchivedProfilePosts(userId: string): Promise<ProfilePost[]> {
+  if (isSrv()) return (await srv<{ posts: ProfilePost[] }>(`/api/users/${userId}/posts?archived=1`)).posts
+  if (isSb()) {
+    const { data, error } = await supabase!.from('profile_posts').select('*')
+      .eq('user_id', userId).eq('archived', true).order('created_at', { ascending: false }).limit(200)
+    if (error) err(error.message)
+    return (data as ProfilePost[]) || []
+  }
+  const db = loadDB()
+  return db.profilePosts.filter((p) => p.user_id === userId && p.archived)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+}
+
+export async function createPost(userId: string, body: string, att?: AttachmentInfo): Promise<ProfilePost> {
+  body = body.trim()
+  if (!body && !att) err('Post is empty.')
+  if (isSrv()) {
+    const { post } = await srv<{ post: ProfilePost }>('/api/posts', { method: 'POST', body: { body, attachment: att || null } })
+    return post
+  }
+  if (isSb()) {
+    const { data, error } = await supabase!.from('profile_posts').insert({
+      user_id: userId, body,
+      attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '',
+    }).select().single()
+    if (error) err(error.message)
+    return data as ProfilePost
+  }
+  const db = loadDB()
+  const post: ProfilePost = {
+    id: uid(), user_id: userId, body,
+    attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '',
+    archived: false, created_at: now(),
+  }
+  db.profilePosts.push(post)
+  saveDB(db)
+  return post
+}
+
+export async function setPostArchived(postId: string, userId: string, archived: boolean): Promise<void> {
+  if (isSrv()) { await srv(`/api/posts/${postId}`, { method: 'PATCH', body: { archived } }); return }
+  if (isSb()) {
+    const { error } = await supabase!.from('profile_posts').update({ archived }).eq('id', postId).eq('user_id', userId)
+    if (error) err(error.message)
+    return
+  }
+  const db = loadDB()
+  const post = db.profilePosts.find((p) => p.id === postId)
+  if (!post) err('Post not found.')
+  if (post!.user_id !== userId) err('Access denied.')
+  post!.archived = archived
+  saveDB(db)
+}
+
+export async function deletePost(postId: string, userId: string): Promise<void> {
+  if (isSrv()) { await srv(`/api/posts/${postId}`, { method: 'DELETE' }); return }
+  if (isSb()) {
+    const { error } = await supabase!.from('profile_posts').delete().eq('id', postId).eq('user_id', userId)
+    if (error) err(error.message)
+    return
+  }
+  const db = loadDB()
+  const post = db.profilePosts.find((p) => p.id === postId)
+  if (!post) err('Post not found.')
+  if (post!.user_id !== userId) err('Access denied.')
+  db.profilePosts = db.profilePosts.filter((p) => p.id !== postId)
+  saveDB(db)
+}
+
+/** Collectible NFTs owned by any user (public showcase for profiles). */
+export async function listUserCollectibles(userId: string): Promise<OwnedGift[]> {
+  if (isSrv()) return (await srv<{ items: OwnedGift[] }>(`/api/users/${userId}/collectibles`)).items
+  if (isSb()) {
+    const { data, error } = await supabase!.from('gift_items').select('*').eq('owner_id', userId).limit(200)
+    if (error) err(error.message)
+    return ((data as GiftItem[]) || []).map((item) => ({ item, model: giftModel(item.model_key), listing: null }))
+  }
+  const db = loadDB()
+  return db.gifts.items.filter((i) => i.owner_id === userId)
+    .map((item) => ({ item, model: giftModel(item.model_key), listing: localListingOf(db, item.id) }))
 }
 
 /* ============================== MESSAGE EDIT / DELETE ============================== */

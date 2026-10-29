@@ -1,7 +1,7 @@
 import type {
   Channel, ChannelMember, ChannelPost, ConvMember, Conversation, Reaction,
   GiftItem, GiftListing, GiftTxn,
-  Group, GroupMember, GroupMessage, Message, Profile, UserSettings,
+  Group, GroupMember, GroupMessage, Message, Profile, ProfilePost, UserSettings,
 } from './types'
 import { COLLECTIBLE_MODELS, PROMO_CODES, STORE_STOCK_PER_MODEL, storeSerial } from './giftData'
 
@@ -74,6 +74,7 @@ export interface LocalDB {
   channels: Channel[]
   channelMembers: ChannelMember[]
   posts: ChannelPost[]
+  profilePosts: ProfilePost[]
   reactions: Reaction[]
   settings: UserSettings[]
   gifts: LocalGiftState
@@ -135,6 +136,7 @@ function seed(): LocalDB {
     channels: [news],
     channelMembers: [{ channel_id: 'c_news', user_id: 'u_assistant', role: 'owner', can_post: true, joined_at: t }],
     posts: [{ id: uid(), channel_id: 'c_news', author_id: 'u_assistant', body: 'Welcome to NEXO Messenger. This is a public channel — subscribe to receive broadcasts.', attachment_url: '', attachment_name: '', attachment_type: '', created_at: t }],
+    profilePosts: [],
     settings: [], reactions: [], gifts: giftSeedState(), sessionUserId: null,
   }
 }
@@ -146,6 +148,7 @@ export function loadDB(): LocalDB {
       const db = JSON.parse(raw) as LocalDB
       // Backfill collections added in later versions (existing user data is preserved).
       if (!Array.isArray(db.reactions)) db.reactions = []
+      if (!Array.isArray(db.profilePosts)) db.profilePosts = []
       if (!db.gifts || !Array.isArray(db.gifts.items)) db.gifts = giftSeedState()
       backfillGiftStock(db)
       // Promo codes added later appear in existing DBs too (unredeemed).
