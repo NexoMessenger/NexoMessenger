@@ -165,6 +165,7 @@ jobs:
           Environment=NODE_ENV=production
           Environment=HOST=0.0.0.0
           Environment=PORT=$NEXO_PORT
+          Environment=NEXO_DATA_DIR=$DEPLOY_DIR/data
           Restart=always
           RestartSec=3
           User=$(whoami)
@@ -179,7 +180,7 @@ jobs:
             sleep 3
             $SUDO systemctl is-active nexo || true
           else
-            PORT=$NEXO_PORT HOST=0.0.0.0 nohup node server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
+            PORT=$NEXO_PORT HOST=0.0.0.0 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
             sleep 3
           fi
 
