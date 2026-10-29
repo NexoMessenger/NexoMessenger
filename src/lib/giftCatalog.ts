@@ -8,6 +8,9 @@ import eternalCandle from '../assets/gifts/eternal-candle.jpg'
 import glowMushroom from '../assets/gifts/glow-mushroom.jpg'
 import starFrog from '../assets/gifts/star-frog.jpg'
 import rubyRose from '../assets/gifts/ruby-rose.jpg'
+import heartCharm from '../assets/gifts/heart-charm.jpg'
+import luckyStar from '../assets/gifts/lucky-star.jpg'
+import nexGem from '../assets/gifts/nex-gem.jpg'
 import nexoRidersCover from '../assets/gifts/nexo-riders.png'
 import nexoRidersVideo from '../assets/gifts/nexo-riders.webm'
 
@@ -23,6 +26,9 @@ export const GIFT_ART: Record<string, string> = {
   'glow-mushroom': glowMushroom,
   'star-frog': starFrog,
   'ruby-rose': rubyRose,
+  'heart-charm': heartCharm,
+  'lucky-star': luckyStar,
+  'nex-gem': nexGem,
   'nexo-riders': nexoRidersCover,
 }
 

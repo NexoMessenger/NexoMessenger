@@ -154,17 +154,20 @@ export default function ProfileShowcase({ userId, isOwn, owner }: { userId: stri
                   <div className="showcase-gift-sub">{g.model.collection}</div>
                 </button>
               ))}
-              {gifts!.regular.map((g) => (
+              {gifts!.regular.map((g) => {
+                const FallbackIcon = g.model.key === 'heart-charm' ? IconHeart : g.model.key === 'lucky-star' ? IconStar : IconGem
+                return (
                 <button type="button" key={g.model.key} className="showcase-gift glass" onClick={() => setSelectedGift({ kind: 'regular', model: g.model, qty: g.qty })}>
                   <div className="showcase-gift-art">
                     {giftArt(g.model.key)
                       ? <img src={giftArt(g.model.key)} alt={g.model.name} loading="lazy" />
-                      : <div className="showcase-gift-fallback"><IconGift size={30} /></div>}
+                      : <div className="showcase-gift-fallback" style={{ background: REGULAR_GRADIENT[g.model.key] || REGULAR_GRADIENT['nex-gem'] }}><FallbackIcon size={30} /></div>}
                   </div>
                   <div className="showcase-gift-name">{g.model.name}</div>
                   <div className="showcase-gift-sub">×{g.qty}</div>
                 </button>
-              ))}
+                )
+              })}
             </div>
           )}
           {isOwn && gifts !== null && (
