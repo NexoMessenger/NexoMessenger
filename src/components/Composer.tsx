@@ -19,9 +19,13 @@ interface Props {
   onSend: (text: string, att?: AttachmentInfo) => Promise<void>
   onTyping: () => void
   upload: (file: File) => Promise<AttachmentInfo>
+  /** Edit mode: when initialTextKey changes to a message id, the input is
+   *  prefilled with initialText (and focused) instead of keeping the draft. */
+  initialText?: string
+  initialTextKey?: string
 }
 
-export default function Composer({ placeholder, sending, onSend, onTyping, upload }: Props) {
+export default function Composer({ placeholder, sending, onSend, onTyping, upload, initialText, initialTextKey }: Props) {
   const [text, setText] = useState('')
   const [pending, setPending] = useState<AttachmentInfo | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -65,6 +69,18 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
     const ta = taRef.current
     if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
   }
+
+  // Edit mode prefill (only when the edit target actually changes).
+  const lastInitKey = useRef('')
+  useEffect(() => {
+    if (initialTextKey && initialTextKey !== lastInitKey.current) {
+      lastInitKey.current = initialTextKey
+      setText(initialText || '')
+      requestAnimationFrame(() => { grow(); taRef.current?.focus() })
+    }
+    if (!initialTextKey) lastInitKey.current = ''
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTextKey])
 
   const handleTyping = () => {
     const ts = Date.now()

@@ -89,6 +89,7 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   'Daily bonus is not ready yet.': 'error.bonusNotReady',
   'Access denied.': 'error.accessDenied',
   'Invalid code.': 'error.promoInvalid',
+  'Message not found.': 'error.messageNotFound',
   'This code has already been used.': 'error.promoUsed',
 }
 
