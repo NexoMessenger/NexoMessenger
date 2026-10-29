@@ -578,6 +578,7 @@ if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
   app.use(express.static(DIST_DIR, { maxAge: '1h', index: false }))
   app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api')) return next()
+    res.setHeader('Cache-Control', 'no-cache')
     res.sendFile(path.join(DIST_DIR, 'index.html'))
   })
 } else {
