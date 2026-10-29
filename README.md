@@ -2,7 +2,7 @@
 
 Premium black glassmorphism messenger — React + TypeScript + Vite, with **Supabase** (Auth, PostgreSQL, Realtime, Storage) as the production backend.
 
-## Quick start
+## Quick starttest
 
 ```bash
 npm install
