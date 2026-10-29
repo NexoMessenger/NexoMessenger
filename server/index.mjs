@@ -111,6 +111,59 @@ function persist() {
   fs.renameSync(tmp, DB_FILE)
 }
 
+/* ============================== NEXO Gifts ============================== */
+// Catalog mirrors src/lib/giftData.ts (keep keys/prices in sync). Rarity and
+// supply are NEXO's own in-app collectible attributes — not blockchain data.
+const GIFT_MODELS = [
+  { key: 'crystal-wolf', kind: 'collectible', collection: 'Arcane Pets', name: 'Crystal Wolf', pattern: 'Tribal Paint', background: 'Moon Teal', rarity_model: 2, rarity_pattern: 0.5, rarity_background: 1.5, total_supply: 12000, floor_price: 1450 },
+  { key: 'hex-cauldron', kind: 'collectible', collection: 'Arcane Pets', name: 'Hex Cauldron', pattern: 'Bubble Eye', background: 'Violet Mist', rarity_model: 3, rarity_pattern: 1, rarity_background: 2, total_supply: 15000, floor_price: 890 },
+  { key: 'moon-owl', kind: 'collectible', collection: 'Arcane Pets', name: 'Moon Owl', pattern: 'Crescent Down', background: 'Midnight', rarity_model: 1.5, rarity_pattern: 0.8, rarity_background: 1.2, total_supply: 9000, floor_price: 1750 },
+  { key: 'ginger-heart', kind: 'collectible', collection: 'Sweet Life', name: 'Ginger Heart', pattern: 'Royal Icing', background: 'Peach Candy', rarity_model: 4, rarity_pattern: 1.5, rarity_background: 2.5, total_supply: 20000, floor_price: 640 },
+  { key: 'instant-ramen', kind: 'collectible', collection: 'Sweet Life', name: 'Instant Ramen', pattern: 'Spicy Broth', background: 'Amber', rarity_model: 2, rarity_pattern: 0.5, rarity_background: 1.5, total_supply: 25000, floor_price: 720 },
+  { key: 'honey-bear', kind: 'collectible', collection: 'Sweet Life', name: 'Honey Bear', pattern: 'Honeycomb', background: 'Honey Gold', rarity_model: 5, rarity_pattern: 2, rarity_background: 3, total_supply: 30000, floor_price: 480 },
+  { key: 'eternal-candle', kind: 'collectible', collection: 'Glow Garden', name: 'Eternal Candle', pattern: 'Leaf Flame', background: 'Emerald Night', rarity_model: 3, rarity_pattern: 1, rarity_background: 2, total_supply: 14000, floor_price: 980 },
+  { key: 'glow-mushroom', kind: 'collectible', collection: 'Glow Garden', name: 'Glow Cap', pattern: 'Firefly Windows', background: 'Plum Dusk', rarity_model: 2.5, rarity_pattern: 1, rarity_background: 1.8, total_supply: 11000, floor_price: 1230 },
+  { key: 'star-frog', kind: 'collectible', collection: 'Glow Garden', name: 'Star Frog', pattern: 'Tiny Crown', background: 'Mint Starlight', rarity_model: 1, rarity_pattern: 0.4, rarity_background: 1, total_supply: 8000, floor_price: 2100 },
+  { key: 'ruby-rose', kind: 'regular', collection: 'Regular', name: 'Ruby Rose', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 25 },
+  { key: 'heart-charm', kind: 'regular', collection: 'Regular', name: 'Heart Charm', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 30 },
+  { key: 'lucky-star', kind: 'regular', collection: 'Regular', name: 'Lucky Star', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 45 },
+  { key: 'nex-gem', kind: 'regular', collection: 'Regular', name: 'NEX Gem', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 80 },
+]
+const GIFT_WELCOME_BONUS = 1000
+const GIFT_DAILY_BONUS = 250
+const GIFT_BONUS_INTERVAL_MS = 24 * 60 * 60 * 1000
+
+function giftSeedState() {
+  const items = []
+  GIFT_MODELS.filter((m) => m.kind === 'collectible').forEach((m, mi) => {
+    for (let i = 0; i < 4; i++) items.push({ id: uid(), serial: 12040 + mi * 7919 + i * 104729, model_key: m.key, owner_id: null })
+  })
+  return { wallets: {}, items, listings: [], regular: {}, txns: [], seq: 1 }
+}
+// Backfill for databases created before Gifts existed (user data preserved).
+if (!db.gifts || !Array.isArray(db.gifts.items)) { db.gifts = giftSeedState(); persist() }
+
+const giftModelOf = (key) => GIFT_MODELS.find((m) => m.key === key)
+function giftTxn(userId, kind, amount, note) {
+  db.gifts.txns.push({ id: uid(), user_id: userId, kind, amount, note: String(note || ''), created_at: now() })
+}
+/** Wallet is created lazily with the one-time welcome bonus (server-side only). */
+function giftWallet(userId) {
+  let w = db.gifts.wallets[userId]
+  if (!w) {
+    w = { balance: GIFT_WELCOME_BONUS, last_bonus_at: '' }
+    db.gifts.wallets[userId] = w
+    giftTxn(userId, 'welcome', GIFT_WELCOME_BONUS, 'Welcome bonus')
+  }
+  return w
+}
+const activeListing = (itemId) => db.gifts.listings.find((l) => l.item_id === itemId) || null
+const giftModelPublic = (key) => {
+  const m = giftModelOf(key)
+  return m ? { ...m, issued: db.gifts.items.filter((i) => i.model_key === key).length } : m
+}
+const publicTxn = (t) => ({ id: t.id, kind: t.kind, amount: t.amount, note: t.note, created_at: t.created_at })
+
 /* ============================== helpers ============================== */
 
 const profileOf = (id) => db.profiles.find((p) => p.id === id) || null
@@ -536,6 +589,144 @@ app.post('/api/channels/:id/posts', auth, (req, res) => {
   db.posts.push(post)
   persist(); touch('channel', req.params.id); touchGlobal()
   res.json({ post })
+})
+
+/* ---------- gifts / NEX marketplace ---------- */
+// All money movement happens here, server-side, in one synchronous step:
+// the frontend never supplies balances, prices of record, or seller identity.
+app.get('/api/gifts/state', auth, (req, res) => {
+  const me = req.me.id
+  const w = giftWallet(me)
+  persist()
+  const myItems = db.gifts.items.filter((i) => i.owner_id === me)
+    .map((item) => ({ item, model: giftModelPublic(item.model_key), listing: activeListing(item.id) }))
+  const myRegular = Object.entries(db.gifts.regular[me] || {})
+    .filter(([, qty]) => qty > 0)
+    .map(([key, qty]) => ({ model: giftModelOf(key), qty })).filter((x) => x.model)
+  const bonusReadyAt = w.last_bonus_at ? new Date(w.last_bonus_at).getTime() + GIFT_BONUS_INTERVAL_MS : 0
+  res.json({
+    balance: w.balance,
+    nextBonusAt: bonusReadyAt > Date.now() ? new Date(bonusReadyAt).toISOString() : null,
+    bonusAmount: GIFT_DAILY_BONUS,
+    myItems, myRegular,
+    transactions: db.gifts.txns.filter((t) => t.user_id === me).slice(-30).reverse().map(publicTxn),
+  })
+})
+
+app.get('/api/gifts/market', auth, (req, res) => {
+  const entries = []
+  for (const item of db.gifts.items) {
+    const model = giftModelPublic(item.model_key)
+    if (!model) continue
+    const listing = activeListing(item.id)
+    if (listing) entries.push({ item, model, listing, seller: profileOf(listing.seller_id), price: listing.price })
+    else if (item.owner_id === null) entries.push({ item, model, listing: null, seller: null, price: model.floor_price })
+  }
+  res.json({ entries })
+})
+
+app.post('/api/gifts/buy', auth, (req, res) => {
+  const me = req.me.id
+  const item = db.gifts.items.find((i) => i.id === String(req.body?.itemId || ''))
+  if (!item) return fail(res, 404, 'Gift not found.')
+  const model = giftModelOf(item.model_key)
+  const listing = activeListing(item.id)
+  if (item.owner_id === me) return fail(res, 400, 'This gift is already yours.')
+  if (!listing && item.owner_id !== null) return fail(res, 409, 'This gift is not for sale.')
+  const price = listing ? listing.price : model.floor_price
+  const w = giftWallet(me)
+  if (w.balance < price) return fail(res, 402, 'Not enough NEX.')
+  w.balance -= price
+  if (listing) {
+    const sellerWallet = giftWallet(listing.seller_id)
+    sellerWallet.balance += price
+    giftTxn(listing.seller_id, 'sale', price, `${model.name} #${item.serial}`)
+    db.gifts.listings = db.gifts.listings.filter((l) => l.id !== listing.id)
+  }
+  item.owner_id = me
+  giftTxn(me, 'purchase', -price, `${model.name} #${item.serial}`)
+  persist(); touchGlobal()
+  res.json({ balance: w.balance })
+})
+
+app.post('/api/gifts/list', auth, (req, res) => {
+  const me = req.me.id
+  const price = Number(req.body?.price)
+  if (!Number.isInteger(price) || price <= 0 || price > 1000000000) return fail(res, 400, 'Price must be a positive whole number.')
+  const item = db.gifts.items.find((i) => i.id === String(req.body?.itemId || ''))
+  if (!item) return fail(res, 404, 'Gift not found.')
+  if (item.owner_id !== me) return fail(res, 403, 'You do not own this gift.')
+  if (activeListing(item.id)) return fail(res, 409, 'This gift is already listed.')
+  const listing = { id: uid(), item_id: item.id, seller_id: me, price, created_at: now() }
+  db.gifts.listings.push(listing)
+  persist(); touchGlobal()
+  res.json({ listing })
+})
+
+app.post('/api/gifts/unlist', auth, (req, res) => {
+  const listing = db.gifts.listings.find((l) => l.id === String(req.body?.listingId || ''))
+  if (!listing) return fail(res, 404, 'Listing not found.')
+  if (listing.seller_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.gifts.listings = db.gifts.listings.filter((l) => l.id !== listing.id)
+  persist(); touchGlobal()
+  res.json({ ok: true })
+})
+
+app.post('/api/gifts/buy-regular', auth, (req, res) => {
+  const me = req.me.id
+  const model = giftModelOf(String(req.body?.giftKey || ''))
+  if (!model || model.kind !== 'regular') return fail(res, 404, 'Gift not found.')
+  const w = giftWallet(me)
+  if (w.balance < model.floor_price) return fail(res, 402, 'Not enough NEX.')
+  w.balance -= model.floor_price
+  if (!db.gifts.regular[me]) db.gifts.regular[me] = {}
+  db.gifts.regular[me][model.key] = (db.gifts.regular[me][model.key] || 0) + 1
+  giftTxn(me, 'regular_buy', -model.floor_price, model.name)
+  persist(); touchGlobal()
+  res.json({ balance: w.balance })
+})
+
+app.post('/api/gifts/send-regular', auth, (req, res) => {
+  const me = req.me.id
+  const model = giftModelOf(String(req.body?.giftKey || ''))
+  if (!model || model.kind !== 'regular') return fail(res, 404, 'Gift not found.')
+  const toId = String(req.body?.toUserId || '')
+  const to = profileOf(toId)
+  if (!to) return fail(res, 404, 'Profile not found.')
+  if (toId === me) return fail(res, 400, 'You cannot message yourself.')
+  const inv = db.gifts.regular[me] || {}
+  if ((inv[model.key] || 0) < 1) return fail(res, 400, 'No gifts left to send.')
+  inv[model.key] -= 1
+  db.gifts.regular[me] = inv
+  let convId = db.convMembers.filter((m) => m.user_id === me).map((m) => m.conversation_id)
+    .find((cid) => db.convMembers.some((m) => m.conversation_id === cid && m.user_id === toId))
+  if (!convId) {
+    const conv = { id: uid(), created_by: me, created_at: now(), last_message_at: now() }
+    db.conversations.push(conv)
+    db.convMembers.push(
+      { conversation_id: conv.id, user_id: me, last_read_at: now(), joined_at: now() },
+      { conversation_id: conv.id, user_id: toId, last_read_at: now(), joined_at: now() },
+    )
+    convId = conv.id
+  }
+  const msg = { id: uid(), conversation_id: convId, sender_id: me, body: model.name, attachment_url: model.key, attachment_name: model.name, attachment_type: 'gift/nexo', attachment_duration: 0, created_at: now() }
+  db.messages.push(msg)
+  const conv = db.conversations.find((c) => c.id === convId); if (conv) conv.last_message_at = msg.created_at
+  giftTxn(me, 'regular_send', 0, `${model.name} → @${to.username}`)
+  persist(); touch('direct', convId); touchGlobal()
+  res.json({ conversationId: convId })
+})
+
+app.post('/api/gifts/claim-bonus', auth, (req, res) => {
+  const w = giftWallet(req.me.id)
+  if (w.last_bonus_at && Date.now() - new Date(w.last_bonus_at).getTime() < GIFT_BONUS_INTERVAL_MS) {
+    return fail(res, 400, 'Daily bonus is not ready yet.')
+  }
+  w.balance += GIFT_DAILY_BONUS
+  w.last_bonus_at = new Date().toISOString()
+  giftTxn(req.me.id, 'bonus', GIFT_DAILY_BONUS, 'Daily bonus')
+  persist(); touchGlobal()
+  res.json({ balance: w.balance })
 })
 
 /* ---------- reactions ---------- */

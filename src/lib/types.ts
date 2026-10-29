@@ -118,3 +118,72 @@ export interface AttachmentInfo {
 }
 
 export type Unsubscribe = () => void
+
+/* ============================== NEXO Gifts ============================== */
+
+export interface GiftModel {
+  key: string
+  kind: 'collectible' | 'regular'
+  collection: string
+  name: string
+  pattern: string
+  background: string
+  /** In-app rarity attributes defined by the NEXO catalog (percent of supply). */
+  rarity_model: number
+  rarity_pattern: number
+  rarity_background: number
+  total_supply: number
+  /** Store (floor) price in NEX for collectibles; purchase price for regular gifts. */
+  floor_price: number
+  /** Instances minted so far (provided by the backend; absent in static catalog). */
+  issued?: number
+}
+
+export interface GiftItem {
+  id: ID
+  serial: number
+  model_key: string
+  /** null = owned by the NEXO Store (primary stock). */
+  owner_id: ID | null
+}
+
+export interface GiftListing {
+  id: ID
+  item_id: ID
+  seller_id: ID
+  price: number
+  created_at: string
+}
+
+/** One marketplace card: a store item (listing null) or a user listing. */
+export interface MarketEntry {
+  item: GiftItem
+  model: GiftModel
+  listing: GiftListing | null
+  seller: Profile | null
+  price: number
+}
+
+export interface OwnedGift {
+  item: GiftItem
+  model: GiftModel
+  listing: GiftListing | null
+}
+
+export interface GiftTxn {
+  id: ID
+  kind: 'welcome' | 'bonus' | 'purchase' | 'sale' | 'regular_buy' | 'regular_send'
+  amount: number
+  note: string
+  created_at: string
+}
+
+export interface GiftState {
+  balance: number
+  /** ISO time when the next daily bonus can be claimed; null = ready now. */
+  nextBonusAt: string | null
+  bonusAmount: number
+  myItems: OwnedGift[]
+  myRegular: { model: GiftModel; qty: number }[]
+  transactions: GiftTxn[]
+}

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar } from './ui'
-import { IconChats, IconGroups, IconChannel, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
+import { IconChats, IconGroups, IconChannel, IconGift, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
 import type { ComponentType } from 'react'
 import { useI18n } from '../i18n'
 import type { TranslationKey } from '../i18n/translations'
@@ -12,6 +12,7 @@ const NAV: { to: string; labelKey: TranslationKey; icon: ComponentType<IconProps
   { to: '/chats', labelKey: 'nav.chats', icon: IconChats },
   { to: '/groups', labelKey: 'nav.groups', icon: IconGroups },
   { to: '/channels', labelKey: 'nav.channels', icon: IconChannel },
+  { to: '/gifts', labelKey: 'nav.gifts', icon: IconGift },
   { to: '/search', labelKey: 'nav.search', icon: IconSearch },
   { to: '/profile', labelKey: 'nav.profile', icon: IconProfile },
   { to: '/settings', labelKey: 'nav.settings', icon: IconSettings },
