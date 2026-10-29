@@ -6,7 +6,7 @@
  *   - REST API under /api (accounts, sessions, profiles, chats, groups,
  *     channels, reactions, settings, uploads)
  *   - WebSocket realtime under /ws (message events + typing)
- *   - data stored on THIS server in server/data/db.json (+ uploads/),
+ *   - data stored on THIS server in <site-root>/data/db.json (+ uploads/),
  *     never in visitors' browsers — that's what makes real people visible
  *     to each other from different devices.
  *
@@ -23,7 +23,10 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
-const DATA_DIR = process.env.NEXO_DATA_DIR || path.join(__dirname, 'data')
+// Data lives NEXT TO the code folders (site-root/data), never inside
+// server/ — the deploy pipeline wipes server/ and dist/ before uploading
+// fresh code, and the database must survive every deploy untouched.
+const DATA_DIR = process.env.NEXO_DATA_DIR || path.join(ROOT, 'data')
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads')
 const DB_FILE = path.join(DATA_DIR, 'db.json')
 const DIST_DIR = path.join(ROOT, 'dist')
@@ -78,6 +81,19 @@ function seed() {
     posts: [{ id: uid(), channel_id: 'c_news', author_id: 'u_assistant', body: 'Welcome to NEXO Messenger. This is a public channel — subscribe to receive broadcasts.', attachment_url: '', attachment_name: '', attachment_type: '', created_at: t }],
     reactions: [], settings: [], sessions: [],
   }
+}
+
+// One-time migration: the first website edition kept data in server/data.
+// If the new location is empty but the old one has a database, copy it over
+// (old copy is kept as a backup) so existing accounts survive the upgrade.
+const OLD_DATA_DIR = path.join(__dirname, 'data')
+try {
+  if (OLD_DATA_DIR !== DATA_DIR && !fs.existsSync(DB_FILE) && fs.existsSync(path.join(OLD_DATA_DIR, 'db.json'))) {
+    fs.cpSync(OLD_DATA_DIR, DATA_DIR, { recursive: true })
+    console.log(`Migrated data directory: ${OLD_DATA_DIR} -> ${DATA_DIR}`)
+  }
+} catch (e) {
+  console.error('Data migration failed:', e)
 }
 
 let db
