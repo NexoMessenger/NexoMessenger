@@ -15,6 +15,7 @@
  */
 import express from 'express'
 import webpush from 'web-push'
+import { createOpenRouter } from './ai-openrouter.mjs'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -520,56 +521,43 @@ app.get('/api/users', auth, (req, res) => {
   res.json({ profiles: ids.map((id) => profileOf(id)).filter(Boolean) })
 })
 
-/* ---------- NEXO AI: private, server-local Qwen via Ollama ---------- */
-// Ollama is deliberately bound to loopback, never exposed as a public proxy.
-// No model is bundled or downloaded during deploy; availability is reported honestly.
-const AI_MODEL = 'qwen2.5:1.5b'
-const AI_URL = 'http://127.0.0.1:11434'
+/* ---------- NEXO AI via OpenRouter (free Qwen only) ---------- */
+// The key is read on the server from persistent data or an environment variable.
+// It is never sent to the browser or written to the database.
+function openRouterKey() {
+  const envKey = (process.env.OPENROUTER_API_KEY || '').trim()
+  if (envKey) return envKey
+  try { return fs.readFileSync(path.join(DATA_DIR, 'openrouter.key'), 'utf8').trim() } catch { return '' }
+}
+const openRouter = createOpenRouter({ getKey: openRouterKey })
 let aiBusy = false
 if (!Array.isArray(db.aiChats)) db.aiChats = []
-async function aiReady() {
-  try {
-    const response = await fetch(`${AI_URL}/api/tags`, { signal: AbortSignal.timeout(2500) })
-    if (!response.ok) return false
-    const data = await response.json()
-    return Array.isArray(data.models) && data.models.some(model => model.name === AI_MODEL || model.model === AI_MODEL)
-  } catch { return false }
-}
-app.get('/api/ai/status', auth, async (req, res) => res.json({ ready: await aiReady() }))
+app.get('/api/ai/status', auth, async (req, res) => res.json(await openRouter.status()))
 app.get('/api/ai/history', auth, (req, res) => {
   const chat = db.aiChats.find(item => item.user_id === req.me.id)
   res.json({ messages: chat?.messages || [] })
 })
 app.post('/api/ai/message', auth, async (req, res) => {
   const text = typeof req.body?.text === 'string' ? req.body.text.trim() : ''
-  if (!text || text.length > 2000) return fail(res, 400, 'Question must contain 1–2000 characters.')
-  if (aiBusy) return fail(res, 429, 'AI is busy. Please try again shortly.')
+  if (!text || text.length > 2000) return fail(res, 400, 'AI_INVALID_INPUT')
+  if (aiBusy) return fail(res, 429, 'AI_BUSY')
   aiBusy = true
   try {
     const chat = db.aiChats.find(item => item.user_id === req.me.id)
     const history = (chat?.messages || []).slice(-12).map(m => ({ role: m.role, content: m.content.slice(0, 2000) }))
-    const response = await fetch(`${AI_URL}/api/chat`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(180000),
-      body: JSON.stringify({ model: AI_MODEL, stream: false, options: { num_predict: 512, num_ctx: 2048 }, messages: [
-        { role: 'system', content: 'You are NEXO AI, a helpful assistant. Reply in the language of the user. Be honest about uncertainty. You are an AI and can make mistakes.' },
-        ...history, { role: 'user', content: text },
-      ] }),
-    })
-    if (!response.ok) return fail(res, 503, 'AI is not available. The model may not be installed or running.')
-    const result = await response.json()
-    const answer = typeof result.message?.content === 'string' ? result.message.content.trim().slice(0, 6000) : ''
-    if (!answer) return fail(res, 502, 'AI returned an empty answer.')
+    const result = await openRouter.answer([
+      { role: 'system', content: 'You are NEXO AI, a helpful assistant. Reply in the language of the user. Be honest about uncertainty. You are an AI and can make mistakes.' },
+      ...history, { role: 'user', content: text },
+    ])
+    if (result.error) return fail(res, result.error === 'AI_RATE_LIMIT' ? 429 : 503, result.error)
     const userMessage = { id: uid(), role: 'user', content: text, created_at: now() }
-    const reply = { id: uid(), role: 'assistant', content: answer, created_at: now() }
+    const reply = { id: uid(), role: 'assistant', content: result.answer, created_at: now() }
     let stored = db.aiChats.find(item => item.user_id === req.me.id)
     if (!stored) { stored = { user_id: req.me.id, messages: [] }; db.aiChats.push(stored) }
     stored.messages.push(userMessage, reply)
     stored.messages = stored.messages.slice(-100)
     persist()
     res.json({ messages: [userMessage, reply] })
-  } catch (error) {
-    console.error('Local AI unavailable:', error.name || 'error')
-    return fail(res, 503, 'AI is not available. The model may not be installed or running.')
   } finally { aiBusy = false }
 })
 

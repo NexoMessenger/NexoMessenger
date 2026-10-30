@@ -8,12 +8,19 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'ai.modelUnavailable': 'The free Qwen model currently has no available provider. Try again later.',
+  'ai.networkError': 'Cannot reach OpenRouter from the server. Try again later.',
+  'ai.unsupported': 'AI is only available in server mode.',
+  'ai.rateLimit': 'The free quota or rate limit was reached. Try again later.',
+  'ai.authError': 'OpenRouter rejected the key. Ask the administrator to check the configuration.',
+  'ai.busy': 'Another request is being processed. Try again shortly.',
+
   'ai.entry': 'Ask the NEXO AI assistant',
   'ai.checking': 'Checking model…',
-  'ai.ready': 'Qwen 2.5 · local AI',
+  'ai.ready': 'Qwen via OpenRouter · ready to try',
   'ai.unavailable': 'Unavailable',
-  'ai.disclaimer': 'AI can make mistakes. Questions and replies are saved on this server; avoid sharing sensitive information.',
-  'ai.setup': 'The local model is not installed or running yet. An administrator needs to set it up on the NEXO server.',
+  'ai.disclaimer': 'AI can make mistakes. Questions and recent context are sent to OpenRouter and its provider, and the conversation is saved on this server. Do not share sensitive information.',
+  'ai.setup': 'OpenRouter is not configured. Ask the NEXO server administrator to set it up.',
   'ai.retry': 'Check again',
   'ai.welcome': 'Ask a question to get started.',
   'ai.thinking': 'Thinking… This may take a while.',
@@ -571,12 +578,19 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'ai.modelUnavailable': 'У бесплатной модели Qwen сейчас нет доступного провайдера. Попробуй позже.',
+  'ai.networkError': 'Сервер не может связаться с OpenRouter. Попробуй позже.',
+  'ai.unsupported': 'ИИ доступен только в серверном режиме.',
+  'ai.rateLimit': 'Бесплатный лимит или ограничение запросов исчерпано. Попробуй позже.',
+  'ai.authError': 'OpenRouter не принял ключ. Попроси администратора проверить настройку.',
+  'ai.busy': 'Сейчас обрабатывается другой запрос. Попробуй чуть позже.',
+
   'ai.entry': 'Задай вопрос помощнику NEXO AI',
   'ai.checking': 'Проверяем модель…',
-  'ai.ready': 'Qwen 2.5 · локальный ИИ',
+  'ai.ready': 'Qwen через OpenRouter · можно проверить',
   'ai.unavailable': 'Недоступен',
-  'ai.disclaimer': 'ИИ может ошибаться. Вопросы и ответы сохраняются на сервере; не отправляй секретные данные.',
-  'ai.setup': 'Локальная модель ещё не установлена или не запущена. Администратору нужно настроить её на сервере NEXO.',
+  'ai.disclaimer': 'ИИ может ошибаться. Вопросы и недавняя переписка отправляются в OpenRouter и его провайдеру; история сохраняется на сервере NEXO. Не отправляй секретные данные.',
+  'ai.setup': 'OpenRouter ещё не подключён. Попроси администратора сервера NEXO настроить его.',
   'ai.retry': 'Проверить снова',
   'ai.welcome': 'Задай любой вопрос, чтобы начать.',
   'ai.thinking': 'Думаю… Это может занять время.',
@@ -1132,12 +1146,19 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'ai.modelUnavailable': 'У безкоштовної моделі Qwen зараз немає доступного провайдера. Спробуй пізніше.',
+  'ai.networkError': 'Сервер не може зв’язатися з OpenRouter. Спробуй пізніше.',
+  'ai.unsupported': 'ШІ доступний лише в серверному режимі.',
+  'ai.rateLimit': 'Безкоштовний ліміт або обмеження запитів вичерпано. Спробуй пізніше.',
+  'ai.authError': 'OpenRouter не прийняв ключ. Попроси адміністратора перевірити налаштування.',
+  'ai.busy': 'Зараз обробляється інший запит. Спробуй трохи пізніше.',
+
   'ai.entry': 'Постав запитання помічнику NEXO AI',
   'ai.checking': 'Перевіряємо модель…',
-  'ai.ready': 'Qwen 2.5 · локальний ШІ',
+  'ai.ready': 'Qwen через OpenRouter · можна перевірити',
   'ai.unavailable': 'Недоступний',
-  'ai.disclaimer': 'ШІ може помилятися. Запитання та відповіді зберігаються на сервері; не надсилай секретні дані.',
-  'ai.setup': 'Локальну модель ще не встановлено або не запущено. Адміністратору потрібно налаштувати її на сервері NEXO.',
+  'ai.disclaimer': 'ШІ може помилятися. Запитання та недавня розмова надсилаються до OpenRouter та його провайдера; історія зберігається на сервері NEXO. Не надсилай секретні дані.',
+  'ai.setup': 'OpenRouter ще не налаштовано. Попроси адміністратора сервера NEXO налаштувати його.',
   'ai.retry': 'Перевірити знову',
   'ai.welcome': 'Постав запитання, щоб почати.',
   'ai.thinking': 'Думаю… Це може тривати деякий час.',
@@ -1693,12 +1714,19 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'ai.modelUnavailable': '免费 Qwen 模型目前没有可用服务商，请稍后重试。',
+  'ai.networkError': '服务器无法连接 OpenRouter，请稍后重试。',
+  'ai.unsupported': 'AI 仅在服务器模式下可用。',
+  'ai.rateLimit': '已达到免费额度或请求限制，请稍后重试。',
+  'ai.authError': 'OpenRouter 拒绝了密钥，请联系管理员检查配置。',
+  'ai.busy': '正在处理其他请求，请稍后重试。',
+
   'ai.entry': '向 NEXO AI 助手提问',
   'ai.checking': '正在检查模型…',
-  'ai.ready': 'Qwen 2.5 · 本地 AI',
+  'ai.ready': 'Qwen · OpenRouter，可尝试',
   'ai.unavailable': '不可用',
-  'ai.disclaimer': 'AI 可能出错。问题和回答保存在服务器上；请勿发送敏感信息。',
-  'ai.setup': '本地模型尚未安装或运行。管理员需要在 NEXO 服务器上进行设置。',
+  'ai.disclaimer': 'AI 可能出错。问题和近期上下文会发送给 OpenRouter 及其服务商，对话保存在 NEXO 服务器。请勿发送敏感信息。',
+  'ai.setup': 'OpenRouter 尚未配置，请联系 NEXO 服务器管理员。',
   'ai.retry': '重新检查',
   'ai.welcome': '提出问题以开始。',
   'ai.thinking': '正在思考……这可能需要一些时间。',
