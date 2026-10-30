@@ -308,6 +308,20 @@ export async function searchUsers(rawQuery: string, excludeId: string, limit = 2
   return loadDB().profiles.filter((p) => p.id !== excludeId && (p.username.toLowerCase().includes(q) || p.display_name.toLowerCase().includes(q))).slice(0, limit)
 }
 
+export interface AiMessage { id: string; role: 'user' | 'assistant'; content: string; created_at: string }
+export async function getAiStatus(): Promise<boolean> {
+  if (!isSrv()) return false
+  return (await srv<{ ready: boolean }>('/api/ai/status')).ready
+}
+export async function getAiHistory(): Promise<AiMessage[]> {
+  if (!isSrv()) return []
+  return (await srv<{ messages: AiMessage[] }>('/api/ai/history')).messages
+}
+export async function askAi(text: string): Promise<AiMessage[]> {
+  if (!isSrv()) throw new Error('AI is unavailable in this mode.')
+  return (await srv<{ messages: AiMessage[] }>('/api/ai/message', { method: 'POST', body: { text } })).messages
+}
+
 /* ============================== DIRECT CHATS ============================== */
 
 export interface DirectListItem { conv: Conversation; other: Profile; lastMessage: Message | null; unread: number }
