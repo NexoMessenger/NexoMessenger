@@ -18,7 +18,22 @@ export const supabase: SupabaseClient | null = hasSupabase
  * see server/index.mjs. This takes priority over Supabase/local demo.
  */
 const apiBaseEnv = import.meta.env.VITE_API_BASE as string | undefined
-export const hasServer = apiBaseEnv !== undefined
+
+/**
+ * Runtime safety net: main.tsx probes same-origin /api/health before the app
+ * modules load. If the real NEXO server answers on this origin, a frontend
+ * bundle that was built without VITE_API_BASE must still use server mode —
+ * never the browser-only Local Demo — on the public website.
+ */
+const runtimeServer = (() => {
+  try {
+    return typeof window !== 'undefined' && window.sessionStorage.getItem('nexo_backend_mode') === 'server'
+  } catch {
+    return false
+  }
+})()
+
+export const hasServer = apiBaseEnv !== undefined || runtimeServer
 export const apiBase = apiBaseEnv === 'same-origin' ? '' : (apiBaseEnv || '')
 
 /** "server" = own website server, "supabase" = Supabase keys, else local demo. */
