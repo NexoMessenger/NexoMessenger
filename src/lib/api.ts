@@ -41,6 +41,38 @@ const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
 
 function err(msg: string): never { throw new Error(msg) }
 
+/** Web Push is available only on the self-hosted HTTPS site. */
+export function pushSupported(): boolean {
+  return isSrv() && window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+}
+export async function pushIsEnabled(): Promise<boolean> {
+  if (!pushSupported() || Notification.permission !== 'granted') return false
+  const reg = await navigator.serviceWorker.getRegistration(new URL('push-sw.js', document.baseURI).href)
+  const sub = await reg?.pushManager.getSubscription()
+  if (!sub) return false
+  return (await srv<{ enabled: boolean }>('/api/push/status', { method: 'POST', body: { endpoint: sub.endpoint } })).enabled
+}
+export async function enablePush(locale: string): Promise<void> {
+  if (!pushSupported()) throw new Error('Push notifications are not supported here.')
+  const permission = await Notification.requestPermission()
+  if (permission !== 'granted') throw new Error('Notification permission was not granted.')
+  const { publicKey } = await srv<{ publicKey: string }>('/api/push/key')
+  const reg = await navigator.serviceWorker.register(new URL('push-sw.js', document.baseURI).href)
+  const bytes = Uint8Array.from(atob(publicKey.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - publicKey.length % 4) % 4)), c => c.charCodeAt(0))
+  let sub = await reg.pushManager.getSubscription()
+  if (sub && sub.options.applicationServerKey && btoa(String.fromCharCode(...new Uint8Array(sub.options.applicationServerKey))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_') !== publicKey) { await sub.unsubscribe(); sub = null }
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes })
+  await srv('/api/push/subscribe', { method: 'POST', body: { subscription: sub.toJSON(), locale } })
+}
+export async function disablePush(): Promise<void> {
+  if (!pushSupported()) return
+  const reg = await navigator.serviceWorker.getRegistration(new URL('push-sw.js', document.baseURI).href)
+  const sub = await reg?.pushManager.getSubscription()
+  if (!sub) return
+  await srv('/api/push/unsubscribe', { method: 'POST', body: { endpoint: sub.endpoint } })
+  await sub.unsubscribe()
+}
+
 /* ============================== AUTH ============================== */
 
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -137,6 +169,7 @@ export async function signIn(email: string, password: string): Promise<void> {
 
 export async function signOutUser(): Promise<void> {
   if (isSrv()) {
+    try { await disablePush() } catch { /* logout still proceeds */ }
     try { await srv('/api/auth/logout', { method: 'POST' }) } catch { /* token may already be gone */ }
     setServerToken(null)
     return

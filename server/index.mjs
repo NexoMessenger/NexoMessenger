@@ -14,6 +14,7 @@
  * Env:  PORT (default 8080), HOST (default 0.0.0.0), NEXO_DATA_DIR.
  */
 import express from 'express'
+import webpush from 'web-push'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -109,6 +110,33 @@ function persist() {
   const tmp = DB_FILE + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(db))
   fs.renameSync(tmp, DB_FILE)
+}
+
+// VAPID identity and subscriptions live in the persistent data directory, never in Git.
+const PUSH_KEY_FILE = path.join(DATA_DIR, 'push-keys.json')
+let pushKeys
+try { pushKeys = JSON.parse(fs.readFileSync(PUSH_KEY_FILE, 'utf8')) }
+catch (e) {
+  if (e.code !== 'ENOENT') throw e
+  pushKeys = webpush.generateVAPIDKeys()
+  fs.writeFileSync(PUSH_KEY_FILE, JSON.stringify(pushKeys), { mode: 0o600, flag: 'wx' })
+}
+webpush.setVapidDetails('mailto:admin@nexomessenger.space', pushKeys.publicKey, pushKeys.privateKey)
+if (!Array.isArray(db.pushSubscriptions)) { db.pushSubscriptions = []; persist() }
+
+function notifyUsers(userIds, sender, scope, roomId) {
+  const recipients = new Set(userIds.filter(id => id !== sender.id))
+  const localized = { en: 'New message', ru: 'Новое сообщение', uk: 'Нове повідомлення', 'zh-CN': '新消息' }
+  for (const entry of db.pushSubscriptions.slice()) {
+    if (!recipients.has(entry.user_id) || db.settings.find(s => s.user_id === entry.user_id)?.notifications_enabled === false) continue
+    const payload = JSON.stringify({ title: 'NEXO · ' + String(sender.display_name || sender.username).slice(0, 60), body: localized[entry.locale] || localized.en, path: (scope === 'group' ? '/group/' : '/chat/') + encodeURIComponent(roomId) })
+    webpush.sendNotification(entry.subscription, payload, { TTL: 86400, timeout: 10000 }).catch(error => {
+      if (error.statusCode === 404 || error.statusCode === 410) {
+        db.pushSubscriptions = db.pushSubscriptions.filter(s => s.subscription.endpoint !== entry.subscription.endpoint)
+        persist()
+      } else console.error('Push delivery failed:', error.statusCode || error.code || 'unknown')
+    })
+  }
 }
 
 /* ============================== NEXO Gifts ============================== */
@@ -416,6 +444,26 @@ app.post('/api/me/presence', auth, (req, res) => {
   res.json({ ok: true })
 })
 
+// Browser push endpoints are restricted to known push providers to prevent SSRF.
+app.get('/api/push/key', auth, (req, res) => res.json({ publicKey: pushKeys.publicKey }))
+app.post('/api/push/status', auth, (req, res) => res.json({ enabled: db.pushSubscriptions.some(x => x.user_id === req.me.id && x.subscription.endpoint === req.body?.endpoint) }))
+app.post('/api/push/subscribe', auth, (req, res) => {
+  const sub = req.body?.subscription
+  let url
+  try { url = new URL(sub?.endpoint) } catch { return fail(res, 400, 'Invalid push subscription.') }
+  const allowed = ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com']
+  if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443') || !allowed.some(host => url.hostname === host || (host === 'web.push.apple.com' && url.hostname.endsWith('.' + host))) || url.href.length > 2048 || !/^[A-Za-z0-9_-]{80,100}$/.test(sub?.keys?.p256dh || '') || !/^[A-Za-z0-9_-]{20,30}$/.test(sub?.keys?.auth || '')) return fail(res, 400, 'Invalid push subscription.')
+  if (db.pushSubscriptions.filter(x => x.user_id === req.me.id && x.subscription.endpoint !== sub.endpoint).length >= 20) return fail(res, 400, 'Too many devices.')
+  db.pushSubscriptions = db.pushSubscriptions.filter(x => x.subscription.endpoint !== sub.endpoint)
+  const locale = ['en', 'ru', 'uk', 'zh-CN'].includes(req.body.locale) ? req.body.locale : 'en'
+  db.pushSubscriptions.push({ user_id: req.me.id, subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, locale })
+  persist(); res.json({ ok: true })
+})
+app.post('/api/push/unsubscribe', auth, (req, res) => {
+  db.pushSubscriptions = db.pushSubscriptions.filter(x => !(x.user_id === req.me.id && x.subscription.endpoint === req.body?.endpoint))
+  persist(); res.json({ ok: true })
+})
+
 app.get('/api/settings', auth, (req, res) => {
   let s = db.settings.find((x) => x.user_id === req.me.id)
   if (!s) { s = { user_id: req.me.id, theme: 'nexoglass', notifications_enabled: true, privacy_profile: 'public', updated_at: now() }; db.settings.push(s); persist() }
@@ -513,6 +561,7 @@ app.post('/api/chats/:id/messages', auth, (req, res) => {
   db.messages.push(msg)
   const conv = db.conversations.find((c) => c.id === req.params.id); if (conv) conv.last_message_at = msg.created_at
   persist(); touch('direct', req.params.id); touchGlobal()
+  notifyUsers(db.convMembers.filter(m => m.conversation_id === req.params.id).map(m => m.user_id), req.me, 'direct', req.params.id)
   res.json({ message: msg })
 })
 
@@ -652,6 +701,7 @@ app.post('/api/groups/:id/messages', auth, (req, res) => {
   db.groupMessages.push(msg)
   const g = db.groups.find((x) => x.id === req.params.id); if (g) g.last_message_at = msg.created_at
   persist(); touch('group', req.params.id); touchGlobal()
+  notifyUsers(db.groupMembers.filter(m => m.group_id === req.params.id).map(m => m.user_id), req.me, 'group', req.params.id)
   res.json({ message: msg })
 })
 
@@ -952,6 +1002,7 @@ app.post('/api/gifts/send-regular', auth, (req, res) => {
   giftTxn(me, 'regular_send', 0, `${model.name} → @${to.username}`)
   giftTxn(toId, 'regular_send', 0, `${model.name} ← @${req.me.username}`)
   persist(); touch('direct', convId); touchGlobal()
+  notifyUsers([toId], req.me, 'direct', convId)
   res.json({ conversationId: convId })
 })
 

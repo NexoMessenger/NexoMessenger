@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
 
   useEffect(() => {
     if (!profile) return
@@ -37,6 +39,17 @@ export default function SettingsPage() {
       .catch((e) => setError(errText(e, t)))
       .finally(() => setLoading(false))
   }, [profile])
+
+  useEffect(() => { api.pushIsEnabled().then(setPushEnabled).catch(() => setPushEnabled(false)) }, [profile?.id])
+
+  const togglePush = async () => {
+    setPushBusy(true); setError(''); setNotice('')
+    try {
+      if (pushEnabled) { await api.disablePush(); setPushEnabled(false) }
+      else { await api.enablePush(locale); setPushEnabled(true); if (profile) await api.updateSettings(profile.id, { notifications_enabled: true }); setSettings(prev => prev ? { ...prev, notifications_enabled: true } : prev) }
+      setNotice(t('settings.saved'))
+    } catch { setError(t('push.failed')) } finally { setPushBusy(false) }
+  }
 
   const save = async (patch: Partial<UserSettings>) => {
     if (!profile || !settings) return
@@ -172,6 +185,13 @@ export default function SettingsPage() {
               </div>
               <button className={`toggle ${settings.notifications_enabled ? 'on' : ''}`} aria-label="Toggle notifications"
                 onClick={() => save({ notifications_enabled: !settings.notifications_enabled })} />
+            </div>
+          </div>
+
+          <div className="settings-group glass card" style={{ marginTop: 10 }}>
+            <div className="switch-row">
+              <div><div className="sw-title">{t('push.title')}</div><div className="sw-sub">{api.pushSupported() ? t('push.hint') : t('push.unsupported')}</div></div>
+              <button className={`toggle ${pushEnabled ? 'on' : ''}`} aria-label={t('push.title')} aria-pressed={pushEnabled} disabled={!api.pushSupported() || pushBusy} onClick={() => void togglePush()} />
             </div>
           </div>
 
