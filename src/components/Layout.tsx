@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import { Avatar } from './ui'
+import MessagePopups from './MessagePopups'
 import { IconChats, IconGroups, IconChannel, IconGift, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
 import type { ComponentType } from 'react'
 import { useI18n } from '../i18n'
@@ -56,6 +57,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className={`app-shell ${inRoom ? 'in-room' : ''}`}>
+      <MessagePopups />
       <aside className="sidebar">
         <div className="logo-badge"><NexoMark size={26} /></div>
         {items('desktop')}

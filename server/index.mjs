@@ -459,6 +459,26 @@ app.post('/api/push/subscribe', auth, (req, res) => {
   db.pushSubscriptions.push({ user_id: req.me.id, subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } }, locale })
   persist(); res.json({ ok: true })
 })
+// Explicit test for the current device. A provider acceptance is not proof
+// that the operating system displayed the alert.
+const pushTestTimes = new Map()
+app.post('/api/push/test', auth, async (req, res) => {
+  const entry = db.pushSubscriptions.find(x => x.user_id === req.me.id && x.subscription.endpoint === req.body?.endpoint)
+  if (!entry) return fail(res, 404, 'Push is not enabled on this device.')
+  if (db.settings.find(s => s.user_id === req.me.id)?.notifications_enabled === false) return fail(res, 400, 'Message notifications are turned off.')
+  const last = pushTestTimes.get(req.me.id) || 0
+  if (Date.now() - last < 10000) return fail(res, 429, 'Please wait before testing again.')
+  pushTestTimes.set(req.me.id, Date.now())
+  const labels = { en: 'Your NEXO notifications are enabled.', ru: 'Уведомления NEXO включены.', uk: 'Сповіщення NEXO увімкнено.', 'zh-CN': 'NEXO 通知已启用。' }
+  try {
+    await webpush.sendNotification(entry.subscription, JSON.stringify({ title: 'NEXO', body: labels[entry.locale] || labels.en, path: '/chats' }), { TTL: 60, timeout: 10000 })
+    res.json({ ok: true })
+  } catch (error) {
+    if (error.statusCode === 404 || error.statusCode === 410) { db.pushSubscriptions = db.pushSubscriptions.filter(x => x !== entry); persist() }
+    console.error('Push test delivery failed:', error.statusCode || error.code || 'unknown')
+    return fail(res, 502, 'Push service did not accept the notification.')
+  }
+})
 app.post('/api/push/unsubscribe', auth, (req, res) => {
   db.pushSubscriptions = db.pushSubscriptions.filter(x => !(x.user_id === req.me.id && x.subscription.endpoint === req.body?.endpoint))
   persist(); res.json({ ok: true })

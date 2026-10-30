@@ -1305,3 +1305,12 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .call-end { background: #a8243d; color: white; border-color: #e34c66; }
 .call-accept { background: #16844a; color: white; border-color: #3cc377; }
 .call-error { position: fixed; z-index: 1200; bottom: 20px; left: 50%; transform: translateX(-50%); width: min(90vw, 520px); padding: 14px; background: #321821; color: white; border: 1px solid #ad455a; border-radius: 16px; display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+
+/* Small in-app notification, independent from phone/browser push permissions. */
+.message-popup { position: fixed; z-index: 1050; top: max(12px, env(safe-area-inset-top)); right: 16px; width: min(360px, calc(100vw - 32px)); display: flex; align-items: center; border: 1px solid rgba(175,145,255,.42); border-radius: 18px; background: rgba(25,20,40,.97); color: #fff; box-shadow: 0 16px 40px #0008; }
+.message-popup-content { min-width: 0; flex: 1; display: flex; align-items: center; gap: 12px; padding: 13px; background: none; color: inherit; text-align: left; border: 0; cursor: pointer; font: inherit; }
+.message-popup-icon { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 14px; background: #7651c9; }
+.message-popup-text { min-width: 0; display: grid; gap: 2px; }
+.message-popup-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-popup-text span { font-size: 13px; color: #d0c7dc; }
+.message-popup-close { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border: 0; background: transparent; color: #e8def6; cursor: pointer; }
