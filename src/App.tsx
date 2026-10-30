@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { LanguageProvider, useI18n } from './i18n'
 import Layout from './components/Layout'
+import { CallsProvider } from './components/Calls'
 import WelcomePage from './pages/WelcomePage'
 import { LoginPage, RegisterPage, ForgotPage } from './pages/AuthPages'
 import ChatsPage from './pages/ChatsPage'
@@ -59,7 +60,7 @@ export default function App() {
     <AuthProvider>
       <LanguageProvider>
         <HashRouter>
-          <Routes>
+          <CallsProvider><Routes>
             <Route path="/" element={<Gate />} />
             <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
             <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
@@ -77,7 +78,7 @@ export default function App() {
             <Route path="/gifts" element={<Protected><GiftsPage /></Protected>} />
             <Route path="/premium" element={<Protected><PremiumPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          </Routes></CallsProvider>
         </HashRouter>
       </LanguageProvider>
     </AuthProvider>

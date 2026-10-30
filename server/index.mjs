@@ -1215,6 +1215,57 @@ app.use('/api', (req, res) => fail(res, 404, 'Not found.'))
 const server = createServer(app)
 const wss = new WebSocketServer({ server, path: '/ws' })
 
+// In-memory call sessions: only authenticated direct-chat members can signal.
+// Media travels peer-to-peer, never through this signalling server.
+const activeCalls = new Map()
+function callSend(client, data) { if (client?.ws.readyState === 1) client.ws.send(JSON.stringify({ t: 'call', ...data })) }
+function finishCall(call, reason = 'ended') {
+  if (!activeCalls.has(call.id)) return
+  clearTimeout(call.timer); activeCalls.delete(call.id)
+  callSend(call.caller, { action: reason, callId: call.id })
+  for (const peer of call.targets) callSend(peer, { action: reason, callId: call.id })
+}
+function handleCall(client, m) {
+  const action = m.action, id = String(m.callId || '')
+  if (!/^[a-zA-Z0-9-]{10,80}$/.test(id)) return
+  if (action === 'invite') {
+    const roomId = String(m.roomId || '')
+    if (!isConvMember(roomId, client.userId) || activeCalls.has(id)) return
+    const members = db.convMembers.filter(x => x.conversation_id === roomId && x.user_id !== client.userId)
+    if (members.length !== 1 || !['audio', 'video'].includes(m.kind)) return
+    if ([...activeCalls.values()].some(c => c.users.includes(client.userId))) return callSend(client, { action: 'busy', callId: id })
+    const targetId = members[0].user_id
+    if ([...activeCalls.values()].some(c => c.users.includes(targetId))) return callSend(client, { action: 'busy', callId: id })
+    const targets = [...clients].filter(c => c.userId === targetId && c.ws.readyState === 1)
+    if (!targets.length) return callSend(client, { action: 'unavailable', callId: id })
+    const call = { id, caller: client, targets, peer: null, users: [client.userId, targetId], roomId, timer: null }
+    call.timer = setTimeout(() => finishCall(call, 'timeout'), 45000); call.timer.unref()
+    activeCalls.set(id, call)
+    const sender = profileOf(client.userId)
+    for (const target of targets) callSend(target, { action: 'invite', callId: id, roomId, kind: m.kind, name: String(sender?.display_name || '').slice(0, 60) })
+    return
+  }
+  const call = activeCalls.get(id)
+  if (!call || (client !== call.caller && !call.targets.includes(client))) return
+  if (action === 'accept' && !call.peer && call.targets.includes(client)) {
+    call.peer = client; clearTimeout(call.timer)
+    for (const target of call.targets) if (target !== client) callSend(target, { action: 'answered-elsewhere', callId: id })
+    callSend(call.caller, { action: 'accept', callId: id }); return
+  }
+  if (action === 'decline' && !call.peer && call.targets.includes(client)) {
+    call.targets = call.targets.filter(c => c !== client)
+    if (!call.targets.length) finishCall(call, 'declined')
+    return
+  }
+  if (action === 'hangup' && (client === call.caller || client === call.peer)) { finishCall(call); return }
+  if (['offer', 'answer', 'candidate'].includes(action) && call.peer && (client === call.caller || client === call.peer)) {
+    const data = m.data
+    if (!data || JSON.stringify(data).length > 32000) return
+    if (action === 'offer' && client !== call.caller || action === 'answer' && client !== call.peer) return
+    callSend(client === call.caller ? call.peer : call.caller, { action, callId: id, data })
+  }
+}
+
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost')
   const token = url.searchParams.get('token') || ''
@@ -1226,7 +1277,9 @@ wss.on('connection', (ws, req) => {
   if (p && !p.is_online) { p.is_online = true; p.last_seen = now(); persist(); touchGlobal() }
   ws.on('message', (raw) => {
     try {
+      if (raw.length > 40000) return
       const m = JSON.parse(String(raw))
+      if (m.t === 'call') handleCall(client, m)
       if (m.t === 'sub' && m.kind && m.id) client.rooms.add(`${m.kind}:${m.id}`)
       if (m.t === 'typing' && m.scope) {
         const out = JSON.stringify({ t: 'typing', scope: String(m.scope), userId: client.userId, name: String(m.name || '') })
@@ -1236,6 +1289,10 @@ wss.on('connection', (ws, req) => {
   })
   ws.on('close', () => {
     clients.delete(client)
+    for (const call of activeCalls.values()) {
+      if (call.caller === client || call.peer === client) finishCall(call)
+      else if (!call.peer && call.targets.includes(client)) { call.targets = call.targets.filter(c => c !== client); if (!call.targets.length) finishCall(call, 'unavailable') }
+    }
     const stillOnline = [...clients].some((c) => c.userId === client.userId)
     const prof = profileOf(client.userId)
     if (!stillOnline && prof && prof.is_online) { prof.is_online = false; prof.last_seen = now(); persist(); touchGlobal() }

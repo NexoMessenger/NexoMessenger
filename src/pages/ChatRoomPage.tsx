@@ -4,8 +4,9 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { AttachmentInfo, Message, Profile, Reaction } from '../lib/types'
 import Composer from '../components/Composer'
+import { useCalls } from '../components/Calls'
 import { useI18n } from '../i18n'
-import { IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
+import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
 import { AttachmentView, Avatar, ProfileName, fmtClock, fmtLastSeen, errText } from '../components/ui'
 import { AnimatedEmojiBody, ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
 import { PREMIUM_REACTIONS, isPremiumActive } from '../lib/premiumData'
@@ -17,6 +18,7 @@ export default function ChatRoomPage() {
   const { id = '' } = useParams()
   const { profile } = useAuth()
   const navigate = useNavigate()
+  const { start: startCall } = useCalls()
   const { t, locale } = useI18n()
   const [peer, setPeer] = useState<Profile | null>(null)
   const [peerReadAt, setPeerReadAt] = useState('')
@@ -189,6 +191,8 @@ export default function ChatRoomPage() {
             <span className="row-preview">{peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
           </span>
         </button>
+        <button className="icon-btn" aria-label={t('call.audio')} title={t('call.audio')} disabled={!peer} onClick={() => peer && startCall(id, peer.display_name, 'audio')}><IconPhone size={20} /></button>
+        <button className="icon-btn" aria-label={t('call.video')} title={t('call.video')} disabled={!peer} onClick={() => peer && startCall(id, peer.display_name, 'video')}><IconVideoCall size={21} /></button>
       </div>
 
       {error && (

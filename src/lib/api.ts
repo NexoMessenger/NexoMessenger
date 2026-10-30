@@ -172,6 +172,7 @@ export async function signOutUser(): Promise<void> {
     try { await disablePush() } catch { /* logout still proceeds */ }
     try { await srv('/api/auth/logout', { method: 'POST' }) } catch { /* token may already be gone */ }
     setServerToken(null)
+    try { wsSock?.close() } catch { /* socket already closed */ }
     return
   }
   if (isSb()) {
@@ -957,6 +958,8 @@ export async function updateSettings(userId: string, patch: Partial<UserSettings
 let wsSock: WebSocket | null = null
 let wsReconnect: number | undefined
 const wsRoomCbs = new Map<string, Set<() => void>>()
+export type CallSignal = { action: string; callId: string; roomId?: string; kind?: 'audio' | 'video'; name?: string; data?: unknown }
+const wsCallCbs = new Set<(signal: CallSignal) => void>()
 const wsTypingCbs = new Map<string, Set<{ meId: string; cb: (name: string) => void }>>()
 
 function wsUrl(): string {
@@ -972,12 +975,13 @@ function wsSendSub(key: string) {
 }
 function ensureWs() {
   if (!isSrv() || wsSock || typeof window === 'undefined') return
-  if (!wsRoomCbs.size && !wsTypingCbs.size) return
+  if (!wsRoomCbs.size && !wsTypingCbs.size && !wsCallCbs.size) return
   try { wsSock = new WebSocket(wsUrl()) } catch { wsSock = null; return }
   wsSock.onopen = () => { wsRoomCbs.forEach((_, key) => wsSendSub(key)) }
   wsSock.onmessage = (e) => {
     try {
       const m = JSON.parse(String(e.data)) as { t: string; kind?: string; id?: string; scope?: string; userId?: string; name?: string }
+      if (m.t === 'call') { wsCallCbs.forEach(cb => cb(m as unknown as CallSignal)) }
       if (m.t === 'changed') {
         wsRoomCbs.get('global')?.forEach((cb) => cb())
         if (m.kind && m.id) wsRoomCbs.get(`${m.kind}:${m.id}`)?.forEach((cb) => cb())
@@ -988,7 +992,8 @@ function ensureWs() {
   }
   wsSock.onclose = () => {
     wsSock = null
-    if ((wsRoomCbs.size || wsTypingCbs.size) && getServerToken()) {
+    wsCallCbs.forEach(cb => cb({ action: 'transport-lost', callId: '' }))
+    if ((wsRoomCbs.size || wsTypingCbs.size || wsCallCbs.size) && getServerToken()) {
       window.clearTimeout(wsReconnect)
       wsReconnect = window.setTimeout(() => ensureWs(), 2000)
     }
@@ -1003,6 +1008,16 @@ function wsSubRoom(key: string, cb: () => void): () => void {
     wsRoomCbs.get(key)?.delete(cb)
     if (wsRoomCbs.get(key)?.size === 0) wsRoomCbs.delete(key)
   }
+}
+
+export function subscribeCalls(cb: (signal: CallSignal) => void): () => void {
+  if (!isSrv()) return () => undefined
+  wsCallCbs.add(cb); ensureWs()
+  return () => { wsCallCbs.delete(cb) }
+}
+export function sendCall(signal: CallSignal): boolean {
+  if (!isSrv() || !wsSock || wsSock.readyState !== WebSocket.OPEN) return false
+  wsSock.send(JSON.stringify({ t: 'call', ...signal })); return true
 }
 
 /** Subscribe to any relevant data change. Local: storage/broadcast. Supabase: postgres changes. Server: WebSocket. */
