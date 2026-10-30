@@ -15,7 +15,7 @@
  */
 import express from 'express'
 import webpush from 'web-push'
-import { createOpenRouter } from './ai-openrouter.mjs'
+import { createDeepSeek } from './ai-deepseek.mjs'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -521,18 +521,18 @@ app.get('/api/users', auth, (req, res) => {
   res.json({ profiles: ids.map((id) => profileOf(id)).filter(Boolean) })
 })
 
-/* ---------- NEXO AI via OpenRouter (free Qwen only) ---------- */
-// The key is read on the server from persistent data or an environment variable.
-// It is never sent to the browser or written to the database.
-function openRouterKey() {
-  const envKey = (process.env.OPENROUTER_API_KEY || '').trim()
+/* ---------- Astra: paid DeepSeek API ---------- */
+// Key is read only from the server environment or its persistent data directory.
+function deepSeekKey() {
+  const envKey = (process.env.DEEPSEEK_API_KEY || '').trim()
   if (envKey) return envKey
-  try { return fs.readFileSync(path.join(DATA_DIR, 'openrouter.key'), 'utf8').trim() } catch { return '' }
+  try { return fs.readFileSync(path.join(DATA_DIR, 'deepseek.key'), 'utf8').trim() } catch { return '' }
 }
-const openRouter = createOpenRouter({ getKey: openRouterKey })
+const aiProvider = createDeepSeek({ getKey: deepSeekKey })
 let aiBusy = false
 if (!Array.isArray(db.aiChats)) db.aiChats = []
-app.get('/api/ai/status', auth, async (req, res) => res.json(await openRouter.status()))
+if (!db.aiUsage || typeof db.aiUsage !== 'object') db.aiUsage = { day: '', total: 0, users: {} }
+app.get('/api/ai/status', auth, (req, res) => res.json(aiProvider.status()))
 app.get('/api/ai/history', auth, (req, res) => {
   const chat = db.aiChats.find(item => item.user_id === req.me.id)
   res.json({ messages: chat?.messages || [] })
@@ -540,13 +540,21 @@ app.get('/api/ai/history', auth, (req, res) => {
 app.post('/api/ai/message', auth, async (req, res) => {
   const text = typeof req.body?.text === 'string' ? req.body.text.trim() : ''
   if (!text || text.length > 2000) return fail(res, 400, 'AI_INVALID_INPUT')
+  if (!deepSeekKey()) return fail(res, 503, 'AI_NOT_CONFIGURED')
   if (aiBusy) return fail(res, 429, 'AI_BUSY')
+  // Server-wide and per-account daily attempt limits protect a paid key from abuse.
+  // Limits are counts, not a financial spending cap. Count attempts before making the request.
+  const day = new Date().toISOString().slice(0, 10)
+  if (db.aiUsage.day !== day) db.aiUsage = { day, total: 0, users: {} }
+  if (db.aiUsage.total >= 40 || (db.aiUsage.users[req.me.id] || 0) >= 10) return fail(res, 429, 'AI_DAILY_LIMIT')
   aiBusy = true
   try {
+    db.aiUsage.total++; db.aiUsage.users[req.me.id] = (db.aiUsage.users[req.me.id] || 0) + 1
+    persist()
     const chat = db.aiChats.find(item => item.user_id === req.me.id)
-    const history = (chat?.messages || []).slice(-12).map(m => ({ role: m.role, content: m.content.slice(0, 2000) }))
-    const result = await openRouter.answer([
-      { role: 'system', content: 'You are NEXO AI, a helpful assistant. Reply in the language of the user. Be honest about uncertainty. You are an AI and can make mistakes.' },
+    const history = (chat?.messages || []).slice(-6).map(m => ({ role: m.role, content: m.content.slice(0, 2000) }))
+    const result = await aiProvider.answer([
+      { role: 'system', content: 'You are Astra, the NEXO AI assistant. Respond in the language of the user. Be kind, helpful and honest about uncertainty. You are an AI and can make mistakes.' },
       ...history, { role: 'user', content: text },
     ])
     if (result.error) return fail(res, result.error === 'AI_RATE_LIMIT' ? 429 : 503, result.error)

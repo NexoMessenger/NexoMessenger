@@ -58,6 +58,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className={`app-shell ${inRoom ? 'in-room' : ''}`}>
       <MessagePopups />
+      {!inRoom && <NavLink className="ai-bubble-launcher" to="/ai" aria-label={t('astra.open')} title={t('astra.open')}><NexoMark size={24} /><span>AI</span></NavLink>}
       <aside className="sidebar">
         <div className="logo-badge"><NexoMark size={26} /></div>
         {items('desktop')}
