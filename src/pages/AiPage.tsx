@@ -57,7 +57,7 @@ export default function AiPage() {
       <span className="row-main"><strong>{t('astra.name')}</strong><span className="row-preview">{status === null ? t('ai.checking') : ready ? t('ai.ready') : t('ai.unavailable')}</span></span>
     </div>
     <div ref={scroller} className="messages-scroll ai-messages">
-      <div className="astra-intro"><Astra /><div className="astra-greeting glass">{t('astra.hello')}</div></div>
+      <div className="astra-intro"><Astra greeting /><div className="astra-greeting glass">{t('astra.hello')}</div></div>
       <div className="ai-disclaimer glass">{t('ai.disclaimer')}</div>
       {status && !ready && <div className="ai-notice glass" role="status"><p>{t(status.reason === 'missing_key' ? 'ai.setup' : status.reason === 'model_unavailable' ? 'ai.modelUnavailable' : status.reason === 'unsupported' ? 'ai.unsupported' : 'ai.networkError')}</p><button className="btn btn-sm" onClick={() => void check()}>{t('ai.retry')}</button></div>}
       {messages.length === 0 && <div className="ai-empty">{t('ai.welcome')}</div>}

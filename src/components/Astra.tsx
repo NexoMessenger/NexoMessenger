@@ -1,6 +1,6 @@
-import astraImage from '../assets/bot/astra-cutout.png'
+import astraImage from '../assets/bot/astra-original.png'
 
-/** Screenshot cutout: a still image, not a rigged 3D model. */
-export default function Astra() {
-  return <img className="astra-figure" src={astraImage} alt="Astra" />
+/** The supplied image is used unchanged; animation moves the whole image. */
+export default function Astra({ greeting = false }: { greeting?: boolean }) {
+  return <img className={`astra-figure${greeting ? ' astra-figure-greeting' : ''}`} src={astraImage} alt="Astra" />
 }
