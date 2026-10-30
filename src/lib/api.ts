@@ -64,6 +64,13 @@ export async function enablePush(locale: string): Promise<void> {
   if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes })
   await srv('/api/push/subscribe', { method: 'POST', body: { subscription: sub.toJSON(), locale } })
 }
+export async function testPush(): Promise<void> {
+  if (!pushSupported() || Notification.permission !== 'granted') throw new Error('Push unavailable')
+  const reg = await navigator.serviceWorker.getRegistration(new URL('push-sw.js', document.baseURI).href)
+  const sub = await reg?.pushManager.getSubscription()
+  if (!sub) throw new Error('Push unavailable')
+  await srv('/api/push/test', { method: 'POST', body: { endpoint: sub.endpoint } })
+}
 export async function disablePush(): Promise<void> {
   if (!pushSupported()) return
   const reg = await navigator.serviceWorker.getRegistration(new URL('push-sw.js', document.baseURI).href)

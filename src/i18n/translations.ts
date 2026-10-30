@@ -8,6 +8,12 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'popup.newMessage': 'New message',
+  'popup.close': 'Dismiss notification',
+  'push.testButton': 'Send test notification',
+  'push.testSent': 'Sent to the push service. Check your phone; display depends on its settings.',
+  'push.testFailed': 'Could not send the test. Check the notification switch, browser permission and server connection.',
+
   'call.title': 'Call',
   'call.audio': 'Voice call',
   'call.video': 'Video call',
@@ -551,6 +557,12 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'popup.newMessage': 'Новое сообщение',
+  'popup.close': 'Закрыть уведомление',
+  'push.testButton': 'Проверить уведомления',
+  'push.testSent': 'Отправлено в службу уведомлений. Проверь телефон: показ зависит от его настроек.',
+  'push.testFailed': 'Не удалось отправить тест. Проверь переключатель, разрешение браузера и соединение с сервером.',
+
   'call.title': 'Звонок',
   'call.audio': 'Аудиозвонок',
   'call.video': 'Видеозвонок',
@@ -1092,6 +1104,12 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'popup.newMessage': 'Нове повідомлення',
+  'popup.close': 'Закрити сповіщення',
+  'push.testButton': 'Перевірити сповіщення',
+  'push.testSent': 'Надіслано до служби сповіщень. Перевір телефон: показ залежить від його налаштувань.',
+  'push.testFailed': 'Не вдалося надіслати тест. Перевір перемикач, дозвіл браузера та з’єднання із сервером.',
+
   'call.title': 'Дзвінок',
   'call.audio': 'Аудіодзвінок',
   'call.video': 'Відеодзвінок',
@@ -1633,6 +1651,12 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'popup.newMessage': '新消息',
+  'popup.close': '关闭通知',
+  'push.testButton': '测试通知',
+  'push.testSent': '已发送至推送服务。请检查手机；显示情况取决于设备设置。',
+  'push.testFailed': '无法发送测试通知。请检查开关、浏览器权限和服务器连接。',
+
   'call.title': '通话',
   'call.audio': '语音通话',
   'call.video': '视频通话',

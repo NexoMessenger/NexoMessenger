@@ -195,6 +195,14 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {pushEnabled && <button className="btn" style={{ margin: '10px 0 14px' }} disabled={pushBusy || !settings.notifications_enabled}
+            onClick={async () => {
+              setPushBusy(true); setNotice(''); setError('')
+              try { await api.testPush(); setNotice(t('push.testSent')) }
+              catch { setError(t('push.testFailed')) }
+              finally { setPushBusy(false) }
+            }}>{t('push.testButton')}</button>}
+
           <div className="section-label">{t('settings.privacy')}</div>
           <div className="settings-group glass card">
             <div className="switch-row">
