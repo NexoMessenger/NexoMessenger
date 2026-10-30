@@ -1212,3 +1212,65 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
   .premium-time { width: 102px; }
   .nexo-emoji-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- Premium profile styling: floating gifts, music, fonts, themes ---------- */
+.profile-hero { position: relative; }
+.float-gifts { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.float-gift {
+  position: absolute; object-fit: contain; border: 0; border-radius: 0;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,0.5));
+  animation-name: nexo-floaty; animation-timing-function: ease-in-out; animation-iteration-count: infinite;
+}
+@keyframes nexo-floaty {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-11px) rotate(2.5deg); }
+}
+.profile-hero > *:not(.float-gifts) { position: relative; z-index: 1; }
+.profile-music {
+  display: flex; gap: 12px; align-items: center; text-align: left;
+  max-width: 430px; margin: 16px auto 4px; padding: 12px 14px; border-radius: 18px;
+}
+.profile-music-disc {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  background: radial-gradient(circle at 50% 50%, #1a1a22 0 26%, #2c2c38 27% 55%, #101016 56% 100%);
+  border: 1px solid var(--border);
+  animation: nexo-disc 7s linear infinite;
+}
+@keyframes nexo-disc { to { transform: rotate(360deg); } }
+.profile-music-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.profile-music-title { font-weight: 750; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-music-artist { color: var(--text-3); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+
+.pfont-default { font-family: inherit; }
+.pfont-gothic { font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
+.pfont-mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 0.5px; }
+.pfont-serif { font-family: Georgia, 'Times New Roman', serif; font-style: italic; }
+.pfont-neon { font-family: inherit; font-weight: 850; text-shadow: 0 0 7px rgba(167,139,250,0.9), 0 0 20px rgba(124,58,237,0.55); }
+
+.ptheme-shadow {
+  background: linear-gradient(180deg, rgba(24,24,28,0.92), rgba(5,5,7,0.94)), var(--glass) !important;
+}
+.ptheme-shadow .avatar { filter: grayscale(1) contrast(1.12); }
+.ptheme-shadow .float-gift { filter: grayscale(0.9) drop-shadow(0 10px 22px rgba(0,0,0,0.65)); }
+.ptheme-neon {
+  background: linear-gradient(150deg, rgba(124,58,237,0.30), rgba(217,70,239,0.14) 55%, rgba(5,5,7,0.9)), var(--glass) !important;
+  box-shadow: 0 0 42px rgba(139,92,246,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.ptheme-ocean {
+  background: linear-gradient(150deg, rgba(2,132,199,0.28), rgba(56,189,248,0.12) 55%, rgba(3,7,18,0.92)), var(--glass) !important;
+  box-shadow: 0 0 38px rgba(56,150,255,0.22), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.premium-bg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 9px; margin-bottom: 12px; }
+.premium-bg-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 6px;
+  border-radius: 15px; border: 1px solid var(--border); background: var(--glass);
+  color: inherit; font: inherit; font-size: 11.5px; font-weight: 650; cursor: pointer; text-align: center;
+}
+.premium-bg-cell img, .premium-bg-fallback { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; display: grid; place-items: center; color: #d6bcfa; background: rgba(124,58,237,0.2); }
+.premium-bg-cell.active { border-color: color-mix(in srgb, var(--violet) 65%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet-strong) 18%, transparent); }
+.premium-bg-cell:disabled { opacity: 0.45; cursor: not-allowed; }
+.premium-bg-serial { color: var(--text-3); font-size: 10.5px; font-weight: 500; }
+@media (prefers-reduced-motion: reduce) {
+  .float-gift, .profile-music-disc { animation: none !important; }
+}

@@ -160,6 +160,8 @@ const PREMIUM_CODES = [
 ]
 const PREMIUM_EMOJI_STATUSES = ['🔥', '⭐', '💎', '👑', '🚀', '🎧', '🎮', '⚽', '🌙', '☀️', '❤️', '😎', '🥳', '😴', '💼', '📚', '✈️', '🍕', '🐱', '🦊']
 const PREMIUM_NAME_COLORS = new Set(['violet', 'sky', 'mint', 'gold', 'rose', 'peach', ''])
+const PREMIUM_FONTS = new Set(['default', 'gothic', 'mono', 'serif', 'neon'])
+const PREMIUM_PROFILE_THEMES = new Set(['default', 'shadow', 'neon', 'ocean'])
 const premiumActive = (p) => Boolean(p?.premium_until && new Date(p.premium_until).getTime() > Date.now())
 function sanitizeBusinessSrv(raw) {
   const b = raw && typeof raw === 'object' ? raw : {}
@@ -180,6 +182,9 @@ function sanitizeBusinessSrv(raw) {
 function clearWorn(itemId, keepUserId = '') {
   for (const p of db.profiles) {
     if (p.worn_gift?.item_id === itemId && p.id !== keepUserId) p.worn_gift = null
+    if (p.id !== keepUserId && Array.isArray(p.bg_gifts) && p.bg_gifts.some((g) => g.item_id === itemId)) {
+      p.bg_gifts = p.bg_gifts.filter((g) => g.item_id !== itemId)
+    }
   }
 }
 
@@ -224,6 +229,29 @@ if (!Array.isArray(db.premiumCodes)) {
     }
   }
   if (premiumChanged) persist()
+}
+// NEXO showcase bot: an original gothic-styled profile (like a demo mannequin
+// for Premium profile styling). Backfilled so existing databases get it too.
+{
+  const BOT_ID = 'u_noxghost'
+  if (!db.profiles.some((p) => p.username === 'nox_ghost')) {
+    db.profiles.push({
+      id: BOT_ID, username: 'nox_ghost', display_name: 'NOX GHOST',
+      avatar_url: '', bio: 'night watcher of NEXO. gifts float, names glow.',
+      is_online: false, last_seen: now(), created_at: now(),
+      premium_until: '2099-01-01T00:00:00.000Z', emoji_status: '\u{1F319}', name_color: 'violet',
+      profile_font: 'gothic', profile_theme: 'shadow', business: null, worn_gift: null, bg_gifts: [],
+    })
+    const want = ['nexo-riders', 'crystal-wolf', 'moon-owl', 'star-frog', 'glow-mushroom', 'hex-cauldron']
+    const bg = []
+    for (const key of want) {
+      const item = db.gifts.items.find((i) => i.model_key === key && i.owner_id === null && !db.gifts.listings.some((l) => l.item_id === i.id))
+      if (item) { item.owner_id = BOT_ID; bg.push({ item_id: item.id, model_key: item.model_key, serial: item.serial }) }
+    }
+    const bot = db.profiles.find((p) => p.id === BOT_ID)
+    if (bot) bot.bg_gifts = bg
+    persist()
+  }
 }
 // Promo codes added to the catalog later appear in existing DBs (unredeemed).
 if (!Array.isArray(db.gifts.promo)) db.gifts.promo = []
@@ -1021,6 +1049,8 @@ app.post('/api/premium/redeem', auth, rateLimitAuth, (req, res) => {
 app.put('/api/premium/decor', auth, (req, res) => {
   const body = req.body || {}
   const wantsPremium = Boolean(body.emojiStatus) || Boolean(body.wornItemId) || Boolean(body.nameColor) || Boolean(body.business?.enabled)
+    || Boolean(body.bgGiftItemIds?.length) || Boolean(body.music?.url)
+    || (body.font !== undefined && body.font !== 'default') || (body.profileTheme !== undefined && body.profileTheme !== 'default')
   if (wantsPremium && !premiumActive(req.me)) return fail(res, 403, 'NEXO Premium required.')
   if (body.emojiStatus !== undefined) {
     const v = body.emojiStatus ? String(body.emojiStatus) : ''
@@ -1040,6 +1070,30 @@ app.put('/api/premium/decor', auth, (req, res) => {
       if (item.owner_id !== req.me.id) return fail(res, 403, 'You do not own this gift.')
       req.me.worn_gift = { item_id: item.id, model_key: item.model_key, serial: item.serial }
     }
+  }
+  if (body.bgGiftItemIds !== undefined) {
+    const ids = Array.isArray(body.bgGiftItemIds) ? body.bgGiftItemIds.slice(0, 8) : []
+    const gifts = []
+    for (const itemId of ids) {
+      const item = db.gifts.items.find((i) => i.id === String(itemId))
+      if (!item) return fail(res, 404, 'Gift not found.')
+      if (item.owner_id !== req.me.id) return fail(res, 403, 'You do not own this gift.')
+      gifts.push({ item_id: item.id, model_key: item.model_key, serial: item.serial })
+    }
+    req.me.bg_gifts = gifts
+  }
+  if (body.music !== undefined) {
+    req.me.profile_music = body.music?.url
+      ? { title: String(body.music.title || '').slice(0, 80), artist: String(body.music.artist || '').slice(0, 80), url: String(body.music.url).slice(0, 2000) }
+      : null
+  }
+  if (body.font !== undefined) {
+    if (!PREMIUM_FONTS.has(String(body.font))) return fail(res, 400, 'Invalid code.')
+    req.me.profile_font = String(body.font)
+  }
+  if (body.profileTheme !== undefined) {
+    if (!PREMIUM_PROFILE_THEMES.has(String(body.profileTheme))) return fail(res, 400, 'Invalid code.')
+    req.me.profile_theme = String(body.profileTheme)
   }
   if (body.business !== undefined) {
     req.me.business = body.business ? sanitizeBusinessSrv(body.business) : null

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
-import { Avatar, BusinessBadge, ErrorBox, ProfileName, errText } from '../components/ui'
+import { Avatar, BusinessBadge, ErrorBox, FloatingGifts, ProfileMusicCard, ProfileName, errText, profileThemeClass } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconGift, NexCoin, NexoMark } from '../components/icons'
 import { fmtNex } from '../lib/giftCatalog'
@@ -109,7 +109,8 @@ export default function ProfilePage() {
         {promoMsg && <div className="notice-box" style={{ marginTop: 10 }}>{promoMsg}</div>}
       </div>
 
-      <div className="profile-hero glass card">
+      <div className={`profile-hero glass card ${profileThemeClass(profile.profile_theme)}`}>
+        <FloatingGifts profile={profile} />
         <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={profile} size={92} showOnline /></div>
         <h2 style={{ margin: '14px 0 2px', fontSize: 22, letterSpacing: '-0.4px' }}><ProfileName profile={profile} /></h2>
         <div style={{ color: 'var(--text-2)', fontSize: 14 }}>@{profile.username}</div>
@@ -125,6 +126,7 @@ export default function ProfilePage() {
         <button className="btn btn-sm" style={{ marginTop: 16 }} disabled={uploading} onClick={() => fileRef.current?.click()}>
           {uploading ? t('profile.uploading') : t('profile.changeAvatar')}
         </button>
+        <ProfileMusicCard profile={profile} />
       </div>
 
       {editing ? (
