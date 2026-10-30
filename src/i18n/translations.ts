@@ -8,6 +8,20 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'ai.entry': 'Ask the NEXO AI assistant',
+  'ai.checking': 'Checking model…',
+  'ai.ready': 'Qwen 2.5 · local AI',
+  'ai.unavailable': 'Unavailable',
+  'ai.disclaimer': 'AI can make mistakes. Questions and replies are saved on this server; avoid sharing sensitive information.',
+  'ai.setup': 'The local model is not installed or running yet. An administrator needs to set it up on the NEXO server.',
+  'ai.retry': 'Check again',
+  'ai.welcome': 'Ask a question to get started.',
+  'ai.thinking': 'Thinking… This may take a while.',
+  'ai.placeholder': 'Write a question…',
+  'ai.send': 'Send',
+  'ai.historyError': 'Could not load your conversation.',
+  'ai.sendError': 'Could not get an answer. The model may be busy or unavailable. Your question is still in the input.',
+
   'popup.newMessage': 'New message',
   'popup.close': 'Dismiss notification',
   'push.testButton': 'Send test notification',
@@ -557,6 +571,20 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'ai.entry': 'Задай вопрос помощнику NEXO AI',
+  'ai.checking': 'Проверяем модель…',
+  'ai.ready': 'Qwen 2.5 · локальный ИИ',
+  'ai.unavailable': 'Недоступен',
+  'ai.disclaimer': 'ИИ может ошибаться. Вопросы и ответы сохраняются на сервере; не отправляй секретные данные.',
+  'ai.setup': 'Локальная модель ещё не установлена или не запущена. Администратору нужно настроить её на сервере NEXO.',
+  'ai.retry': 'Проверить снова',
+  'ai.welcome': 'Задай любой вопрос, чтобы начать.',
+  'ai.thinking': 'Думаю… Это может занять время.',
+  'ai.placeholder': 'Напиши вопрос…',
+  'ai.send': 'Отправить',
+  'ai.historyError': 'Не удалось загрузить переписку.',
+  'ai.sendError': 'Не удалось получить ответ. Модель может быть занята или недоступна. Твой вопрос остался в поле ввода.',
+
   'popup.newMessage': 'Новое сообщение',
   'popup.close': 'Закрыть уведомление',
   'push.testButton': 'Проверить уведомления',
@@ -1104,6 +1132,20 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'ai.entry': 'Постав запитання помічнику NEXO AI',
+  'ai.checking': 'Перевіряємо модель…',
+  'ai.ready': 'Qwen 2.5 · локальний ШІ',
+  'ai.unavailable': 'Недоступний',
+  'ai.disclaimer': 'ШІ може помилятися. Запитання та відповіді зберігаються на сервері; не надсилай секретні дані.',
+  'ai.setup': 'Локальну модель ще не встановлено або не запущено. Адміністратору потрібно налаштувати її на сервері NEXO.',
+  'ai.retry': 'Перевірити знову',
+  'ai.welcome': 'Постав запитання, щоб почати.',
+  'ai.thinking': 'Думаю… Це може тривати деякий час.',
+  'ai.placeholder': 'Напиши запитання…',
+  'ai.send': 'Надіслати',
+  'ai.historyError': 'Не вдалося завантажити листування.',
+  'ai.sendError': 'Не вдалося отримати відповідь. Модель може бути зайнята або недоступна. Запитання залишилося в полі вводу.',
+
   'popup.newMessage': 'Нове повідомлення',
   'popup.close': 'Закрити сповіщення',
   'push.testButton': 'Перевірити сповіщення',
@@ -1651,6 +1693,20 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'ai.entry': '向 NEXO AI 助手提问',
+  'ai.checking': '正在检查模型…',
+  'ai.ready': 'Qwen 2.5 · 本地 AI',
+  'ai.unavailable': '不可用',
+  'ai.disclaimer': 'AI 可能出错。问题和回答保存在服务器上；请勿发送敏感信息。',
+  'ai.setup': '本地模型尚未安装或运行。管理员需要在 NEXO 服务器上进行设置。',
+  'ai.retry': '重新检查',
+  'ai.welcome': '提出问题以开始。',
+  'ai.thinking': '正在思考……这可能需要一些时间。',
+  'ai.placeholder': '输入问题…',
+  'ai.send': '发送',
+  'ai.historyError': '无法加载对话。',
+  'ai.sendError': '无法获得回答。模型可能繁忙或不可用。问题仍保留在输入框中。',
+
   'popup.newMessage': '新消息',
   'popup.close': '关闭通知',
   'push.testButton': '测试通知',

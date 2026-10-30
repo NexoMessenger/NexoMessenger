@@ -5,7 +5,7 @@ import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { Avatar, EmptyState, ErrorBox, Modal, ProfileName, UserPicker, fmtTime, errText } from '../components/ui'
 import { useI18n } from '../i18n'
-import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, NexoMark } from '../components/icons'
 
 export default function ChatsPage() {
   const { profile } = useAuth()
@@ -57,6 +57,10 @@ export default function ChatsPage() {
         <button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.new')}</button>
       </div>
 
+      <button className="row-card glass ai-entry" onClick={() => navigate('/ai')}>
+        <span className="ai-avatar"><NexoMark size={25} /></span>
+        <span className="row-main"><span className="row-title">NEXO AI</span><span className="row-preview">{t('ai.entry')}</span></span>
+      </button>
       <ErrorBox error={error} />
       {loading ? (
         <div className="center-loader"><div className="spinner" />{t('chats.loading')}</div>

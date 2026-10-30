@@ -25,7 +25,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   // Inside an open conversation the message composer must own the bottom of
   // the screen — the fixed bottom navigation would cover it on mobile.
-  const inRoom = /^\/(chat|group|channel)\//.test(pathname)
+  const inRoom = pathname === '/ai' || /^\/(chat|group|channel)\//.test(pathname)
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {

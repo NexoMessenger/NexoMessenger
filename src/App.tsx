@@ -6,6 +6,7 @@ import { CallsProvider } from './components/Calls'
 import WelcomePage from './pages/WelcomePage'
 import { LoginPage, RegisterPage, ForgotPage } from './pages/AuthPages'
 import ChatsPage from './pages/ChatsPage'
+import AiPage from './pages/AiPage'
 import ChatRoomPage from './pages/ChatRoomPage'
 import GroupsPage from './pages/GroupsPage'
 import GroupRoomPage from './pages/GroupRoomPage'
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
             <Route path="/forgot" element={<ForgotPage />} />
             <Route path="/chats" element={<Protected><ChatsPage /></Protected>} />
+            <Route path="/ai" element={<Protected><AiPage /></Protected>} />
             <Route path="/chat/:id" element={<Protected><ChatRoomPage /></Protected>} />
             <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
             <Route path="/group/:id" element={<Protected><GroupRoomPage /></Protected>} />
