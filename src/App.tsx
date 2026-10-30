@@ -75,6 +75,7 @@ export default function App() {
             <Route path="/user/:id" element={<Protected><UserPage /></Protected>} />
             <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
             <Route path="/gifts" element={<Protected><GiftsPage /></Protected>} />
+            <Route path="/premium" element={<Protected><PremiumPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </HashRouter>
