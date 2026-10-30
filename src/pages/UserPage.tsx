@@ -7,6 +7,7 @@ import { useI18n } from '../i18n'
 import { Avatar, BusinessBadge, ErrorBox, FloatingGifts, ProfileMusicCard, ProfileName, errText, fmtLastSeen, profileThemeClass } from '../components/ui'
 import { IconBack, IconChats } from '../components/icons'
 import ProfileShowcase from '../components/ProfileShowcase'
+import noxTheme from '../assets/bot/nox-theme.wav'
 
 /**
  * Full-screen public profile page. This deliberately replaces the old
@@ -59,10 +60,11 @@ export default function UserPage() {
     }
   }
 
+  const isNox = user?.id === 'u_noxghost' && user.username === 'nox_ghost'
   const since = user ? new Date(user.created_at).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) : ''
 
   return (
-    <div className="page user-profile-page">
+    <div className={`page user-profile-page ${isNox ? 'nox-profile' : ''}`}>
       <div className="page-head user-profile-head">
         <button className="icon-btn" onClick={() => navigate(-1)} aria-label={t('common.back')}>
           <IconBack size={19} />
@@ -87,8 +89,12 @@ export default function UserPage() {
       {user && (
         <>
           <div className={`profile-hero glass card user-profile-hero ${profileThemeClass(user.profile_theme)}`}>
-            <FloatingGifts profile={user} />
-            <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={user} size={96} showOnline /></div>
+            {isNox ? (
+              <div className="nox-avatar-stage">
+                <FloatingGifts profile={{ bg_gifts: (user.bg_gifts || []).filter((gift) => gift.model_key !== 'nexo-riders') }} />
+                <div className="nox-avatar"><Avatar profile={user} size={112} /></div>
+              </div>
+            ) : <><FloatingGifts profile={user} /><div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={user} size={96} showOnline /></div></>}
             <h2><ProfileName profile={user} /></h2>
             <div className="username-line">@{user.username}</div>
             {user.business?.enabled && (
@@ -112,7 +118,7 @@ export default function UserPage() {
             </div>
 
             <ErrorBox error={error} />
-            <ProfileMusicCard profile={user} />
+            <ProfileMusicCard profile={isNox ? { ...user, profile_music: { title: 'Night Watch', artist: 'NOX GHOST · NEXO', url: noxTheme } } : user} />
             {me && user.id !== me.id && (
               <button className="btn btn-primary btn-block" style={{ maxWidth: 360, margin: '16px auto 0' }} disabled={busy} onClick={() => void message()}>
                 <IconChats size={17} /> {busy ? t('common.loading') : t('search.message')}
