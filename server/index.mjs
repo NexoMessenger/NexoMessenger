@@ -977,11 +977,20 @@ app.post('/api/upload', auth, saveUpload)
 app.post('/api/avatar', auth, saveUpload)
 
 /* ---------- frontend (website) ---------- */
+// One-time browser reset for people stuck on a cached browser-only copy:
+// visiting /__clear tells the browser to drop cache/cookies/storage for
+// this origin, then sends them back to the fresh server version.
+app.get('/__clear', (req, res) => {
+  res.setHeader('Clear-Site-Data', '"cache", "cookies", "storage"')
+  res.setHeader('Cache-Control', 'no-store')
+  res.redirect(302, '/?fresh=clear')
+})
+
 if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
   app.use(express.static(DIST_DIR, { maxAge: '1h', index: false }))
   app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api')) return next()
-    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Cache-Control', 'no-store')
     res.sendFile(path.join(DIST_DIR, 'index.html'))
   })
 } else {
