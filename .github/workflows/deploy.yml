@@ -117,7 +117,8 @@ jobs:
             cat > /tmp/nexo-nginx.conf <<'NGINX'
           server {
             listen 80 default_server;
-            server_name _;
+            server_name nexomessenger.space www.nexomessenger.space _;
+            client_max_body_size 25m;
             location / {
               proxy_pass http://127.0.0.1:8080;
               proxy_http_version 1.1;
@@ -126,6 +127,7 @@ jobs:
               proxy_set_header Host $host;
               proxy_set_header X-Real-IP $remote_addr;
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
             }
           }
           NGINX
@@ -189,7 +191,7 @@ jobs:
           echo ""
           echo "NEXO server is up on port $NEXO_PORT (dir: $DEPLOY_DIR)"
           if [ "${NGINX_OK:-1}" = "0" ]; then
-            echo "::warning::Port 80 still serves the OLD static copy (workflow has no rights to reconfigure nginx). The real site works on port 8080. To fix port 80 once, run on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
+            echo "::warning::Port 80/domain still serves the OLD static copy (workflow has no rights to reconfigure nginx). The real site works on port 8080. To fix nexomessenger.space + port 80 + HTTPS once, run on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
           fi
           REMOTE
 
@@ -207,3 +209,13 @@ jobs:
           done
           echo "Public /api/health did not answer in server mode (see server step log above)."
           exit 1
+
+      - name: Check custom domain (warning only)
+        run: |
+          if curl -sf "https://nexomessenger.space/api/health" | grep -q '"mode":"server"'; then
+            echo "Custom domain is live in server mode: https://nexomessenger.space/"
+          elif curl -sf "http://nexomessenger.space/api/health" | grep -q '"mode":"server"'; then
+            echo "::warning::http://nexomessenger.space works in server mode, but HTTPS is not ready yet. Run once on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
+          else
+            echo "::warning::nexomessenger.space does not serve the real NEXO server yet (DNS already points to this VPS; nginx still serves the old static copy). Run once on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
+          fi
