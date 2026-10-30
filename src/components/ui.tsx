@@ -5,7 +5,7 @@ import { useI18n, type TranslationKey } from '../i18n'
 import { IconClose, IconSearch, IconFile, NexoMark } from './icons'
 import { AudioBubble, VideoCircle } from './MessageExtras'
 import { FoxSticker } from './FoxStickers'
-import { giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
+import { floatingGiftArt, giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { IconGem, IconGift, IconHeart, IconStar } from './icons'
 import { businessStatus, isPremiumActive, nameColorOf, profileFontClass, profileThemeClass } from '../lib/premiumData'
 import noxGhostAvatar from '../assets/bot/nox-ghost.jpg'
@@ -76,7 +76,7 @@ export function FloatingGifts({ profile }: { profile: Pick<Profile, 'bg_gifts'> 
       {gifts.map((g, i) => {
         const s = spots[i % spots.length]
         return (
-          <img key={g.item_id} src={giftArt(g.model_key)} alt="" loading="lazy"
+          <img key={g.item_id} src={floatingGiftArt(g.model_key)} alt="" loading="lazy"
             className="float-gift"
             style={{
               left: s.left, top: s.top, width: s.size, height: s.size,
