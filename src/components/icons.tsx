@@ -188,3 +188,10 @@ export function NexCoin({ size = 20 }: { size?: number }) {
     </svg>
   )
 }
+
+export const IconPhone = (p: IconProps) => (
+  <svg {...base(p)}><path d="M5 3.5 8 3l2 4-2 2c1.1 2.6 3.4 4.9 6 6l2-2 4 2-.5 3c-.2 1.2-1.3 2-2.5 1.8C10.5 19 5 13.5 4.2 6 4 4.8 4.8 3.7 5 3.5Z" /></svg>
+)
+export const IconVideoCall = (p: IconProps) => (
+  <svg {...base(p)}><rect x="3" y="6" width="12" height="12" rx="3" /><path d="m15 10 5-3v10l-5-3" /></svg>
+)
