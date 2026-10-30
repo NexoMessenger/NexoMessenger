@@ -4,6 +4,39 @@ import { IconPlay, IconPause } from './icons'
 
 export const REACTION_SET = ['❤️', '😂', '🔥', '😮', '😢', '👍', '👎', '🎉']
 
+const ANIMATED_EMOJI_ANIM: Record<string, string> = {
+  '🔥': 'pulse', '💎': 'float', '⭐': 'spin', '🚀': 'float', '🎉': 'bounce',
+  '❤️': 'pulse', '😂': 'shake', '😮': 'bounce', '👑': 'float', '⚡': 'pulse',
+  '🌙': 'float', '🦊': 'bounce',
+}
+
+/**
+ * Message body renderer: a message made only of NEXO animated emoji (1–3)
+ * renders big with a CSS animation; anything else is plain text.
+ */
+export function AnimatedEmojiBody({ body }: { body: string }) {
+  const trimmed = body.trim()
+  const found: string[] = []
+  let rest = trimmed.replace(/\s+/g, '')
+  let guard = 0
+  while (rest && guard++ < 4) {
+    const hit = Object.keys(ANIMATED_EMOJI_ANIM).find((e) => rest.startsWith(e))
+    if (!hit) break
+    found.push(hit)
+    rest = rest.slice(hit.length)
+  }
+  if (found.length >= 1 && found.length <= 3 && rest === '') {
+    return (
+      <span className="nexo-emoji-message">
+        {found.map((e, i) => (
+          <span key={i} className={`nexo-emoji-anim anim-${ANIMATED_EMOJI_ANIM[e]}`} style={{ animationDelay: `${i * 120}ms` }}>{e}</span>
+        ))}
+      </span>
+    )
+  }
+  return <>{body}</>
+}
+
 export function fmtDuration(sec: number) {
   if (!isFinite(sec) || sec < 0) sec = 0
   const m = Math.floor(sec / 60)

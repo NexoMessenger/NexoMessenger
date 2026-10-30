@@ -6,8 +6,9 @@ import type { AttachmentInfo, Message, Profile, Reaction } from '../lib/types'
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
-import { AttachmentView, Avatar, fmtClock, fmtLastSeen, errText } from '../components/ui'
-import { ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
+import { AttachmentView, Avatar, ProfileName, fmtClock, fmtLastSeen, errText } from '../components/ui'
+import { AnimatedEmojiBody, ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
+import { PREMIUM_REACTIONS, isPremiumActive } from '../lib/premiumData'
 import { ForwardPicker, MessageContextMenu, copyText, useMessageMenu, type MenuTarget, type MessageAction } from '../components/MessageMenu'
 
 const PAGE = 60
@@ -184,7 +185,7 @@ export default function ChatRoomPage() {
         <button className="room-head-profile" onClick={() => peer && navigate(`/user/${peer.id}`)} aria-label={t('profile.view')}>
           {peer ? <Avatar profile={peer} size={42} showOnline /> : <span className="avatar" style={{ width: 42, height: 42 }}>?</span>}
           <span className="row-main">
-            <span className="row-title">{peer ? peer.display_name : t('room.conversation')}</span>
+            <span className="row-title">{peer ? <ProfileName profile={peer} /> : t('room.conversation')}</span>
             <span className="row-preview">{peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
           </span>
         </button>
@@ -239,7 +240,7 @@ export default function ChatRoomPage() {
                       )
                     })()}
                     <AttachmentView url={m.attachment_url} name={m.attachment_name} type={m.attachment_type} duration={m.attachment_duration} />
-                    {m.body && <div>{m.body}</div>}
+                    {m.body && <div><AnimatedEmojiBody body={m.body} /></div>}
                     <div className="bubble-meta">
                       {m.edited_at ? <span className="edited-mark">{t('msg.edited')}</span> : null}
                       <button className="react-btn" aria-label={t('reactions.add')} onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}>
@@ -252,7 +253,7 @@ export default function ChatRoomPage() {
                   <ReactionBar reactions={reactions.filter((r) => r.message_id === m.id)} meId={profile?.id || ''} onToggle={(e, ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} />
                   {pickerFor === m.id && (
                     <div className="reaction-picker glass" role="menu" aria-label={t('reactions.add')}>
-                      {REACTION_SET.map((e) => (
+                      {[...REACTION_SET, ...(isPremiumActive(profile) ? PREMIUM_REACTIONS : [])].map((e) => (
                         <button key={e} className="reaction-pick" onClick={(ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} aria-label={e}>{e}</button>
                       ))}
                     </div>
@@ -282,10 +283,13 @@ export default function ChatRoomPage() {
       <Composer placeholder={`${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`direct-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)}
+        premiumEmojiEnabled={isPremiumActive(profile)}
+        onPremiumEmojiLocked={() => navigate('/premium')}
         initialTextKey={editing?.id || ''} initialText={editing?.body || ''} />
 
       {menuTarget && profile && (
         <MessageContextMenu target={menuTarget} mine={menuTarget.msg.sender_id === profile.id}
+          premiumReactions={isPremiumActive(profile)}
           myEmoji={reactions.find((r) => r.message_id === menuTarget.msg.id && r.user_id === profile.id)?.emoji ?? null}
           onReact={(emoji, at) => { const m = menuTarget.msg; setMenuTarget(null); void react(m, emoji, at) }}
           onCopy={() => { const m = menuTarget.msg; setMenuTarget(null); void copyText(m.body).then((ok) => { if (ok) showToast(t('msg.copied')) }) }}

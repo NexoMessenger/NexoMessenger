@@ -6,8 +6,9 @@ import type { AttachmentInfo, Group, GroupMessage, Profile, Reaction } from '../
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconBack, IconGroups, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
-import { AttachmentView, Avatar, GroupAvatar, Modal, UserPicker, fmtClock, errText } from '../components/ui'
-import { ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
+import { AttachmentView, Avatar, GroupAvatar, Modal, ProfileName, UserPicker, fmtClock, errText } from '../components/ui'
+import { AnimatedEmojiBody, ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
+import { PREMIUM_REACTIONS, isPremiumActive } from '../lib/premiumData'
 import { ForwardPicker, MessageContextMenu, copyText, useMessageMenu, type MenuTarget, type MessageAction } from '../components/MessageMenu'
 
 const PAGE = 60
@@ -227,7 +228,7 @@ export default function GroupRoomPage() {
               {!mine && sender && <Avatar profile={sender} size={30} />}
               <div className="msg-col">
                 <div className="bubble">
-                  {!mine && sender && <div className="bubble-sender">{sender.display_name} <span style={{ fontWeight: 500, color: 'var(--text-3)' }}>@{sender.username}</span></div>}
+                  {!mine && sender && <div className="bubble-sender"><ProfileName profile={sender} /> <span style={{ fontWeight: 500, color: 'var(--text-3)' }}>@{sender.username}</span></div>}
                   {m.reply_to && (() => {
                     const q = messages.find((x) => x.id === m.reply_to)
                     const qp = q ? profiles[q.sender_id] : undefined
@@ -239,7 +240,7 @@ export default function GroupRoomPage() {
                     )
                   })()}
                   <AttachmentView url={m.attachment_url} name={m.attachment_name} type={m.attachment_type} duration={m.attachment_duration} />
-                  {m.body && <div>{m.body}</div>}
+                  {m.body && <div><AnimatedEmojiBody body={m.body} /></div>}
                   <div className="bubble-meta">
                     {m.edited_at ? <span className="edited-mark">{t('msg.edited')}</span> : null}
                     <button className="react-btn" aria-label={t('reactions.add')} onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}>
@@ -251,7 +252,7 @@ export default function GroupRoomPage() {
                 <ReactionBar reactions={reactions.filter((r) => r.message_id === m.id)} meId={profile?.id || ''} onToggle={(e, ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} />
                 {pickerFor === m.id && (
                   <div className="reaction-picker glass" role="menu" aria-label={t('reactions.add')}>
-                    {REACTION_SET.map((e) => (
+                    {[...REACTION_SET, ...(isPremiumActive(profile) ? PREMIUM_REACTIONS : [])].map((e) => (
                       <button key={e} className="reaction-pick" onClick={(ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} aria-label={e}>{e}</button>
                     ))}
                   </div>
@@ -278,10 +279,13 @@ export default function GroupRoomPage() {
       <Composer placeholder={t('groups.messagePlaceholder', { name: group?.name || '' })} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`group-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)}
+        premiumEmojiEnabled={isPremiumActive(profile)}
+        onPremiumEmojiLocked={() => navigate('/premium')}
         initialTextKey={editing?.id || ''} initialText={editing?.body || ''} />
 
       {menuTarget && profile && (
         <MessageContextMenu target={menuTarget} mine={menuTarget.msg.sender_id === profile.id}
+          premiumReactions={isPremiumActive(profile)}
           myEmoji={reactions.find((r) => r.message_id === menuTarget.msg.id && r.user_id === profile.id)?.emoji ?? null}
           onReact={(emoji, at) => { const m = menuTarget.msg; setMenuTarget(null); void react(m, emoji, at) }}
           onCopy={() => { const m = menuTarget.msg; setMenuTarget(null); void copyText(m.body).then((ok) => { if (ok) showToast(t('msg.copied')) }) }}
@@ -327,7 +331,7 @@ export default function GroupRoomPage() {
                   onClick={() => navigate(`/user/${p.id}`)} onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/user/${p.id}`) }}>
                   <Avatar profile={p} size={40} showOnline />
                   <span className="row-main">
-                    <span className="row-title">{p.display_name}</span>
+                    <span className="row-title"><ProfileName profile={p} /></span>
                     <span className="row-preview">@{p.username}</span>
                   </span>
                 </span>

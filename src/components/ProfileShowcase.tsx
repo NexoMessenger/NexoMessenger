@@ -7,6 +7,8 @@ import { AttachmentView, ErrorBox, Modal, UserPicker, errText } from './ui'
 import { IconFile, IconGem, IconGift, IconHeart, IconImage, IconPlus, IconStar, IconTrash, NexCoin } from './icons'
 import { GIFT_VIDEO, REGULAR_GRADIENT, fmtNex, fmtSerial, giftArt } from '../lib/giftCatalog'
 import { GIFT_SELL_FEE, GIFT_TRANSFER_FEE } from '../lib/giftData'
+import { useAuth } from '../lib/AuthContext'
+import { isPremiumActive } from '../lib/premiumData'
 
 type Tab = 'posts' | 'gifts'
 
@@ -209,6 +211,8 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
   onChanged: (message: string) => void
 }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
+  const { profile: meProfile, refresh } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [sellArmed, setSellArmed] = useState(false)
@@ -318,6 +322,26 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
           <p className="gift-note">{t('gifts.sellBackNote')}</p>
         </div>
       )}
+
+      {isOwn && selection.kind === 'nft' && (() => {
+        const worn = Boolean(item && meProfile?.worn_gift?.item_id === item.id)
+        const premium = isPremiumActive(meProfile)
+        const wear = async () => {
+          if (!item) return
+          if (!premium) { navigate('/premium'); return }
+          setBusy(true); setError('')
+          try {
+            await api.updatePremiumDecor({ wornItemId: worn ? null : item.id })
+            await refresh()
+            onChanged(t(worn ? 'premium.removedWear' : 'premium.wearing'))
+          } catch (e) { setError(errText(e, t)); setBusy(false) }
+        }
+        return (
+          <button className={`btn btn-block ${worn ? '' : 'btn-primary'}`} style={{ marginTop: 14 }} disabled={busy} onClick={() => void wear()}>
+            {busy ? t('common.loading') : worn ? t('premium.removeWear') : premium ? t('premium.wear') : t('premium.wearPremium')}
+          </button>
+        )
+      })()}
 
       {isOwn && selection.kind === 'nft' && (
         <div style={{ marginTop: 14 }}>

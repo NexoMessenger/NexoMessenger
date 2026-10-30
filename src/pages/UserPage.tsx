@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { useI18n } from '../i18n'
-import { Avatar, ErrorBox, errText, fmtLastSeen } from '../components/ui'
+import { Avatar, BusinessBadge, ErrorBox, ProfileName, errText, fmtLastSeen } from '../components/ui'
 import { IconBack, IconChats } from '../components/icons'
 import ProfileShowcase from '../components/ProfileShowcase'
 
@@ -88,8 +88,15 @@ export default function UserPage() {
         <>
           <div className="profile-hero glass card user-profile-hero">
             <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={user} size={96} showOnline /></div>
-            <h2>{user.display_name}</h2>
+            <h2><ProfileName profile={user} /></h2>
             <div className="username-line">@{user.username}</div>
+            {user.business?.enabled && (
+              <div style={{ marginTop: 9, display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <BusinessBadge profile={user} />
+                {user.business.name && <span className="pill">{user.business.name}</span>}
+                {user.business.address && <span className="pill">{user.business.address}</span>}
+              </div>
+            )}
             <div style={{ marginTop: 9 }}>
               <span className="pill">
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: user.is_online ? 'var(--ok)' : 'var(--text-3)', display: 'inline-block' }} />

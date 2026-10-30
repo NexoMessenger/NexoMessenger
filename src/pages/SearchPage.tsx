@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Channel, Group, Profile } from '../lib/types'
-import { Avatar, ErrorBox, EmptyState, GroupAvatar, errText } from '../components/ui'
+import { Avatar, ErrorBox, EmptyState, GroupAvatar, ProfileName, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 

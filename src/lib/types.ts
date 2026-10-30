@@ -1,5 +1,29 @@
 export type ID = string
 
+export interface BusinessHoursDay {
+  /** 0 = Monday … 6 = Sunday */
+  day: number
+  enabled: boolean
+  /** "09:00" */
+  open: string
+  /** "18:00" */
+  close: string
+}
+
+export interface BusinessInfo {
+  enabled: boolean
+  name: string
+  address: string
+  hours: BusinessHoursDay[]
+}
+
+/** Snapshot of the collectible a Premium user "wears" next to their name. */
+export interface WornGift {
+  item_id: string
+  model_key: string
+  serial: number
+}
+
 export interface Profile {
   id: ID
   username: string
@@ -9,6 +33,22 @@ export interface Profile {
   is_online: boolean
   last_seen: string
   created_at: string
+  /* ------- NEXO Premium decorations (public, shown next to the name) ------- */
+  /** ISO time until which Premium is active; empty/null = no Premium. */
+  premium_until?: string | null
+  /** One animated emoji shown next to the nickname. */
+  emoji_status?: string
+  worn_gift?: WornGift | null
+  /** Key of the name colour palette (see premiumData NAME_COLORS). */
+  name_color?: string
+  business?: BusinessInfo | null
+}
+
+export interface PremiumState {
+  active: boolean
+  until: string | null
+  priceRub: number
+  days: number
 }
 
 export interface Conversation {

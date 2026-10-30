@@ -1,9 +1,10 @@
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
 import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS, GIFT_TRANSFER_FEE, GIFT_SELL_FEE } from './giftData'
+import { EMOJI_STATUSES, NAME_COLORS, PREMIUM_DAYS, PREMIUM_PRICE_RUB, isPremiumActive, normalizePremiumCode, sanitizeBusiness } from './premiumData'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
-  MarketEntry, Message, OwnedGift, Profile, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
+  BusinessInfo, MarketEntry, Message, OwnedGift, PremiumState, Profile, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
 } from './types'
 
 export const mode = backendMode
@@ -1254,6 +1255,7 @@ export async function transferGift(itemId: string, toUserId: string): Promise<{ 
   w.balance -= GIFT_TRANSFER_FEE
   db.gifts.listings = db.gifts.listings.filter((l) => l.item_id !== itemId)
   item!.owner_id = toUserId
+  db.profiles.forEach((p) => { if (p.worn_gift?.item_id === itemId && p.id !== toUserId) p.worn_gift = null })
   db.gifts.txns.push({ id: uid(), user_id: me!, kind: 'transfer', amount: -GIFT_TRANSFER_FEE, note: `${model.name} #${item!.serial} → @${to!.username}`, created_at: now() })
   db.gifts.txns.push({ id: uid(), user_id: toUserId, kind: 'transfer', amount: 0, note: `${model.name} #${item!.serial} ← @${from?.username ?? ''}`, created_at: now() })
   saveDB(db)
@@ -1311,6 +1313,92 @@ export async function redeemPromoCode(code: string): Promise<{ amount: number; b
   db.gifts.txns.push({ id: uid(), user_id: me, kind: 'promo', amount: entry!.amount, note: 'Promo code', created_at: now() })
   saveDB(db)
   return { amount: entry!.amount, balance: w.balance }
+}
+
+/* ============================== NEXO PREMIUM ============================== */
+// Premium costs 100 ₽ / 30 days and is activated with a one-time code
+// (there is no card gateway in the app). The backend decides everything.
+
+export async function getPremiumState(): Promise<PremiumState> {
+  if (isSrv()) return srv<PremiumState>('/api/premium/me')
+  const me = await getCurrentProfile()
+  const until = me?.premium_until ?? null
+  return { active: isPremiumActive(me), until, priceRub: PREMIUM_PRICE_RUB, days: PREMIUM_DAYS }
+}
+
+/** Activate/extend Premium by 30 days with a one-time code. Codes stack. */
+export async function redeemPremiumCode(code: string): Promise<{ until: string; days: number }> {
+  if (!normalizePremiumCode(code)) err('Invalid code.')
+  if (isSrv()) return srv<{ until: string; days: number }>('/api/premium/redeem', { method: 'POST', body: { code } })
+  if (isSb()) {
+    const { data, error } = await supabase!.rpc('redeem_premium_code', { p_code: code })
+    if (error) err(error.message)
+    return data as { until: string; days: number }
+  }
+  const db = loadDB()
+  const me = localMe(db)
+  const norm = normalizePremiumCode(code)
+  const entry = db.premium.codes.find((x) => normalizePremiumCode(x.code) === norm)
+  if (!entry) err('Invalid code.')
+  if (entry!.redeemed_by) err('This code has already been used.')
+  const profile = db.profiles.find((p) => p.id === me)
+  if (!profile) err('Profile not found.')
+  const base = Math.max(Date.now(), profile!.premium_until ? new Date(profile!.premium_until).getTime() : 0)
+  const until = new Date(base + entry!.days * 24 * 60 * 60 * 1000).toISOString()
+  profile!.premium_until = until
+  entry!.redeemed_by = me
+  entry!.redeemed_at = now()
+  saveDB(db)
+  return { until, days: entry!.days }
+}
+
+export interface PremiumDecorPatch {
+  emojiStatus?: string | null
+  wornItemId?: string | null
+  nameColor?: string
+  business?: BusinessInfo | null
+}
+
+function assertPremiumDecor(patch: PremiumDecorPatch) {
+  if (patch.emojiStatus != null && patch.emojiStatus !== '' && !EMOJI_STATUSES.includes(patch.emojiStatus)) err('Invalid code.')
+  if (patch.nameColor !== undefined && patch.nameColor !== '' && !NAME_COLORS.some((c) => c.key === patch.nameColor)) err('Invalid code.')
+}
+
+/** Save Premium decorations (status emoji, worn NFT, name colour, business).
+ *  Setting any of them requires an active Premium — enforced by the backend. */
+export async function updatePremiumDecor(patch: PremiumDecorPatch): Promise<Profile> {
+  assertPremiumDecor(patch)
+  if (isSrv()) return (await srv<{ profile: Profile }>('/api/premium/decor', { method: 'PUT', body: patch })).profile
+  const me = await getCurrentProfile()
+  if (!me) err('Session expired. Please sign in again.')
+  const wantsPremium = Boolean(patch.emojiStatus) || Boolean(patch.wornItemId) || Boolean(patch.nameColor) || Boolean(patch.business?.enabled)
+  if (wantsPremium && !isPremiumActive(me)) err('NEXO Premium required.')
+  let worn = me!.worn_gift ?? null
+  if (patch.wornItemId !== undefined) {
+    if (!patch.wornItemId) worn = null
+    else {
+      const state = await getGiftState()
+      const owned = state.myItems.find((x) => x.item.id === patch.wornItemId)
+      if (!owned) err('You do not own this gift.')
+      worn = { item_id: owned!.item.id, model_key: owned!.item.model_key, serial: owned!.item.serial }
+    }
+  }
+  const next: Partial<Profile> = {}
+  if (patch.emojiStatus !== undefined) next.emoji_status = patch.emojiStatus || ''
+  if (patch.wornItemId !== undefined) next.worn_gift = worn
+  if (patch.nameColor !== undefined) next.name_color = patch.nameColor || ''
+  if (patch.business !== undefined) next.business = patch.business ? sanitizeBusiness(patch.business) : null
+  if (isSb()) {
+    const { error } = await supabase!.from('profiles').update(next).eq('id', me!.id)
+    if (error) err(error.message)
+  } else {
+    const db = loadDB()
+    const p = db.profiles.find((x) => x.id === me!.id)
+    if (!p) err('Profile not found.')
+    Object.assign(p!, next)
+    saveDB(db)
+  }
+  return { ...me!, ...next }
 }
 
 export async function claimGiftBonus(): Promise<{ balance: number }> {
