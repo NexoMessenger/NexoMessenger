@@ -1,10 +1,10 @@
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
 import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS, GIFT_TRANSFER_FEE, GIFT_SELL_FEE } from './giftData'
-import { EMOJI_STATUSES, NAME_COLORS, PREMIUM_DAYS, PREMIUM_PRICE_RUB, isPremiumActive, normalizePremiumCode, sanitizeBusiness } from './premiumData'
+import { EMOJI_STATUSES, NAME_COLORS, PREMIUM_DAYS, PREMIUM_PRICE_RUB, PROFILE_FONTS, PROFILE_THEMES, isPremiumActive, normalizePremiumCode, sanitizeBusiness } from './premiumData'
 import type {
   AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
-  BusinessInfo, MarketEntry, Message, OwnedGift, PremiumState, Profile, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
+  BgGift, BusinessInfo, MarketEntry, Message, OwnedGift, PremiumState, Profile, ProfileMusic, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
 } from './types'
 
 export const mode = backendMode
@@ -1143,6 +1143,10 @@ export async function buyGift(itemId: string): Promise<{ balance: number }> {
     db.gifts.listings = db.gifts.listings.filter((l) => l.id !== listing.id)
   }
   item!.owner_id = me
+  db.profiles.forEach((p) => {
+    if (p.worn_gift?.item_id === item!.id && p.id !== me) p.worn_gift = null
+    if (p.id !== me && p.bg_gifts?.some((g) => g.item_id === item!.id)) p.bg_gifts = p.bg_gifts.filter((g) => g.item_id !== item!.id)
+  })
   db.gifts.txns.push({ id: uid(), user_id: me, kind: 'purchase', amount: -price, note: `${model.name} #${item!.serial}`, created_at: now() })
   saveDB(db)
   return { balance: w.balance }
@@ -1255,7 +1259,10 @@ export async function transferGift(itemId: string, toUserId: string): Promise<{ 
   w.balance -= GIFT_TRANSFER_FEE
   db.gifts.listings = db.gifts.listings.filter((l) => l.item_id !== itemId)
   item!.owner_id = toUserId
-  db.profiles.forEach((p) => { if (p.worn_gift?.item_id === itemId && p.id !== toUserId) p.worn_gift = null })
+  db.profiles.forEach((p) => {
+    if (p.worn_gift?.item_id === itemId && p.id !== toUserId) p.worn_gift = null
+    if (p.id !== toUserId && p.bg_gifts?.some((g) => g.item_id === itemId)) p.bg_gifts = p.bg_gifts.filter((g) => g.item_id !== itemId)
+  })
   db.gifts.txns.push({ id: uid(), user_id: me!, kind: 'transfer', amount: -GIFT_TRANSFER_FEE, note: `${model.name} #${item!.serial} → @${to!.username}`, created_at: now() })
   db.gifts.txns.push({ id: uid(), user_id: toUserId, kind: 'transfer', amount: 0, note: `${model.name} #${item!.serial} ← @${from?.username ?? ''}`, created_at: now() })
   saveDB(db)
@@ -1357,11 +1364,19 @@ export interface PremiumDecorPatch {
   wornItemId?: string | null
   nameColor?: string
   business?: BusinessInfo | null
+  /** Item ids to pin to the profile background (max 8); null/[] clears. */
+  bgGiftItemIds?: string[] | null
+  music?: ProfileMusic | null
+  font?: string
+  profileTheme?: string
 }
 
 function assertPremiumDecor(patch: PremiumDecorPatch) {
   if (patch.emojiStatus != null && patch.emojiStatus !== '' && !EMOJI_STATUSES.includes(patch.emojiStatus)) err('Invalid code.')
   if (patch.nameColor !== undefined && patch.nameColor !== '' && !NAME_COLORS.some((c) => c.key === patch.nameColor)) err('Invalid code.')
+  if (patch.font !== undefined && !(PROFILE_FONTS as readonly string[]).includes(patch.font)) err('Invalid code.')
+  if (patch.profileTheme !== undefined && !(PROFILE_THEMES as readonly string[]).includes(patch.profileTheme)) err('Invalid code.')
+  if (patch.bgGiftItemIds != null && patch.bgGiftItemIds.length > 8) err('Invalid code.')
 }
 
 /** Save Premium decorations (status emoji, worn NFT, name colour, business).
@@ -1372,6 +1387,8 @@ export async function updatePremiumDecor(patch: PremiumDecorPatch): Promise<Prof
   const me = await getCurrentProfile()
   if (!me) err('Session expired. Please sign in again.')
   const wantsPremium = Boolean(patch.emojiStatus) || Boolean(patch.wornItemId) || Boolean(patch.nameColor) || Boolean(patch.business?.enabled)
+    || Boolean(patch.bgGiftItemIds?.length) || Boolean(patch.music?.url)
+    || (patch.font !== undefined && patch.font !== 'default') || (patch.profileTheme !== undefined && patch.profileTheme !== 'default')
   if (wantsPremium && !isPremiumActive(me)) err('NEXO Premium required.')
   let worn = me!.worn_gift ?? null
   if (patch.wornItemId !== undefined) {
@@ -1383,11 +1400,31 @@ export async function updatePremiumDecor(patch: PremiumDecorPatch): Promise<Prof
       worn = { item_id: owned!.item.id, model_key: owned!.item.model_key, serial: owned!.item.serial }
     }
   }
+  let bgGifts: BgGift[] | undefined
+  if (patch.bgGiftItemIds !== undefined) {
+    bgGifts = []
+    if (patch.bgGiftItemIds?.length) {
+      const state = await getGiftState()
+      for (const itemId of patch.bgGiftItemIds) {
+        const owned = state.myItems.find((x) => x.item.id === itemId)
+        if (!owned) err('You do not own this gift.')
+        bgGifts.push({ item_id: owned!.item.id, model_key: owned!.item.model_key, serial: owned!.item.serial })
+      }
+    }
+  }
   const next: Partial<Profile> = {}
   if (patch.emojiStatus !== undefined) next.emoji_status = patch.emojiStatus || ''
   if (patch.wornItemId !== undefined) next.worn_gift = worn
   if (patch.nameColor !== undefined) next.name_color = patch.nameColor || ''
   if (patch.business !== undefined) next.business = patch.business ? sanitizeBusiness(patch.business) : null
+  if (bgGifts !== undefined) next.bg_gifts = bgGifts
+  if (patch.music !== undefined) {
+    next.profile_music = patch.music?.url
+      ? { title: String(patch.music.title || '').slice(0, 80), artist: String(patch.music.artist || '').slice(0, 80), url: String(patch.music.url).slice(0, 2000) }
+      : null
+  }
+  if (patch.font !== undefined) next.profile_font = patch.font
+  if (patch.profileTheme !== undefined) next.profile_theme = patch.profileTheme
   if (isSb()) {
     const { error } = await supabase!.from('profiles').update(next).eq('id', me!.id)
     if (error) err(error.message)

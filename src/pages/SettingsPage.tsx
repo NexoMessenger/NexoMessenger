@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { UserSettings } from '../lib/types'
 import { ErrorBox, errText } from '../components/ui'
+import { PROFILE_FONTS, PROFILE_THEMES, isPremiumActive, profileFontClass } from '../lib/premiumData'
 import { useI18n, type TranslationKey } from '../i18n'
 import { LOCALES } from '../i18n/translations'
 
@@ -60,6 +61,16 @@ export default function SettingsPage() {
 
   const doSignOut = async () => { await signOut(); navigate('/login') }
 
+  const saveProfileStyle = async (patch: { font?: string; profileTheme?: string }) => {
+    if (!profile) return
+    setSaving(true); setError(''); setNotice('')
+    try {
+      await api.updatePremiumDecor(patch)
+      await refresh()
+      setNotice(t('settings.saved'))
+    } catch (e) { setError(errText(e, t)) } finally { setSaving(false) }
+  }
+
   return (
     <div className="page">
       <div className="page-head">
@@ -102,6 +113,38 @@ export default function SettingsPage() {
                     </span>
                     <span className="theme-card-name">{t(theme.labelKey)}{settings.theme === theme.id && <span className="theme-check">{t('settings.themeActive')}</span>}</span>
                     <span className="theme-card-hint">{t(theme.hintKey)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="section-label">{t('settings.profileStyle')}</div>
+          <div className="settings-group glass card">
+            <div style={{ padding: '14px 0 10px' }}>
+              <div className="sw-title" style={{ fontWeight: 620, fontSize: 14.5 }}>{t('settings.fontTitle')}</div>
+              <div className="sw-sub" style={{ color: 'var(--text-3)', fontSize: 12.5, margin: '2px 0 12px' }}>{t('settings.premiumHint')}</div>
+              {!isPremiumActive(profile) && (
+                <button className="btn btn-primary btn-sm" style={{ marginBottom: 12 }} onClick={() => navigate('/premium')}>
+                  {t('premium.getPremium')}
+                </button>
+              )}
+              <div className="premium-colors">
+                {PROFILE_FONTS.map((f) => (
+                  <button key={f} type="button" disabled={!isPremiumActive(profile)}
+                    className={`premium-color ${(profile.profile_font || 'default') === f ? 'active' : ''}`}
+                    onClick={() => void saveProfileStyle({ font: f })}>
+                    <span className={profileFontClass(f)}>NEXO · {t(`settings.font.${f}` as TranslationKey)}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="sw-title" style={{ fontWeight: 620, fontSize: 14.5, marginTop: 8 }}>{t('settings.profileThemeTitle')}</div>
+              <div className="premium-colors" style={{ marginTop: 10 }}>
+                {PROFILE_THEMES.map((th) => (
+                  <button key={th} type="button" disabled={!isPremiumActive(profile)}
+                    className={`premium-color ${(profile.profile_theme || 'default') === th ? 'active' : ''}`}
+                    onClick={() => void saveProfileStyle({ profileTheme: th })}>
+                    {t(`settings.ptheme.${th}` as TranslationKey)}
                   </button>
                 ))}
               </div>

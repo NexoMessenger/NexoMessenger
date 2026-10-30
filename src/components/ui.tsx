@@ -7,17 +7,20 @@ import { AudioBubble, VideoCircle } from './MessageExtras'
 import { FoxSticker } from './FoxStickers'
 import { giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { IconGem, IconGift, IconHeart, IconStar } from './icons'
-import { businessStatus, isPremiumActive, nameColorOf } from '../lib/premiumData'
+import { businessStatus, isPremiumActive, nameColorOf, profileFontClass, profileThemeClass } from '../lib/premiumData'
+import noxGhostAvatar from '../assets/bot/nox-ghost.jpg'
+export { profileThemeClass }
 
 export function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'N'
 }
 
-export function Avatar({ profile, size = 46, showOnline = false }: { profile: Pick<Profile, 'display_name' | 'avatar_url' | 'is_online'>; size?: number; showOnline?: boolean }) {
+export function Avatar({ profile, size = 46, showOnline = false }: { profile: Pick<Profile, 'display_name' | 'avatar_url' | 'is_online'> & { username?: string }; size?: number; showOnline?: boolean }) {
+  const avatarUrl = profile.avatar_url || (profile.username === 'nox_ghost' ? noxGhostAvatar : '')
   return (
     <span className="avatar-wrap" style={{ width: size, height: size }}>
-      {profile.avatar_url ? (
-        <img className="avatar" src={profile.avatar_url} alt="" style={{ width: size, height: size, fontSize: size * 0.34 }} />
+      {avatarUrl ? (
+        <img className="avatar" src={avatarUrl} alt="" style={{ width: size, height: size, fontSize: size * 0.34 }} />
       ) : (
         <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.34 }}>{initials(profile.display_name)}</span>
       )}
@@ -37,14 +40,14 @@ export function GroupAvatar({ name, url, size = 46 }: { name: string; url?: stri
  * nickname everywhere this component is used.
  */
 export function ProfileName({ profile, className = '' }: {
-  profile: Pick<Profile, 'display_name' | 'premium_until' | 'emoji_status' | 'worn_gift' | 'name_color'>
+  profile: Pick<Profile, 'display_name' | 'premium_until' | 'emoji_status' | 'worn_gift' | 'name_color' | 'profile_font'>
   className?: string
 }) {
   const color = nameColorOf(profile.name_color)
   const wornArt = profile.worn_gift ? giftArt(profile.worn_gift.model_key) : undefined
   return (
     <span className={`profile-name ${className}`}>
-      <span style={color ? { color } : undefined}>{profile.display_name}</span>
+      <span className={profileFontClass(profile.profile_font)} style={color ? { color } : undefined}>{profile.display_name}</span>
       {isPremiumActive(profile) && (
         <span className="premium-badge" title="NEXO Premium" aria-label="NEXO Premium"><NexoMark size={14} /></span>
       )}
@@ -55,6 +58,49 @@ export function ProfileName({ profile, className = '' }: {
           : <span className="worn-gift worn-gift-fallback"><IconGem size={11} /></span>
       )}
     </span>
+  )
+}
+
+/** Frameless collectibles floating around the profile avatar (Premium). */
+export function FloatingGifts({ profile }: { profile: Pick<Profile, 'bg_gifts'> }) {
+  const gifts = (profile.bg_gifts || []).filter((g) => giftArt(g.model_key)).slice(0, 8)
+  if (!gifts.length) return null
+  const spots = [
+    { left: '6%', top: '12%', size: 54 }, { left: '82%', top: '10%', size: 60 },
+    { left: '16%', top: '58%', size: 46 }, { left: '78%', top: '56%', size: 50 },
+    { left: '4%', top: '36%', size: 40 }, { left: '88%', top: '34%', size: 42 },
+    { left: '26%', top: '4%', size: 38 }, { left: '64%', top: '66%', size: 38 },
+  ]
+  return (
+    <div className="float-gifts" aria-hidden="true">
+      {gifts.map((g, i) => {
+        const s = spots[i % spots.length]
+        return (
+          <img key={g.item_id} src={giftArt(g.model_key)} alt="" loading="lazy"
+            className="float-gift"
+            style={{
+              left: s.left, top: s.top, width: s.size, height: s.size,
+              animationDelay: `${i * 0.55}s`, animationDuration: `${5.2 + (i % 3) * 1.1}s`,
+            }} />
+        )
+      })}
+    </div>
+  )
+}
+
+/** Profile music card: cover-less glass card with the shared audio player. */
+export function ProfileMusicCard({ profile }: { profile: Pick<Profile, 'profile_music' | 'display_name'> }) {
+  const music = profile.profile_music
+  if (!music?.url) return null
+  return (
+    <div className="profile-music glass">
+      <span className="profile-music-disc" aria-hidden="true" />
+      <span className="profile-music-main">
+        <span className="profile-music-title">{music.title || 'NEXO track'}</span>
+        <span className="profile-music-artist">{music.artist || profile.display_name}</span>
+        <AudioBubble url={music.url} label={music.title || 'profile music'} />
+      </span>
+    </div>
   )
 }
 

@@ -119,11 +119,19 @@ function seed(): LocalDB {
     avatar_url: '', bio: 'Official NEXO assistant. Say hi — I reply instantly in demo mode.',
     is_online: true, last_seen: t, created_at: t,
   }
+  const noxGhost: Profile = {
+    id: 'u_noxghost', username: 'nox_ghost', display_name: 'NOX GHOST',
+    avatar_url: '', bio: 'night watcher of NEXO. gifts float, names glow.',
+    is_online: false, last_seen: t, created_at: t,
+    premium_until: '2099-01-01T00:00:00.000Z', emoji_status: '🌙', name_color: 'violet',
+    profile_font: 'gothic', profile_theme: 'shadow', business: null, worn_gift: null, bg_gifts: [],
+  }
   const seedProfiles: Profile[] = [
     assistant,
     { id: 'u_mira', username: 'Mira', display_name: 'Mira Chen', avatar_url: '', bio: 'Product designer · Berlin', is_online: true, last_seen: t, created_at: t },
     { id: 'u_kai', username: 'Kai', display_name: 'Kai Morgan', avatar_url: '', bio: 'Building things for the web', is_online: false, last_seen: t, created_at: t },
     { id: 'u_lena', username: 'lena', display_name: 'Lena Hoffmann', avatar_url: '', bio: 'Photography & travel', is_online: true, last_seen: t, created_at: t },
+    noxGhost,
   ]
   const design: Group = { id: 'g_design', name: 'Design Circle', avatar_url: '', description: 'Premium UI, glassmorphism and motion.', owner_id: 'u_mira', is_public: true, created_at: t, last_message_at: t }
   const news: Channel = { id: 'c_news', name: 'NEXO Updates', avatar_url: '', description: 'Official announcements from the NEXO team.', owner_id: 'u_assistant', is_public: true, created_at: t }
@@ -163,6 +171,28 @@ export function loadDB(): LocalDB {
       db.profilePosts.forEach((p) => { p.archived = false })
       if (!db.gifts || !Array.isArray(db.gifts.items)) db.gifts = giftSeedState()
       backfillGiftStock(db)
+      // NEXO showcase bot (Premium profile styling mannequin).
+      if (!db.profiles.some((p) => p.username === 'nox_ghost')) {
+        db.profiles.push({
+          id: 'u_noxghost', username: 'nox_ghost', display_name: 'NOX GHOST',
+          avatar_url: '', bio: 'night watcher of NEXO. gifts float, names glow.',
+          is_online: false, last_seen: new Date().toISOString(), created_at: new Date().toISOString(),
+          premium_until: '2099-01-01T00:00:00.000Z', emoji_status: '🌙', name_color: 'violet',
+          profile_font: 'gothic', profile_theme: 'shadow', business: null, worn_gift: null, bg_gifts: [],
+        })
+      }
+      {
+        const bot = db.profiles.find((p) => p.username === 'nox_ghost')
+        if (bot && (!Array.isArray(bot.bg_gifts) || bot.bg_gifts.length === 0) && !db.gifts.items.some((i) => i.owner_id === bot.id)) {
+          const want = ['nexo-riders', 'crystal-wolf', 'moon-owl', 'star-frog', 'glow-mushroom', 'hex-cauldron']
+          const bg: { item_id: string; model_key: string; serial: number }[] = []
+          for (const key of want) {
+            const item = db.gifts.items.find((i) => i.model_key === key && i.owner_id === null && !db.gifts.listings.some((l) => l.item_id === i.id))
+            if (item) { item.owner_id = bot.id; bg.push({ item_id: item.id, model_key: item.model_key, serial: item.serial }) }
+          }
+          bot.bg_gifts = bg
+        }
+      }
       if (!db.premium || !Array.isArray(db.premium.codes)) db.premium = premiumSeedState()
       for (const pc of PREMIUM_CODES) {
         if (!db.premium.codes.some((x) => x.code === pc.code)) {

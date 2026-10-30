@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
@@ -24,6 +24,12 @@ export default function PremiumPage() {
 
   const [emojiStatus, setEmojiStatus] = useState('')
   const [nameColor, setNameColor] = useState('')
+  const [bgSelected, setBgSelected] = useState<string[]>([])
+  const [musicTitle, setMusicTitle] = useState('')
+  const [musicArtist, setMusicArtist] = useState('')
+  const [musicUrl, setMusicUrl] = useState('')
+  const [musicBusy, setMusicBusy] = useState(false)
+  const musicFileRef = useRef<HTMLInputElement>(null)
   const [business, setBusiness] = useState<BusinessInfo>(emptyBusiness())
   const [saving, setSaving] = useState('')
 
@@ -36,6 +42,10 @@ export default function PremiumPage() {
     if (!profile) return
     setEmojiStatus(profile.emoji_status || '')
     setNameColor(profile.name_color || '')
+    setBgSelected((profile.bg_gifts || []).map((g) => g.item_id))
+    setMusicTitle(profile.profile_music?.title || '')
+    setMusicArtist(profile.profile_music?.artist || '')
+    setMusicUrl(profile.profile_music?.url || '')
     setBusiness(profile.business ? sanitizeBusiness(profile.business) : emptyBusiness())
     api.getGiftState().then((st) => setMyItems(st.myItems)).catch(() => undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -217,6 +227,84 @@ export default function PremiumPage() {
             })}
           </div>
         )}
+      </div>
+
+      <div className="settings-group glass card">
+        <div className="sw-title premium-section-title"><IconGift size={18} /> {t('premium.bgTitle')}</div>
+        <p className="premium-hint">{t('premium.bgHint')}</p>
+        {locked}
+        {myItems.length === 0 ? (
+          <p className="premium-hint">{t('premium.noNfts')}</p>
+        ) : (
+          <>
+            <div className="premium-bg-grid">
+              {myItems.map((g) => {
+                const on = bgSelected.includes(g.item.id)
+                return (
+                  <button key={g.item.id} type="button" disabled={!active}
+                    className={`premium-bg-cell ${on ? 'active' : ''}`} aria-pressed={on}
+                    onClick={() => setBgSelected((prev) => on ? prev.filter((x) => x !== g.item.id) : prev.length >= 8 ? prev : [...prev, g.item.id])}>
+                    {giftArt(g.model.key)
+                      ? <img src={giftArt(g.model.key)} alt="" loading="lazy" />
+                      : <span className="premium-bg-fallback"><IconGem size={22} /></span>}
+                    <span>{g.model.name}</span>
+                    <span className="premium-bg-serial">{fmtSerial(g.item.serial)}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <button className="btn btn-primary btn-block" disabled={!active || saving === 'bg'}
+              onClick={() => void saveDecor('bg', { bgGiftItemIds: bgSelected })}>
+              {saving === 'bg' ? t('common.saving') : t('common.save')}
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="settings-group glass card">
+        <div className="sw-title premium-section-title"><IconStar size={18} /> {t('premium.musicTitle')}</div>
+        <p className="premium-hint">{t('premium.musicHint')}</p>
+        {locked}
+        <div className="field" style={{ marginTop: 4 }}>
+          <label>{t('premium.musicName')}</label>
+          <input className="input" value={musicTitle} disabled={!active} maxLength={80}
+            onChange={(e) => setMusicTitle(e.target.value)} placeholder={t('premium.musicNamePh')} />
+        </div>
+        <div className="field">
+          <label>{t('premium.musicArtist')}</label>
+          <input className="input" value={musicArtist} disabled={!active} maxLength={80}
+            onChange={(e) => setMusicArtist(e.target.value)} />
+        </div>
+        <input ref={musicFileRef} type="file" hidden accept="audio/*"
+          onChange={async (e) => {
+            const f = e.target.files?.[0]
+            if (!f || !profile) return
+            setMusicBusy(true); setError('')
+            try {
+              const att = await api.uploadFile(f, profile.id)
+              setMusicUrl(att.url)
+              if (!musicTitle) setMusicTitle(f.name.replace(/\.[^.]+$/, ''))
+            } catch (err) { setError(errText(err, t)) } finally {
+              setMusicBusy(false)
+              if (musicFileRef.current) musicFileRef.current.value = ''
+            }
+          }} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn" disabled={!active || musicBusy} onClick={() => musicFileRef.current?.click()}>
+            {musicBusy ? t('common.loading') : musicUrl ? t('premium.musicChange') : t('premium.musicUpload')}
+          </button>
+          {musicUrl && (
+            <button className="btn" disabled={!active || saving === 'music'}
+              onClick={() => { setMusicUrl(''); void saveDecor('music', { music: null }) }}>
+              {t('premium.remove')}
+            </button>
+          )}
+          <button className="btn btn-primary" style={{ flex: 1 }} disabled={!active || !musicUrl || saving === 'music'}
+            onClick={() => void saveDecor('music', { music: { title: musicTitle, artist: musicArtist, url: musicUrl } })}>
+            {saving === 'music' ? t('common.saving') : t('common.save')}
+          </button>
+        </div>
+        {musicUrl && <p className="premium-hint" style={{ marginTop: 8 }}>{musicTitle || 'NEXO track'} · {musicArtist}</p>}
       </div>
 
       <div className="settings-group glass card">

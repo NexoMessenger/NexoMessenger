@@ -42,6 +42,27 @@ export interface Profile {
   /** Key of the name colour palette (see premiumData NAME_COLORS). */
   name_color?: string
   business?: BusinessInfo | null
+  /** Collectibles pinned to the profile background (frameless, floating). */
+  bg_gifts?: BgGift[]
+  /** Music card shown in the profile. */
+  profile_music?: ProfileMusic | null
+  /** Display-name font style key (see premiumData PROFILE_FONTS). */
+  profile_font?: string
+  /** Profile page theme key (see premiumData PROFILE_THEMES). */
+  profile_theme?: string
+}
+
+/** Snapshot of a collectible pinned to the profile background. */
+export interface BgGift {
+  item_id: string
+  model_key: string
+  serial: number
+}
+
+export interface ProfileMusic {
+  title: string
+  artist: string
+  url: string
 }
 
 export interface PremiumState {

@@ -72,6 +72,18 @@ export const NAME_COLORS: { key: string; color: string }[] = [
   { key: 'peach', color: '#FDBA74' },
 ]
 
+/** Display-name font styles (Settings -> Appearance, Premium). */
+export const PROFILE_FONTS = ['default', 'gothic', 'mono', 'serif', 'neon'] as const
+
+/** Profile page themes (Settings -> Appearance, Premium). */
+export const PROFILE_THEMES = ['default', 'shadow', 'neon', 'ocean'] as const
+
+export const profileFontClass = (key?: string): string =>
+  `pfont-${PROFILE_FONTS.includes((key || 'default') as typeof PROFILE_FONTS[number]) ? key : 'default'}`
+
+export const profileThemeClass = (key?: string): string =>
+  `ptheme-${PROFILE_THEMES.includes((key || 'default') as typeof PROFILE_THEMES[number]) ? key : 'default'}`
+
 export const nameColorOf = (key?: string): string | undefined =>
   NAME_COLORS.find((c) => c.key === key)?.color
 

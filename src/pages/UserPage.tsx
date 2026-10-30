@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { useI18n } from '../i18n'
-import { Avatar, BusinessBadge, ErrorBox, ProfileName, errText, fmtLastSeen } from '../components/ui'
+import { Avatar, BusinessBadge, ErrorBox, FloatingGifts, ProfileMusicCard, ProfileName, errText, fmtLastSeen, profileThemeClass } from '../components/ui'
 import { IconBack, IconChats } from '../components/icons'
 import ProfileShowcase from '../components/ProfileShowcase'
 
@@ -86,7 +86,8 @@ export default function UserPage() {
 
       {user && (
         <>
-          <div className="profile-hero glass card user-profile-hero">
+          <div className={`profile-hero glass card user-profile-hero ${profileThemeClass(user.profile_theme)}`}>
+            <FloatingGifts profile={user} />
             <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={user} size={96} showOnline /></div>
             <h2><ProfileName profile={user} /></h2>
             <div className="username-line">@{user.username}</div>
@@ -111,6 +112,7 @@ export default function UserPage() {
             </div>
 
             <ErrorBox error={error} />
+            <ProfileMusicCard profile={user} />
             {me && user.id !== me.id && (
               <button className="btn btn-primary btn-block" style={{ maxWidth: 360, margin: '16px auto 0' }} disabled={busy} onClick={() => void message()}>
                 <IconChats size={17} /> {busy ? t('common.loading') : t('search.message')}
