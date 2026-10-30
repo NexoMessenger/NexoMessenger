@@ -12,6 +12,7 @@ import heartCharm from '../assets/gifts/heart-charm.jpg'
 import luckyStar from '../assets/gifts/lucky-star.jpg'
 import nexGem from '../assets/gifts/nex-gem.jpg'
 import nexoRidersCover from '../assets/gifts/nexo-riders.png'
+import nexoRidersFloating from '../assets/gifts/nexo-riders-floating.png'
 import nexoRidersVideo from '../assets/gifts/nexo-riders.webm'
 
 /** Illustrated artwork per gift model key (bundled with the app). */
@@ -38,6 +39,9 @@ export const GIFT_VIDEO: Record<string, string> = {
 }
 
 export const giftArt = (key: string): string | undefined => GIFT_ART[key]
+
+/** Transparent profile-only cutout; the original NFT artwork remains unchanged elsewhere. */
+export const floatingGiftArt = (key: string): string | undefined => key === 'nexo-riders' ? nexoRidersFloating : giftArt(key)
 
 /** Gradient aura used for regular gifts without illustrated artwork. */
 export const REGULAR_GRADIENT: Record<string, string> = {
