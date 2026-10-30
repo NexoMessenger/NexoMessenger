@@ -1274,3 +1274,17 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 @media (prefers-reduced-motion: reduce) {
   .float-gift, .profile-music-disc { animation: none !important; }
 }
+
+/* NOX GHOST: a deliberately black, immersive showcase, without affecting other profiles. */
+.nox-profile { background: #000; min-height: 100%; color: #f4f4f5; }
+.nox-profile .user-profile-head { color: #fff; }
+.nox-profile .user-profile-hero { background: #000 !important; border-color: #252525; box-shadow: none; padding-top: 8px; }
+.nox-profile .nox-avatar-stage { height: 250px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.nox-profile .nox-avatar { z-index: 1; }
+.nox-profile .nox-avatar .avatar { border: 2px solid #777; box-shadow: 0 0 32px #ffffff22; }
+.nox-profile .float-gifts { z-index: 2; }
+.nox-profile .float-gift { width: 76px !important; height: 76px !important; object-fit: cover; border-radius: 50%; filter: drop-shadow(0 0 12px #ffffff30); -webkit-mask-image: radial-gradient(circle, #000 48%, transparent 73%); mask-image: radial-gradient(circle, #000 48%, transparent 73%); }
+.nox-profile .user-profile-hero h2 { margin-top: 0; color: #fff; }
+.nox-profile .username-line { color: #bbb; }
+.nox-profile .profile-music { background: #141414; border: 1px solid #343434; }
+.nox-profile .settings-group { background: #0a0a0a; }
