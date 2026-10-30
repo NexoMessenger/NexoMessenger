@@ -147,6 +147,42 @@ const PROMO_CODES = [
 ]
 const normalizePromoCode = (raw) => String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
 
+/* ============================== NEXO Premium ============================== */
+// 100 RUB per 30 days, activated with a one-time code (no card gateway in the
+// app). Mirror src/lib/premiumData.ts; keep in sync.
+const PREMIUM_PRICE_RUB = 100
+const PREMIUM_CODES = [
+  { code: 'NEXO-PRO-A7K9', days: 30 }, { code: 'NEXO-PRO-M3QX', days: 30 },
+  { code: 'NEXO-PRO-T8WD', days: 30 }, { code: 'NEXO-PRO-Z4HP', days: 30 },
+  { code: 'NEXO-PRO-K6SN', days: 30 }, { code: 'NEXO-PRO-D9VC', days: 30 },
+  { code: 'NEXO-PRO-R2MB', days: 30 }, { code: 'NEXO-PRO-F5XJ', days: 30 },
+  { code: 'NEXO-PRO-Q7GT', days: 30 }, { code: 'NEXO-PRO-W4NA', days: 30 },
+]
+const PREMIUM_EMOJI_STATUSES = ['🔥', '⭐', '💎', '👑', '🚀', '🎧', '🎮', '⚽', '🌙', '☀️', '❤️', '😎', '🥳', '😴', '💼', '📚', '✈️', '🍕', '🐱', '🦊']
+const PREMIUM_NAME_COLORS = new Set(['violet', 'sky', 'mint', 'gold', 'rose', 'peach', ''])
+const premiumActive = (p) => Boolean(p?.premium_until && new Date(p.premium_until).getTime() > Date.now())
+function sanitizeBusinessSrv(raw) {
+  const b = raw && typeof raw === 'object' ? raw : {}
+  const byDay = new Map()
+  for (const h of Array.isArray(b.hours) ? b.hours : []) {
+    const day = Number(h?.day)
+    if (!Number.isInteger(day) || day < 0 || day > 6) continue
+    const time = (v, fb) => (/^\d{1,2}:\d{2}$/.test(String(v)) ? String(v) : fb)
+    byDay.set(day, { day, enabled: Boolean(h.enabled), open: time(h.open, '09:00'), close: time(h.close, '18:00') })
+  }
+  return {
+    enabled: Boolean(b.enabled),
+    name: String(b.name || '').slice(0, 60),
+    address: String(b.address || '').slice(0, 120),
+    hours: [0, 1, 2, 3, 4, 5, 6].map((day) => byDay.get(day) || { day, enabled: false, open: '09:00', close: '18:00' }),
+  }
+}
+function clearWorn(itemId, keepUserId = '') {
+  for (const p of db.profiles) {
+    if (p.worn_gift?.item_id === itemId && p.id !== keepUserId) p.worn_gift = null
+  }
+}
+
 function giftSeedState() {
   const items = []
   GIFT_MODELS.filter((m) => m.kind === 'collectible').forEach((m, mi) => {
@@ -174,6 +210,20 @@ if (!Array.isArray(db.gifts.stocked)) {
     }
   })
   if (stockedChanged) persist()
+}
+if (!Array.isArray(db.premiumCodes)) {
+  db.premiumCodes = PREMIUM_CODES.map((p) => ({ ...p, redeemed_by: null, redeemed_at: '' }))
+  persist()
+}
+{
+  let premiumChanged = false
+  for (const pc of PREMIUM_CODES) {
+    if (!db.premiumCodes.some((x) => x.code === pc.code)) {
+      db.premiumCodes.push({ ...pc, redeemed_by: null, redeemed_at: '' })
+      premiumChanged = true
+    }
+  }
+  if (premiumChanged) persist()
 }
 // Promo codes added to the catalog later appear in existing DBs (unredeemed).
 if (!Array.isArray(db.gifts.promo)) db.gifts.promo = []
@@ -798,6 +848,7 @@ app.post('/api/gifts/buy', auth, (req, res) => {
     db.gifts.listings = db.gifts.listings.filter((l) => l.id !== listing.id)
   }
   item.owner_id = me
+  clearWorn(item.id, me)
   giftTxn(me, 'purchase', -price, `${model.name} #${item.serial}`)
   persist(); touchGlobal()
   res.json({ balance: w.balance })
@@ -908,6 +959,7 @@ app.post('/api/gifts/transfer', auth, (req, res) => {
   w.balance -= GIFT_TRANSFER_FEE
   db.gifts.listings = db.gifts.listings.filter((l) => l.item_id !== item.id)
   item.owner_id = toId
+  clearWorn(item.id, toId)
   giftTxn(me, 'transfer', -GIFT_TRANSFER_FEE, `${model.name} #${item.serial} → @${to.username}`)
   giftTxn(toId, 'transfer', 0, `${model.name} #${item.serial} ← @${req.me.username}`)
   persist(); touchGlobal()
@@ -939,6 +991,61 @@ app.post('/api/gifts/claim-bonus', auth, (req, res) => {
   giftTxn(req.me.id, 'bonus', GIFT_DAILY_BONUS, 'Daily bonus')
   persist(); touchGlobal()
   res.json({ balance: w.balance })
+})
+
+/* ---------- NEXO Premium ---------- */
+app.get('/api/premium/me', auth, (req, res) => {
+  res.json({
+    active: premiumActive(req.me),
+    until: req.me.premium_until || null,
+    priceRub: PREMIUM_PRICE_RUB,
+    days: 30,
+  })
+})
+
+app.post('/api/premium/redeem', auth, rateLimitAuth, (req, res) => {
+  const norm = normalizePromoCode(req.body?.code)
+  if (!norm) return fail(res, 400, 'Invalid code.')
+  const entry = db.premiumCodes.find((x) => normalizePromoCode(x.code) === norm)
+  if (!entry) return fail(res, 404, 'Invalid code.')
+  if (entry.redeemed_by) return fail(res, 409, 'This code has already been used.')
+  const base = Math.max(Date.now(), req.me.premium_until ? new Date(req.me.premium_until).getTime() : 0)
+  const until = new Date(base + entry.days * 24 * 60 * 60 * 1000).toISOString()
+  req.me.premium_until = until
+  entry.redeemed_by = req.me.id
+  entry.redeemed_at = now()
+  persist(); touchGlobal()
+  res.json({ until, days: entry.days })
+})
+
+app.put('/api/premium/decor', auth, (req, res) => {
+  const body = req.body || {}
+  const wantsPremium = Boolean(body.emojiStatus) || Boolean(body.wornItemId) || Boolean(body.nameColor) || Boolean(body.business?.enabled)
+  if (wantsPremium && !premiumActive(req.me)) return fail(res, 403, 'NEXO Premium required.')
+  if (body.emojiStatus !== undefined) {
+    const v = body.emojiStatus ? String(body.emojiStatus) : ''
+    if (v && !PREMIUM_EMOJI_STATUSES.includes(v)) return fail(res, 400, 'Invalid code.')
+    req.me.emoji_status = v
+  }
+  if (body.nameColor !== undefined) {
+    const v = String(body.nameColor || '')
+    if (!PREMIUM_NAME_COLORS.has(v)) return fail(res, 400, 'Invalid code.')
+    req.me.name_color = v
+  }
+  if (body.wornItemId !== undefined) {
+    if (!body.wornItemId) req.me.worn_gift = null
+    else {
+      const item = db.gifts.items.find((i) => i.id === String(body.wornItemId))
+      if (!item) return fail(res, 404, 'Gift not found.')
+      if (item.owner_id !== req.me.id) return fail(res, 403, 'You do not own this gift.')
+      req.me.worn_gift = { item_id: item.id, model_key: item.model_key, serial: item.serial }
+    }
+  }
+  if (body.business !== undefined) {
+    req.me.business = body.business ? sanitizeBusinessSrv(body.business) : null
+  }
+  persist(); touchGlobal()
+  res.json({ profile: req.me })
 })
 
 /* ---------- reactions ---------- */

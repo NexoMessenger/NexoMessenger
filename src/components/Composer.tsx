@@ -7,6 +7,7 @@ import {
   IconSticker, IconStop, IconTrash, IconPlay, IconPause,
 } from './icons'
 import { StickerPicker } from './FoxStickers'
+import { NEXO_ANIMATED_EMOJI } from '../lib/premiumData'
 import { AudioBubble, fmtDuration } from './MessageExtras'
 import VideoRecorder, { mediaSupported, pickMime } from './VideoRecorder'
 
@@ -23,14 +24,18 @@ interface Props {
    *  prefilled with initialText (and focused) instead of keeping the draft. */
   initialText?: string
   initialTextKey?: string
+  /** NEXO Premium: unlocks the animated emoji panel. */
+  premiumEmojiEnabled?: boolean
+  onPremiumEmojiLocked?: () => void
 }
 
-export default function Composer({ placeholder, sending, onSend, onTyping, upload, initialText, initialTextKey }: Props) {
+export default function Composer({ placeholder, sending, onSend, onTyping, upload, initialText, initialTextKey, premiumEmojiEnabled = false, onPremiumEmojiLocked }: Props) {
   const [text, setText] = useState('')
   const [pending, setPending] = useState<AttachmentInfo | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [stickerOpen, setStickerOpen] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
   const [failedMedia, setFailedMedia] = useState<{ blob: Blob; duration: number; name: string } | null>(null)
 
@@ -224,6 +229,38 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
               setError(errText(e, t))
             })
           }} />
+        </div>
+      )}
+
+      {emojiOpen && recPhase === 'idle' && (
+        <div style={{ padding: '0 12px 8px' }}>
+          <div className="sticker-panel glass nexo-emoji-panel">
+            <div className="sticker-panel-head">
+              <span className="sticker-panel-title">{t('premium.emojiPanelTitle')}</span>
+              <span className="pill pill-accent">NEXO Premium</span>
+            </div>
+            {premiumEmojiEnabled ? (
+              <>
+                <div className="nexo-emoji-grid">
+                  {NEXO_ANIMATED_EMOJI.map(({ emoji, anim }) => (
+                    <button key={emoji} className="nexo-emoji-cell" aria-label={emoji}
+                      onClick={() => {
+                        setText((prev) => prev + emoji)
+                        requestAnimationFrame(() => { grow(); taRef.current?.focus() })
+                      }}>
+                      <span className={`nexo-emoji-anim anim-${anim}`}>{emoji}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="premium-hint" style={{ margin: '8px 2px 0' }}>{t('premium.emojiPanelHint')}</p>
+              </>
+            ) : (
+              <div className="nexo-emoji-locked">
+                <p>{t('premium.emojiLocked')}</p>
+                <button className="btn btn-primary btn-sm" onClick={onPremiumEmojiLocked}>{t('premium.getPremium')}</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

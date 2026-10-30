@@ -4,6 +4,7 @@ import type {
   Group, GroupMember, GroupMessage, Message, Profile, ProfilePost, UserSettings,
 } from './types'
 import { COLLECTIBLE_MODELS, PROMO_CODES, STORE_STOCK_PER_MODEL, storeSerial } from './giftData'
+import { PREMIUM_CODES } from './premiumData'
 
 /**
  * LOCAL DEMO BACKEND — used ONLY when Supabase env vars are missing.
@@ -62,6 +63,14 @@ export function backfillGiftStock(db: LocalDB) {
   })
 }
 
+export interface LocalPremiumState {
+  codes: { code: string; days: number; redeemed_by: string | null; redeemed_at: string }[]
+}
+
+export function premiumSeedState(): LocalPremiumState {
+  return { codes: PREMIUM_CODES.map((p) => ({ ...p, redeemed_by: null, redeemed_at: '' })) }
+}
+
 export interface LocalDB {
   users: LocalUser[]
   profiles: Profile[]
@@ -78,6 +87,7 @@ export interface LocalDB {
   reactions: Reaction[]
   settings: UserSettings[]
   gifts: LocalGiftState
+  premium: LocalPremiumState
   sessionUserId: string | null
 }
 
@@ -137,7 +147,7 @@ function seed(): LocalDB {
     channelMembers: [{ channel_id: 'c_news', user_id: 'u_assistant', role: 'owner', can_post: true, joined_at: t }],
     posts: [{ id: uid(), channel_id: 'c_news', author_id: 'u_assistant', body: 'Welcome to NEXO Messenger. This is a public channel — subscribe to receive broadcasts.', attachment_url: '', attachment_name: '', attachment_type: '', created_at: t }],
     profilePosts: [],
-    settings: [], reactions: [], gifts: giftSeedState(), sessionUserId: null,
+    settings: [], reactions: [], gifts: giftSeedState(), premium: premiumSeedState(), sessionUserId: null,
   }
 }
 
@@ -153,6 +163,12 @@ export function loadDB(): LocalDB {
       db.profilePosts.forEach((p) => { p.archived = false })
       if (!db.gifts || !Array.isArray(db.gifts.items)) db.gifts = giftSeedState()
       backfillGiftStock(db)
+      if (!db.premium || !Array.isArray(db.premium.codes)) db.premium = premiumSeedState()
+      for (const pc of PREMIUM_CODES) {
+        if (!db.premium.codes.some((x) => x.code === pc.code)) {
+          db.premium.codes.push({ ...pc, redeemed_by: null, redeemed_at: '' })
+        }
+      }
       // Promo codes added later appear in existing DBs too (unredeemed).
       if (!Array.isArray(db.gifts.promo)) db.gifts.promo = []
       for (const pc of PROMO_CODES) {

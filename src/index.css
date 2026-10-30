@@ -1114,3 +1114,101 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
   .theme-grid { grid-template-columns: 1fr 1fr; }
   .theme-card { padding: 11px; }
 }
+
+/* ---------- NEXO Premium ---------- */
+.profile-name { display: inline-flex; align-items: center; gap: 5px; min-width: 0; vertical-align: middle; }
+.premium-badge { display: inline-flex; flex-shrink: 0; filter: drop-shadow(0 0 5px rgba(139,92,246,0.55)); }
+.emoji-status { display: inline-block; font-size: 0.92em; line-height: 1; animation: nexo-status-float 2.6s ease-in-out infinite; }
+.worn-gift { width: 18px; height: 18px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(167,139,250,0.55); box-shadow: 0 0 8px rgba(124,58,237,0.35); }
+.worn-gift-fallback { display: inline-grid; place-items: center; color: #d6bcfa; background: rgba(124,58,237,0.25); }
+@keyframes nexo-status-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.12); }
+}
+.business-badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); white-space: nowrap;
+}
+.business-badge .business-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.business-badge.open { color: #4ade80; border-color: rgba(74,222,128,0.45); background: rgba(74,222,128,0.10); }
+.business-badge.open .business-dot { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.8); }
+.business-badge.closed { color: #f87171; border-color: rgba(248,113,113,0.45); background: rgba(248,113,113,0.10); }
+.business-badge.closed .business-dot { background: #f87171; }
+
+.premium-profile-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px;
+  border-radius: 20px; color: inherit; font: inherit; cursor: pointer; text-align: left;
+  margin-bottom: 14px; appearance: none;
+  background: linear-gradient(120deg, rgba(124,58,237,0.22), rgba(56,150,255,0.14)), var(--glass);
+}
+.premium-profile-logo { width: 44px; height: 44px; flex-shrink: 0; }
+.premium-page { max-width: 760px; }
+.premium-hero { text-align: center; padding: 26px 20px; margin-bottom: 14px; overflow: hidden; }
+.premium-logo { width: 64px; height: 64px; margin: 0 auto 10px; }
+.premium-hero h2 { margin: 4px 0 2px; font-size: 24px; letter-spacing: -0.4px; }
+.premium-price {
+  font-size: 28px; font-weight: 850; letter-spacing: -0.5px;
+  background: linear-gradient(92deg, #c4b5fd, #38bdf8);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.premium-hero-text { color: var(--text-2); font-size: 14px; margin: 8px auto 12px; max-width: 420px; }
+.premium-myname { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 16px; font-weight: 700; }
+.premium-buy { padding: 16px 18px; margin-bottom: 14px; }
+.premium-section-title { display: flex; align-items: center; gap: 8px; font-weight: 750; font-size: 15.5px; margin-bottom: 10px; }
+.premium-code-row { display: flex; gap: 8px; }
+.premium-buy-card { margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 1px dashed color-mix(in srgb, var(--violet) 45%, transparent); background: color-mix(in srgb, var(--violet-strong) 10%, transparent); }
+.premium-buy-card p { margin: 6px 0 0; font-size: 13px; color: var(--text-2); line-height: 1.55; }
+.premium-features { display: flex; flex-direction: column; }
+.premium-feature { display: flex; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.premium-feature:last-child { border-bottom: 0; }
+.premium-feature-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: linear-gradient(140deg, rgba(124,58,237,0.30), rgba(56,150,255,0.18)); color: #d6bcfa; }
+.premium-feature-title { display: block; font-weight: 700; font-size: 14.5px; }
+.premium-feature-text { display: block; color: var(--text-2); font-size: 13px; line-height: 1.45; margin-top: 1px; }
+.premium-feat-emoji { font-size: 19px; }
+.premium-hint { font-size: 12.5px; color: var(--text-3); margin: 0 0 10px; line-height: 1.5; }
+.premium-locked { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-2); border: 1px dashed var(--border); border-radius: 12px; padding: 8px 11px; margin-bottom: 12px; }
+.premium-emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.premium-emoji-cell { height: 44px; border-radius: 13px; border: 1px solid var(--border); background: var(--glass); font-size: 20px; cursor: pointer; color: var(--text-2); }
+.premium-emoji-cell.active { border-color: color-mix(in srgb, var(--violet) 65%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet-strong) 18%, transparent); }
+.premium-emoji-cell:disabled { opacity: 0.45; cursor: not-allowed; }
+.premium-colors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.premium-color { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--glass); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-transform: capitalize; }
+.premium-color.active { border-color: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent); }
+.premium-color:disabled { opacity: 0.45; cursor: not-allowed; }
+.premium-color-dot { width: 13px; height: 13px; border-radius: 50%; }
+.premium-wear-list { display: flex; flex-direction: column; gap: 8px; }
+.premium-wear-row { display: flex; align-items: center; gap: 11px; }
+.premium-wear-art { width: 42px; height: 42px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+.premium-wear-fallback { display: grid; place-items: center; color: #d6bcfa; background: rgba(124,58,237,0.22); }
+.premium-switch { display: flex; align-items: center; justify-content: space-between; }
+.premium-hours-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 8px; flex-wrap: wrap; }
+.premium-hours { display: flex; flex-direction: column; gap: 7px; }
+.premium-hour-row { display: flex; align-items: center; gap: 8px; }
+.premium-hour-day { display: flex; align-items: center; gap: 7px; width: 76px; flex-shrink: 0; font-size: 13.5px; font-weight: 650; cursor: pointer; }
+.premium-time { width: 118px; padding: 7px 9px; }
+.premium-hour-sep { color: var(--text-3); }
+
+.nexo-emoji-panel { padding-bottom: 12px; }
+.nexo-emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 4px 12px 0; }
+.nexo-emoji-cell { height: 52px; border: 0; border-radius: 14px; background: transparent; font-size: 27px; cursor: pointer; display: grid; place-items: center; }
+.nexo-emoji-cell:hover { background: var(--glass-hover); }
+.nexo-emoji-locked { text-align: center; padding: 12px 16px 4px; color: var(--text-2); font-size: 13.5px; }
+.nexo-emoji-message { display: inline-flex; gap: 2px; font-size: 34px; line-height: 1.25; }
+.nexo-emoji-anim { display: inline-block; }
+.anim-bounce { animation: nexo-emoji-bounce 1.6s ease-in-out infinite; }
+.anim-pulse { animation: nexo-emoji-pulse 1.5s ease-in-out infinite; }
+.anim-spin { animation: nexo-emoji-spin 3.2s linear infinite; }
+.anim-float { animation: nexo-emoji-float 2.8s ease-in-out infinite; }
+.anim-shake { animation: nexo-emoji-shake 1.9s ease-in-out infinite; }
+@keyframes nexo-emoji-bounce { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-7px); } 55% { transform: translateY(0) scale(1.06, 0.94); } }
+@keyframes nexo-emoji-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes nexo-emoji-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes nexo-emoji-float { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-5px) rotate(3deg); } }
+@keyframes nexo-emoji-shake { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .emoji-status, .nexo-emoji-anim, .anim-bounce, .anim-pulse, .anim-spin, .anim-float, .anim-shake { animation: none !important; }
+}
+@media (max-width: 560px) {
+  .premium-time { width: 102px; }
+  .nexo-emoji-grid { grid-template-columns: repeat(4, 1fr); }
+}

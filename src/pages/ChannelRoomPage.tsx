@@ -6,7 +6,9 @@ import type { AttachmentInfo, Channel, ChannelPost, Profile } from '../lib/types
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
-import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, fmtClock, errText } from '../components/ui'
+import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, ProfileName, fmtClock, errText } from '../components/ui'
+import { AnimatedEmojiBody } from '../components/MessageExtras'
+import { isPremiumActive } from '../lib/premiumData'
 
 export default function ChannelRoomPage() {
   const { id = '' } = useParams()
@@ -95,9 +97,9 @@ export default function ChannelRoomPage() {
             <div key={post.id} className="msg-row theirs" style={{ maxWidth: '88%' }}>
               {author && <Avatar profile={author} size={30} />}
               <div className="bubble">
-                {author && <div className="bubble-sender">{author.display_name} <span style={{ fontWeight: 500, color: 'var(--text-3)' }}>@{author.username}</span></div>}
+                {author && <div className="bubble-sender"><ProfileName profile={author} /> <span style={{ fontWeight: 500, color: 'var(--text-3)' }}>@{author.username}</span></div>}
                 <AttachmentView url={post.attachment_url} name={post.attachment_name} type={post.attachment_type} />
-                {post.body && <div>{post.body}</div>}
+                {post.body && <div><AnimatedEmojiBody body={post.body} /></div>}
                 <div className="bubble-meta"><span>{new Date(post.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} · {fmtClock(post.created_at)}</span></div>
               </div>
             </div>
@@ -107,7 +109,9 @@ export default function ChannelRoomPage() {
 
       {canPost ? (
         <Composer placeholder={t('channels.broadcastPlaceholder', { name: channel?.name || '' })} sending={sending}
-          onSend={send} onTyping={() => undefined} upload={(f) => api.uploadFile(f, profile!.id)} />
+          onSend={send} onTyping={() => undefined} upload={(f) => api.uploadFile(f, profile!.id)}
+          premiumEmojiEnabled={isPremiumActive(profile)}
+          onPremiumEmojiLocked={() => navigate('/premium')} />
       ) : (
         <div style={{ padding: '14px 20px calc(14px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-3)', fontSize: 13, background: 'rgba(8,8,12,0.55)' }}>
           {subscribed ? t('channels.readOnly') : t('channels.subscribeToReceive')}

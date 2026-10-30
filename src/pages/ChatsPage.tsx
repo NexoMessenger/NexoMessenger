@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
-import { Avatar, EmptyState, ErrorBox, Modal, UserPicker, fmtTime, errText } from '../components/ui'
+import { Avatar, EmptyState, ErrorBox, Modal, ProfileName, UserPicker, fmtTime, errText } from '../components/ui'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 
@@ -70,7 +70,7 @@ export default function ChatsPage() {
             <button key={conv.id} className="row-card glass" onClick={() => navigate(`/chat/${conv.id}`)}>
               <Avatar profile={other} showOnline />
               <span className="row-main">
-                <span className="row-title">{other.display_name}
+                <span className="row-title"><ProfileName profile={other} />
                   <span style={{ color: 'var(--text-3)', fontWeight: 500, fontSize: 12.5 }}>@{other.username}</span></span>
                 <span className="row-preview">
                   {lastMessage ? (lastMessage.sender_id === profile?.id ? `${t('common.you')}: ` : '') + (lastMessage.body || (lastMessage.attachment_url ? t('common.attachment') : '')) : t('chats.sayHello')}

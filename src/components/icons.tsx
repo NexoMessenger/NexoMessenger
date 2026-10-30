@@ -155,6 +155,9 @@ export const IconStar = (p: IconProps) => (
 export const IconGem = (p: IconProps) => (
   <svg {...base(p)}><path d="M7 3.5h10l3.5 5L12 20.5 3.5 8.5 7 3.5Z" strokeLinejoin="round" /><path d="M3.5 8.5h17M12 20.5 8.8 8.5l2.2-5 2.2 5L12 20.5" strokeLinejoin="round" /></svg>
 )
+export const IconSparkle = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 3.5 13.9 10 20.5 12 13.9 14 12 20.5 10.1 14 3.5 12 10.1 10 12 3.5Z" strokeLinejoin="round" /><path d="M19 3.8v3M17.5 5.3h3" /></svg>
+)
 export const IconCopy = (p: IconProps) => (
   <svg {...base(p)}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6.5A1.5 1.5 0 0 1 6.5 5H15" /></svg>
 )

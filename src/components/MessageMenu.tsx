@@ -2,9 +2,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { useI18n } from '../i18n'
-import { Avatar, GroupAvatar, Modal, errText } from './ui'
+import { Avatar, GroupAvatar, Modal, ProfileName, errText } from './ui'
 import { IconCopy, IconEdit, IconForward, IconReply, IconTrash } from './icons'
 import { REACTION_SET } from './MessageExtras'
+import { PREMIUM_REACTIONS } from '../lib/premiumData'
 
 export interface MenuTarget<M> {
   msg: M
@@ -95,10 +96,12 @@ export type MessageAction = 'reply' | 'forward' | 'edit' | 'delete'
  * top, then only the actions that are actually available for this message.
  * Delete is two-step (tap again to confirm) — destructive but no modal.
  */
-export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoji, onReact, onAction, onCopy, onClose }: {
+export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoji, premiumReactions = false, onReact, onAction, onCopy, onClose }: {
   target: MenuTarget<M>
   mine: boolean
   myEmoji: string | null
+  /** NEXO Premium adds a second reaction row. */
+  premiumReactions?: boolean
   onReact: (emoji: string, at: { x: number; y: number }) => void
   onAction: (action: MessageAction) => void
   onCopy: () => void
@@ -161,6 +164,17 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
               }} aria-label={e}>{e}</button>
           ))}
         </div>
+        {premiumReactions && (
+          <div className="msg-menu-emojis" role="group" aria-label={t('premium.f.reactions')}>
+            {PREMIUM_REACTIONS.map((e) => (
+              <button key={e} className={`msg-menu-emoji ${myEmoji === e ? 'mine' : ''}`}
+                onClick={(ev) => {
+                  const r = (ev.currentTarget as HTMLButtonElement).getBoundingClientRect()
+                  onReact(e, { x: r.left + r.width / 2, y: r.top + r.height / 2 })
+                }} aria-label={e}>{e}</button>
+            ))}
+          </div>
+        )}
         {canCopy && (
           <button className="msg-menu-item" role="menuitem" onClick={onCopy}>
             <IconCopy size={17} /><span>{t('msg.copy')}</span>

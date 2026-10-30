@@ -2,11 +2,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Profile } from '../lib/types'
 import * as api from '../lib/api'
 import { useI18n, type TranslationKey } from '../i18n'
-import { IconClose, IconSearch, IconFile } from './icons'
+import { IconClose, IconSearch, IconFile, NexoMark } from './icons'
 import { AudioBubble, VideoCircle } from './MessageExtras'
 import { FoxSticker } from './FoxStickers'
 import { giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { IconGem, IconGift, IconHeart, IconStar } from './icons'
+import { businessStatus, isPremiumActive, nameColorOf } from '../lib/premiumData'
 
 export function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'N'
@@ -28,6 +29,50 @@ export function Avatar({ profile, size = 46, showOnline = false }: { profile: Pi
 export function GroupAvatar({ name, url, size = 46 }: { name: string; url?: string; size?: number }) {
   if (url) return <img className="avatar" src={url} alt="" style={{ width: size, height: size, borderRadius: 15 }} />
   return <span className="avatar" style={{ width: size, height: size, borderRadius: 15, fontSize: size * 0.34 }}>{initials(name)}</span>
+}
+
+/**
+ * Display name with NEXO Premium decorations: brand badge, one animated
+ * emoji status and the worn collectible's artwork — shown next to the
+ * nickname everywhere this component is used.
+ */
+export function ProfileName({ profile, className = '' }: {
+  profile: Pick<Profile, 'display_name' | 'premium_until' | 'emoji_status' | 'worn_gift' | 'name_color'>
+  className?: string
+}) {
+  const color = nameColorOf(profile.name_color)
+  const wornArt = profile.worn_gift ? giftArt(profile.worn_gift.model_key) : undefined
+  return (
+    <span className={`profile-name ${className}`}>
+      <span style={color ? { color } : undefined}>{profile.display_name}</span>
+      {isPremiumActive(profile) && (
+        <span className="premium-badge" title="NEXO Premium" aria-label="NEXO Premium"><NexoMark size={14} /></span>
+      )}
+      {profile.emoji_status && <span className="emoji-status" aria-hidden="true">{profile.emoji_status}</span>}
+      {profile.worn_gift && (
+        wornArt
+          ? <img className="worn-gift" src={wornArt} alt="" loading="lazy" />
+          : <span className="worn-gift worn-gift-fallback"><IconGem size={11} /></span>
+      )}
+    </span>
+  )
+}
+
+/** Green "Open · until 18:00" / red "Closed · opens 09:00" business pill. */
+export function BusinessBadge({ profile }: { profile: Pick<Profile, 'business'> }) {
+  const { t } = useI18n()
+  const st = businessStatus(profile.business)
+  if (!st) return null
+  return (
+    <span className={`business-badge ${st.open ? 'open' : 'closed'}`}>
+      <span className="business-dot" />
+      {st.open
+        ? t('premium.bizOpenUntil', { time: st.time })
+        : st.time
+          ? t('premium.bizClosedOpens', { time: st.time })
+          : t('premium.bizClosed')}
+    </span>
+  )
 }
 
 export function fmtTime(iso?: string | null) {
@@ -96,6 +141,7 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
   'Post not found.': 'error.postNotFound',
   'Post is too long.': 'error.postTooLong',
   'This code has already been used.': 'error.promoUsed',
+  'NEXO Premium required.': 'error.premiumRequired',
 }
 
 /** Map known backend/API error messages to localized UI strings. */
@@ -180,7 +226,7 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
             <button key={p.id} className="row-card glass" onClick={() => onToggle(p)}>
               <Avatar profile={p} size={42} showOnline />
               <span className="row-main">
-                <span className="row-title">{p.display_name}</span>
+                <span className="row-title"><ProfileName profile={p} /></span>
                 <span className="row-preview">@{p.username}{p.bio ? ` · ${p.bio}` : ''}</span>
               </span>
               <span className={active ? 'pill pill-accent' : 'pill'}>{active ? t('common.added') : t('common.add')}</span>

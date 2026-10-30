@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
-import { Avatar, ErrorBox, errText } from '../components/ui'
+import { Avatar, BusinessBadge, ErrorBox, ProfileName, errText } from '../components/ui'
 import { useI18n } from '../i18n'
-import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconGift, NexCoin } from '../components/icons'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconGift, NexCoin, NexoMark } from '../components/icons'
 import { fmtNex } from '../lib/giftCatalog'
+import { PREMIUM_PRICE_RUB, isPremiumActive } from '../lib/premiumData'
 import ProfileShowcase from '../components/ProfileShowcase'
 
 export default function ProfilePage() {
@@ -110,8 +111,14 @@ export default function ProfilePage() {
 
       <div className="profile-hero glass card">
         <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={profile} size={92} showOnline /></div>
-        <h2 style={{ margin: '14px 0 2px', fontSize: 22, letterSpacing: '-0.4px' }}>{profile.display_name}</h2>
+        <h2 style={{ margin: '14px 0 2px', fontSize: 22, letterSpacing: '-0.4px' }}><ProfileName profile={profile} /></h2>
         <div style={{ color: 'var(--text-2)', fontSize: 14 }}>@{profile.username}</div>
+        {profile.business?.enabled && (
+          <div style={{ marginTop: 9, display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <BusinessBadge profile={profile} />
+            {profile.business.address && <span className="pill">{profile.business.address}</span>}
+          </div>
+        )}
         <div style={{ marginTop: 8 }}><span className="pill"><span style={{ width: 7, height: 7, borderRadius: '50%', background: profile.is_online ? 'var(--ok)' : 'var(--text-3)', display: 'inline-block' }} />{profile.is_online ? t('profile.onlineNow') : t('profile.offlineNow')}</span></div>
         {profile.bio && <p style={{ color: 'var(--text-2)', maxWidth: 420, margin: '14px auto 0', fontSize: 14 }}>{profile.bio}</p>}
         <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={(e) => changeAvatar(e.target.files?.[0])} />
@@ -153,6 +160,19 @@ export default function ProfilePage() {
       <div className="settings-group glass card" style={{ marginBottom: 14 }}>
         <ProfileShowcase userId={profile.id} isOwn owner={profile} />
       </div>
+
+      <button className="premium-profile-card glass" onClick={() => navigate('/premium')}>
+        <span className="logo-badge premium-profile-logo"><NexoMark size={26} /></span>
+        <span className="row-main" style={{ textAlign: 'left' }}>
+          <span className="row-title">{t('premium.title')}</span>
+          <span className="row-preview">
+            {isPremiumActive(profile) && profile.premium_until
+              ? t('premium.activeUntil', { date: new Date(profile.premium_until).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) })
+              : t('premium.price', { price: String(PREMIUM_PRICE_RUB) })}
+          </span>
+        </span>
+        <span className="pill pill-accent">{t('premium.open')}</span>
+      </button>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <button className="btn" style={{ flex: 1 }} onClick={() => navigate('/settings')}><IconSettings size={16} /> {t('profile.openSettings')}</button>

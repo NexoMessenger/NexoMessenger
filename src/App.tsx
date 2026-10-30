@@ -15,6 +15,7 @@ import ProfilePage from './pages/ProfilePage'
 import UserPage from './pages/UserPage'
 import SettingsPage from './pages/SettingsPage'
 import GiftsPage from './pages/GiftsPage'
+import PremiumPage from './pages/PremiumPage'
 import { NexoMark } from './components/icons'
 import type { ReactNode } from 'react'
 
