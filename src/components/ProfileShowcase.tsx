@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as api from '../lib/api'
-import type { AttachmentInfo, GiftModel, OwnedGift, Profile, ProfilePost, UserGifts } from '../lib/types'
+import type { AttachmentInfo, GiftModel, OwnedGift, Profile, ProfilePost, RegularGiftInfo, UserGifts } from '../lib/types'
 import { useI18n } from '../i18n'
 import { AttachmentView, ErrorBox, Modal, UserPicker, errText } from './ui'
 import { IconFile, IconGem, IconGift, IconHeart, IconImage, IconPlus, IconStar, IconTrash, NexCoin } from './icons'
@@ -14,7 +14,7 @@ type Tab = 'posts' | 'gifts'
 
 type GiftSelection =
   | { kind: 'nft'; gift: OwnedGift }
-  | { kind: 'regular'; model: GiftModel; qty: number }
+  | { kind: 'regular'; model: GiftModel; qty: number; gift?: RegularGiftInfo }
 
 function PostTile({ post, onOpen }: { post: ProfilePost; onOpen: () => void }) {
   const isImg = post.attachment_type.startsWith('image/')
@@ -159,14 +159,14 @@ export default function ProfileShowcase({ userId, isOwn, owner }: { userId: stri
               {gifts!.regular.map((g) => {
                 const FallbackIcon = g.model.key === 'heart-charm' ? IconHeart : g.model.key === 'lucky-star' ? IconStar : IconGem
                 return (
-                <button type="button" key={g.model.key} className="showcase-gift glass" onClick={() => setSelectedGift({ kind: 'regular', model: g.model, qty: g.qty })}>
+                <button type="button" key={g.gift?.id || g.model.key} className="showcase-gift glass" onClick={() => setSelectedGift({ kind: 'regular', model: g.model, qty: g.qty, gift: g.gift })}>
                   <div className="showcase-gift-art">
                     {giftArt(g.model.key)
                       ? <img src={giftArt(g.model.key)} alt={g.model.name} loading="lazy" />
                       : <div className="showcase-gift-fallback" style={{ background: REGULAR_GRADIENT[g.model.key] || REGULAR_GRADIENT['nex-gem'] }}><FallbackIcon size={30} /></div>}
                   </div>
                   <div className="showcase-gift-name">{g.model.name}</div>
-                  <div className="showcase-gift-sub">×{g.qty}</div>
+                  <div className="showcase-gift-sub">{g.gift ? (g.gift.anonymous ? t('delivery.giftAnonymousName') : g.gift.sender_name || '') : `×${g.qty}`}</div>
                 </button>
                 )
               })}
@@ -237,7 +237,11 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
     },
   ]
   if (selection.kind === 'regular') {
-    rows.push({ label: t('gifts.quantity'), value: `×${selection.qty}` })
+    if (!selection.gift) rows.push({ label: t('gifts.quantity'), value: `×${selection.qty}` })
+    if (selection.gift) {
+      rows.push({ label: t('delivery.giftSender'), value: selection.gift.anonymous ? t('delivery.giftAnonymousName') : selection.gift.sender_name || t('delivery.giftUnknownSender') })
+      rows.push({ label: t('delivery.giftCommentLabel'), value: selection.gift.comment || t('delivery.giftNoComment') })
+    }
   } else {
     rows.push({ label: t('gifts.collection'), value: model.collection })
     rows.push({
@@ -268,7 +272,7 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
     setBusy(true)
     setError('')
     try {
-      const result = await api.sellRegularGift(selection.model.key)
+      const result = await api.sellRegularGift(selection.model.key, selection.gift?.id)
       onChanged(t('gifts.soldBack', { amount: fmtNex(result.credit) }))
     } catch (e) {
       setError(errText(e, t))
@@ -352,6 +356,7 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
           ) : (
             <>
               <p className="gift-note" style={{ marginTop: 0 }}>{t('gifts.transferFee')}</p>
+              {api.mode !== 'server' && <p className="gift-note">{t('delivery.transferServerOnly')}</p>}
               <UserPicker meId={meId} selected={picked}
                 onToggle={(p) => setPicked((prev) => (prev.some((x) => x.id === p.id) ? [] : [p]))} />
               <button className="btn btn-primary btn-block" style={{ marginTop: 10 }} disabled={busy || !picked[0]} onClick={() => void transfer()}>

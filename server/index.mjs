@@ -312,6 +312,18 @@ function giftWallet(userId) {
   }
   return w
 }
+// Keep the historic quantity inventory intact while giving each ordinary gift
+// a stable identity. Old quantities are migrated once without inventing senders.
+if (!Array.isArray(db.gifts.regularItems)) {
+  db.gifts.regularItems = []
+  for (const [owner_id, inventory] of Object.entries(db.gifts.regular || {})) {
+    for (const [model_key, qty] of Object.entries(inventory || {})) {
+      for (let i = 0; i < Math.max(0, Number(qty) || 0); i++) db.gifts.regularItems.push({ id: uid(), owner_id, model_key, sender_name: '', anonymous: false, comment: '' })
+    }
+  }
+  persist()
+}
+const regularPublic = (item) => ({ id: item.id, sender_name: item.anonymous ? '' : item.sender_name, anonymous: Boolean(item.anonymous), comment: item.comment || '' })
 const activeListing = (itemId) => db.gifts.listings.find((l) => l.item_id === itemId) || null
 const giftModelPublic = (key) => {
   const m = giftModelOf(key)
@@ -368,6 +380,18 @@ const canPostChannel = (cid, uidv) => {
   if (!db.zeronChats || typeof db.zeronChats !== 'object') { db.zeronChats = {}; changed = true }
   if (!Array.isArray(db.zeronOrders)) { db.zeronOrders = []; changed = true }
   if (changed) persist()
+}
+
+function giftDirectConversation(me, toId) {
+  let id = db.convMembers.filter(m => m.user_id === me).map(m => m.conversation_id)
+    .find(cid => db.convMembers.some(m => m.conversation_id === cid && m.user_id === toId))
+  if (!id) {
+    const time = now(), conv = { id: uid(), created_by: me, created_at: time, last_message_at: time }
+    db.conversations.push(conv)
+    db.convMembers.push({ conversation_id: conv.id, user_id: me, last_read_at: time, joined_at: time }, { conversation_id: conv.id, user_id: toId, last_read_at: time, joined_at: time })
+    id = conv.id
+  }
+  return id
 }
 
 function fail(res, status, message) { return res.status(status).json({ error: message }) }
@@ -794,6 +818,7 @@ app.post('/api/chats/:id/messages', auth, (req, res) => {
   if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
   const body = String(req.body?.body || '').trim()
   const att = req.body?.attachment || null
+  if (String(att?.type || '').startsWith('gift/')) return fail(res, 400, 'Gift messages must be sent through the gift action.')
   if (!body && !att) return fail(res, 400, 'Message is empty.')
   const replyTo = String(req.body?.replyTo || '')
   const msg = { id: uid(), conversation_id: req.params.id, sender_id: req.me.id, body, attachment_url: att?.url || '', attachment_name: att?.name || '', attachment_type: att?.type || '', attachment_duration: att?.duration || 0, reply_to: replyTo && db.messages.some((x) => x.id === replyTo && x.conversation_id === req.params.id) ? replyTo : '', edited_at: '', created_at: now() }
@@ -809,6 +834,7 @@ app.patch('/api/chats/:id/messages/:mid', auth, (req, res) => {
   const msg = db.messages.find((x) => x.id === req.params.mid && x.conversation_id === req.params.id)
   if (!msg) return fail(res, 404, 'Message not found.')
   if (msg.sender_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  if (msg.attachment_type?.startsWith('gift/')) return fail(res, 400, 'Gift messages cannot be edited.')
   const body = String(req.body?.body || '').trim()
   if (!body) return fail(res, 400, 'Message is empty.')
   msg.body = body; msg.edited_at = now()
@@ -1109,9 +1135,8 @@ app.get('/api/users/:id/collectibles', auth, (req, res) => {
   if (!db.profiles.some((p) => p.id === target)) return fail(res, 404, 'User not found.')
   const items = db.gifts.items.filter((i) => i.owner_id === target)
     .map((item) => ({ item, model: giftModelPublic(item.model_key), listing: activeListing(item.id) }))
-  const regular = Object.entries(db.gifts.regular[target] || {})
-    .filter(([, qty]) => qty > 0)
-    .map(([key, qty]) => ({ model: giftModelOf(key), qty })).filter((x) => x.model)
+  const regular = db.gifts.regularItems.filter(item => item.owner_id === target)
+    .map(item => ({ model: giftModelOf(item.model_key), qty: 1, gift: regularPublic(item) })).filter(x => x.model)
   res.json({ items, regular })
 })
 
@@ -1203,6 +1228,7 @@ app.post('/api/gifts/buy-regular', auth, (req, res) => {
   w.balance -= model.floor_price
   if (!db.gifts.regular[me]) db.gifts.regular[me] = {}
   db.gifts.regular[me][model.key] = (db.gifts.regular[me][model.key] || 0) + 1
+  db.gifts.regularItems.push({ id: uid(), owner_id: me, model_key: model.key, sender_name: '', anonymous: false, comment: '' })
   giftTxn(me, 'regular_buy', -model.floor_price, model.name)
   persist(); touchGlobal()
   res.json({ balance: w.balance })
@@ -1216,30 +1242,29 @@ app.post('/api/gifts/send-regular', auth, (req, res) => {
   const to = profileOf(toId)
   if (!to) return fail(res, 404, 'Profile not found.')
   if (toId === me) return fail(res, 400, 'You cannot message yourself.')
+  const comment = typeof req.body?.comment === 'string' ? req.body.comment.trim() : ''
+  if (comment.length > 300) return fail(res, 400, 'Comment is too long.')
+  if (req.body?.anonymous !== undefined && typeof req.body.anonymous !== 'boolean') return fail(res, 400, 'Invalid anonymity option.')
+  const anonymous = req.body?.anonymous === true
   const inv = db.gifts.regular[me] || {}
-  if ((inv[model.key] || 0) < 1) return fail(res, 400, 'No gifts left to send.')
+  const candidates = db.gifts.regularItems.filter(x => x.owner_id === me && x.model_key === model.key)
+  // Prefer a fresh store purchase so an existing received dedication is not
+  // overwritten when the sender has just bought another copy.
+  const item = candidates.find(x => !x.sender_name && !x.anonymous && !x.comment) || candidates[0]
+  if ((inv[model.key] || 0) < 1 || !item) return fail(res, 400, 'No gifts left to send.')
+  const convId = giftDirectConversation(me, toId)
   inv[model.key] -= 1
   db.gifts.regular[me] = inv
-  let convId = db.convMembers.filter((m) => m.user_id === me).map((m) => m.conversation_id)
-    .find((cid) => db.convMembers.some((m) => m.conversation_id === cid && m.user_id === toId))
-  if (!convId) {
-    const conv = { id: uid(), created_by: me, created_at: now(), last_message_at: now() }
-    db.conversations.push(conv)
-    db.convMembers.push(
-      { conversation_id: conv.id, user_id: me, last_read_at: now(), joined_at: now() },
-      { conversation_id: conv.id, user_id: toId, last_read_at: now(), joined_at: now() },
-    )
-    convId = conv.id
-  }
-  // The recipient actually receives the gift into their inventory, so it
-  // shows up in their profile showcase (previously it silently vanished).
   if (!db.gifts.regular[toId]) db.gifts.regular[toId] = {}
   db.gifts.regular[toId][model.key] = (db.gifts.regular[toId][model.key] || 0) + 1
-  const msg = { id: uid(), conversation_id: convId, sender_id: me, body: model.name, attachment_url: model.key, attachment_name: model.name, attachment_type: 'gift/nexo', attachment_duration: 0, created_at: now() }
+  item.owner_id = toId
+  item.sender_name = anonymous ? '' : `${req.me.display_name || req.me.username} (@${req.me.username})`
+  item.anonymous = anonymous; item.comment = comment
+  const msg = { id: uid(), conversation_id: convId, sender_id: me, body: model.name, attachment_url: model.key, attachment_name: model.name, attachment_type: 'gift/nexo', attachment_duration: 0, gift_data: { ...regularPublic(item), price: model.floor_price }, created_at: now() }
   db.messages.push(msg)
-  const conv = db.conversations.find((c) => c.id === convId); if (conv) conv.last_message_at = msg.created_at
+  const conv = db.conversations.find(c => c.id === convId); if (conv) conv.last_message_at = msg.created_at
   giftTxn(me, 'regular_send', 0, `${model.name} → @${to.username}`)
-  giftTxn(toId, 'regular_send', 0, `${model.name} ← @${req.me.username}`)
+  giftTxn(toId, 'regular_send', 0, anonymous ? model.name : `${model.name} ← @${req.me.username}`)
   persist(); touch('direct', convId); touchGlobal()
   notifyUsers([toId], req.me, 'direct', convId)
   res.json({ conversationId: convId })
@@ -1251,8 +1276,12 @@ app.post('/api/gifts/sell-regular', auth, (req, res) => {
   if (!model || model.kind !== 'regular') return fail(res, 404, 'Gift not found.')
   const inv = db.gifts.regular[me] || {}
   if ((inv[model.key] || 0) < 1) return fail(res, 400, 'No gifts left to sell.')
+  const itemId = String(req.body?.itemId || '')
+  const itemIndex = db.gifts.regularItems.findIndex(x => x.owner_id === me && x.model_key === model.key && (!itemId || x.id === itemId))
+  if (itemIndex < 0) return fail(res, 404, 'Gift not found.')
   const credit = model.floor_price - GIFT_SELL_FEE
   if (credit <= 0) return fail(res, 400, 'This gift cannot be sold.')
+  db.gifts.regularItems.splice(itemIndex, 1)
   inv[model.key] -= 1
   db.gifts.regular[me] = inv
   const w = giftWallet(me)
@@ -1274,14 +1303,19 @@ app.post('/api/gifts/transfer', auth, (req, res) => {
   const w = giftWallet(me)
   if (w.balance < GIFT_TRANSFER_FEE) return fail(res, 402, 'Not enough NEX.')
   const model = giftModelOf(item.model_key)
+  const convId = giftDirectConversation(me, toId)
   w.balance -= GIFT_TRANSFER_FEE
   db.gifts.listings = db.gifts.listings.filter((l) => l.item_id !== item.id)
   item.owner_id = toId
   clearWorn(item.id, toId)
   giftTxn(me, 'transfer', -GIFT_TRANSFER_FEE, `${model.name} #${item.serial} → @${to.username}`)
   giftTxn(toId, 'transfer', 0, `${model.name} #${item.serial} ← @${req.me.username}`)
-  persist(); touchGlobal()
-  res.json({ balance: w.balance, fee: GIFT_TRANSFER_FEE })
+  const msg = { id: uid(), conversation_id: convId, sender_id: me, body: model.name, attachment_url: item.id, attachment_name: model.name, attachment_type: 'gift/nft-transfer', attachment_duration: 0, gift_data: { fee: GIFT_TRANSFER_FEE, serial: item.serial }, created_at: now() }
+  db.messages.push(msg)
+  const conv = db.conversations.find(c => c.id === convId); if (conv) conv.last_message_at = msg.created_at
+  persist(); touch('direct', convId); touchGlobal()
+  notifyUsers([toId], req.me, 'direct', convId)
+  res.json({ balance: w.balance, fee: GIFT_TRANSFER_FEE, conversationId: convId })
 })
 
 app.post('/api/gifts/redeem', auth, rateLimitAuth, (req, res) => {

@@ -1310,9 +1310,9 @@ export async function buyRegularGift(giftKey: string): Promise<{ balance: number
 
 /** Send an owned regular gift into a direct chat (gift message attachment). */
 /** Sell one regular gift back to the store: price minus the flat fee. */
-export async function sellRegularGift(giftKey: string): Promise<{ balance: number; credit: number; qty: number }> {
+export async function sellRegularGift(giftKey: string, itemId?: string): Promise<{ balance: number; credit: number; qty: number }> {
   const model = giftModel(giftKey)
-  if (isSrv()) return srv('/api/gifts/sell-regular', { method: 'POST', body: { giftKey } })
+  if (isSrv()) return srv('/api/gifts/sell-regular', { method: 'POST', body: { giftKey, itemId } })
   const me = (await getCurrentProfile())?.id
   if (!me) err('Session expired. Please sign in again.')
   if (isSb()) {
@@ -1368,9 +1368,10 @@ export async function transferGift(itemId: string, toUserId: string): Promise<{ 
   return { balance: w.balance }
 }
 
-export async function sendRegularGift(giftKey: string, toUserId: string): Promise<string> {
+export async function sendRegularGift(giftKey: string, toUserId: string, options: { comment?: string; anonymous?: boolean } = {}): Promise<string> {
   const model = giftModel(giftKey)
-  if (isSrv()) return (await srv<{ conversationId: string }>('/api/gifts/send-regular', { method: 'POST', body: { giftKey, toUserId } })).conversationId
+  if (isSrv()) return (await srv<{ conversationId: string }>('/api/gifts/send-regular', { method: 'POST', body: { giftKey, toUserId, ...options } })).conversationId
+  if (options.comment || options.anonymous) err('Gift comments and anonymity are only available on the NEXO server.')
   const me = (await getCurrentProfile())?.id
   if (!me) err('Session expired. Please sign in again.')
   if (isSb()) {
