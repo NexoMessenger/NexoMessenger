@@ -7,21 +7,34 @@ interface AuthState {
   loading: boolean
   refresh: () => Promise<void>
   signOut: () => Promise<void>
+  greeting: 'new' | 'login' | 'session' | null
+  dismissGreeting: () => void
+  email: string | null
 }
 
-const Ctx = createContext<AuthState>({ profile: null, loading: true, refresh: async () => undefined, signOut: async () => undefined })
+const Ctx = createContext<AuthState>({ profile: null, loading: true, refresh: async () => undefined, signOut: async () => undefined, greeting: null, dismissGreeting: () => undefined, email: null })
 export const useAuth = () => useContext(Ctx)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const idRef = useRef<string | null>(null)
+  const shown = useRef(false)
+  const [greeting, setGreeting] = useState<'new' | 'login' | 'session' | null>(null)
+  const [email, setEmail] = useState<string | null>(null)
 
   const refresh = async () => {
     try {
       const p = await api.getCurrentProfile()
       idRef.current = p?.id ?? null
       setProfile(p)
+      if (p && !shown.current) {
+        shown.current = true
+        let event: string | null = null
+        try { event = sessionStorage.getItem('nexo_auth_event'); sessionStorage.removeItem('nexo_auth_event') } catch { /* storage unavailable */ }
+        setGreeting(event === 'new' || event === 'login' ? event : 'session')
+        api.getCurrentEmail().then(value => { if (idRef.current === p.id) setEmail(value) }).catch(() => undefined)
+      }
     } catch {
       setProfile(null)
     } finally {
@@ -60,8 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await api.signOutUser()
     idRef.current = null
+    shown.current = false
+    setGreeting(null)
+    setEmail(null)
     setProfile(null)
   }
 
-  return <Ctx.Provider value={{ profile, loading, refresh, signOut }}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{ profile, loading, refresh, signOut, greeting, dismissGreeting: () => setGreeting(null), email }}>{children}</Ctx.Provider>
 }

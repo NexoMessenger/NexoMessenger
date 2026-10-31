@@ -65,6 +65,7 @@ export function registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL, t
     res.clearCookie('nexo_google_ticket',cookieOptions(c.secure)); if (!identity) return res.status(400).json({error:'GOOGLE_SESSION_EXPIRED'})
     tickets.delete(id)
     let user=db.users.find(u=>u.google_sub===identity.sub)
+    const isNew = !user
     if (!user) {
       // Never take over or silently link a pre-existing password account.
       if (db.users.some(u=>u.email?.toLowerCase()===identity.email.toLowerCase())) return res.status(409).json({error:'GOOGLE_EMAIL_EXISTS'})
@@ -82,7 +83,7 @@ export function registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL, t
     const token=random(); db.sessions.push({token,user_id:user.id,expires_at:Date.now()+sessionTTL})
     profile.is_online=true; profile.last_seen=now()
     persist(); touchGlobal()
-    res.json({token})
+    res.json({token, isNew})
   })
 }
 async function exchangeGoogle({code,verifier,config}) {

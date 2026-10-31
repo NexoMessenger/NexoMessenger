@@ -537,7 +537,7 @@ app.post('/api/auth/logout', auth, (req, res) => {
 })
 
 /* ---------- me / profiles / settings ---------- */
-app.get('/api/me', auth, (req, res) => res.json({ profile: req.me }))
+app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json({ profile: req.me, email: db.users.find(u => u.id === req.me.id)?.email || null }))
 
 app.patch('/api/me', auth, (req, res) => {
   const patch = req.body || {}

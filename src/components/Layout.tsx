@@ -47,7 +47,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const items = (cls: string) => (
     <>
       {NAV.map((n) => (
-        <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${cls}`}>
+        <NavLink key={n.to} to={n.to} data-tour={n.to.slice(1)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${cls}`}>
           {(() => { const NavIcon = n.icon; return <NavIcon size={20} /> })()}
           <span>{t(n.labelKey)}</span>
           {n.to === '/chats' && unread > 0 && <span className="nav-badge">{unread > 99 ? '99+' : unread}</span>}

@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { LanguageProvider, useI18n } from './i18n'
 import Layout from './components/Layout'
+import AccountGreeting from './components/AccountGreeting'
 import { CallsProvider } from './components/Calls'
 import WelcomePage from './pages/WelcomePage'
 import { LoginPage, RegisterPage, ForgotPage } from './pages/AuthPages'
@@ -82,7 +83,7 @@ export default function App() {
             <Route path="/gifts" element={<Protected><GiftsPage /></Protected>} />
             <Route path="/premium" element={<Protected><PremiumPage /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes></CallsProvider>
+          </Routes><AccountGreeting /></CallsProvider>
         </HashRouter>
       </LanguageProvider>
     </AuthProvider>
