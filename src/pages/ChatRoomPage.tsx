@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { AttachmentInfo, Message, Profile, Reaction } from '../lib/types'
 import Composer from '../components/Composer'
+import { GiftMessage } from '../components/GiftMessage'
 import { useCalls } from '../components/Calls'
 import { useI18n } from '../i18n'
 import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
@@ -226,7 +227,9 @@ export default function ChatRoomPage() {
           return (
             <div key={m.id} style={{ display: 'contents' }}>
               {showDay && <div className="day-label">{new Date(m.created_at).toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}</div>}
-              <div className={`msg-row ${mine ? 'mine' : 'theirs'}`} {...bindMenu(m)}>
+              {m.attachment_type === 'gift/nexo' || m.attachment_type === 'gift/nft-transfer' ? (
+                <GiftMessage message={m} sender={mine ? t('common.you') : peer?.display_name || ''} />
+              ) : <div className={`msg-row ${mine ? 'mine' : 'theirs'}`} {...bindMenu(m)}>
                 {!mine && peer && (
                   <span className="msg-avatar-btn" onClick={() => peer && navigate(`/user/${peer.id}`)} role="button" aria-label={t('profile.view')}>
                     <Avatar profile={peer} size={30} />
@@ -263,7 +266,7 @@ export default function ChatRoomPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </div>}
             </div>
           )
         })}

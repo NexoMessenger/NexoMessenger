@@ -86,6 +86,8 @@ export interface ConvMember {
   joined_at: string
 }
 
+export interface RegularGiftInfo { id: ID; sender_name: string; anonymous: boolean; comment: string }
+
 export interface Message {
   id: ID
   conversation_id: ID
@@ -95,6 +97,7 @@ export interface Message {
   attachment_name: string
   attachment_type: string
   attachment_duration?: number
+  gift_data?: (Partial<RegularGiftInfo> & { price?: number; fee?: number; serial?: number })
   /** Id of the message this one replies to (quote), when set. */
   reply_to?: string
   /** ISO timestamp of the last edit (sender-only), when edited. */
@@ -250,7 +253,7 @@ export interface ProfilePost {
 /** A user's public gift showcase: collectible NFTs + regular gift stock. */
 export interface UserGifts {
   items: OwnedGift[]
-  regular: { model: GiftModel; qty: number }[]
+  regular: { model: GiftModel; qty: number; gift?: RegularGiftInfo }[]
 }
 
 export interface GiftTxn {

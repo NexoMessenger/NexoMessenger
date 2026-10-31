@@ -670,6 +670,7 @@ function TransferGiftModal({ owned, meId, onClose, onDone }: {
       <div className="gift-detail-art small"><GiftArtView modelKey={owned.model.key} iconSize={72} /></div>
       <div className="gift-detail-name">{owned.model.name} <span>{fmtSerial(owned.item.serial)}</span></div>
       <p className="gift-note">{t('gifts.transferFee')}</p>
+      {api.mode !== 'server' && <p className="gift-note">{t('delivery.transferServerOnly')}</p>}
       <UserPicker meId={meId} selected={picked}
         onToggle={(p) => setPicked((prev) => (prev.some((x) => x.id === p.id) ? [] : [p]))} />
       <ErrorBox error={error} />
@@ -692,13 +693,15 @@ function SendGiftModal({ model, meId, onClose, onSent }: {
   const [picked, setPicked] = useState<Profile[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [comment, setComment] = useState('')
+  const [anonymous, setAnonymous] = useState(false)
 
   const send = async () => {
     if (!picked[0]) return
     setBusy(true)
     setError('')
     try {
-      const convId = await api.sendRegularGift(model.key, picked[0].id)
+      const convId = await api.sendRegularGift(model.key, picked[0].id, { comment, anonymous })
       onSent(convId)
     } catch (e) {
       setError(errText(e, t))
@@ -710,6 +713,12 @@ function SendGiftModal({ model, meId, onClose, onSent }: {
     <Modal title={`${t('gifts.send')}: ${model.name}`} onClose={onClose}>
       <UserPicker meId={meId} selected={picked}
         onToggle={(p) => setPicked((prev) => (prev.some((x) => x.id === p.id) ? [] : [p]))} />
+      {api.mode === 'server' ? <div className="gift-send-options">
+        <label htmlFor="gift-comment">{t('delivery.giftComment')}</label>
+        <textarea id="gift-comment" className="textarea" rows={3} maxLength={300} value={comment} onChange={e => setComment(e.target.value)} placeholder={t('delivery.giftCommentPlaceholder')} />
+        <label className="gift-anonymous"><input type="checkbox" checked={anonymous} onChange={e => setAnonymous(e.target.checked)} /> {t('delivery.giftAnonymous')}</label>
+        {anonymous && <p className="gift-note">{t('delivery.giftAnonymousNote')}</p>}
+      </div> : <p className="gift-note">{t('delivery.giftServerOnly')}</p>}
       <ErrorBox error={error} />
       <button className="btn btn-primary btn-block" style={{ marginTop: 10 }} disabled={busy || !picked[0]} onClick={send}>
         {busy ? t('common.loading') : t('gifts.send')}

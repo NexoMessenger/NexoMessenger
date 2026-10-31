@@ -8,6 +8,23 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'delivery.transferServerOnly': 'Chat transfer notices are available only on the NEXO server.',
+  'delivery.giftFromAnonymous': 'Anonymous gift',
+  'delivery.giftComment': 'Comment for the gift',
+  'delivery.giftCommentPlaceholder': 'Write a message (optional)',
+  'delivery.giftAnonymous': 'Anonymous sender',
+  'delivery.giftAnonymousNote': 'Others will see “Anonymous” on the gift. The recipient can still see who sent it in your direct chat.',
+  'delivery.giftServerOnly': 'Available only on the NEXO server.',
+  'delivery.giftSender': 'From',
+  'delivery.giftAnonymousName': 'Anonymous',
+  'delivery.giftCommentLabel': 'Comment',
+  'delivery.giftView': 'View gift',
+  'delivery.giftSentNotice': '{sender} sent a gift worth {amount} NEX',
+  'delivery.giftFrom': 'Gift from {sender}',
+  'delivery.giftNftNotice': '{sender} transferred a unique gift for a 25 NEX transfer fee.',
+  'delivery.giftUnknownSender': 'Sender information unavailable',
+  'delivery.giftNoComment': 'No comment',
+
   'zeron.entry': 'Zeron code bot',
   'zeron.subtitle': 'NEX and Premium codes',
   'zeron.verified': 'Verified by the Zeron team',
@@ -650,6 +667,23 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'delivery.transferServerOnly': 'Уведомления о передаче в чате доступны только на сервере NEXO.',
+  'delivery.giftFromAnonymous': 'Анонимный подарок',
+  'delivery.giftComment': 'Комментарий к подарку',
+  'delivery.giftCommentPlaceholder': 'Напиши пожелание (необязательно)',
+  'delivery.giftAnonymous': 'Анонимный отправитель',
+  'delivery.giftAnonymousNote': 'В подарке будет указано «Анонимный». В личном чате получатель всё равно увидит, кто отправил подарок.',
+  'delivery.giftServerOnly': 'Доступно только на сервере NEXO.',
+  'delivery.giftSender': 'Отправитель',
+  'delivery.giftAnonymousName': 'Анонимный',
+  'delivery.giftCommentLabel': 'Комментарий',
+  'delivery.giftView': 'Посмотреть',
+  'delivery.giftSentNotice': '{sender} отправил(а) подарок стоимостью {amount} NEX',
+  'delivery.giftFrom': 'Подарок от {sender}',
+  'delivery.giftNftNotice': '{sender} передал(а) уникальный подарок. Комиссия за передачу — 25 NEX.',
+  'delivery.giftUnknownSender': 'Данные отправителя недоступны',
+  'delivery.giftNoComment': 'Без комментария',
+
   'zeron.entry': 'Бот кодов Zeron',
   'zeron.subtitle': 'Коды NEX и Premium',
   'zeron.verified': 'Бот верифицирован командой Zeron',
@@ -1290,6 +1324,23 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'delivery.transferServerOnly': 'Сповіщення про передачу в чаті доступні лише на сервері NEXO.',
+  'delivery.giftFromAnonymous': 'Анонімний подарунок',
+  'delivery.giftComment': 'Коментар до подарунка',
+  'delivery.giftCommentPlaceholder': 'Напиши побажання (необов’язково)',
+  'delivery.giftAnonymous': 'Анонімний відправник',
+  'delivery.giftAnonymousNote': 'У подарунку буде вказано «Анонімний». В особистому чаті одержувач усе одно побачить, хто надіслав подарунок.',
+  'delivery.giftServerOnly': 'Доступно лише на сервері NEXO.',
+  'delivery.giftSender': 'Відправник',
+  'delivery.giftAnonymousName': 'Анонімний',
+  'delivery.giftCommentLabel': 'Коментар',
+  'delivery.giftView': 'Переглянути',
+  'delivery.giftSentNotice': '{sender} надіслав(ла) подарунок вартістю {amount} NEX',
+  'delivery.giftFrom': 'Подарунок від {sender}',
+  'delivery.giftNftNotice': '{sender} передав(ла) унікальний подарунок. Комісія за передачу — 25 NEX.',
+  'delivery.giftUnknownSender': 'Дані відправника недоступні',
+  'delivery.giftNoComment': 'Без коментаря',
+
   'zeron.entry': 'Бот кодів Zeron',
   'zeron.subtitle': 'Коди NEX і Premium',
   'zeron.verified': 'Бота верифіковано командою Zeron',
@@ -1930,6 +1981,23 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'delivery.transferServerOnly': '聊天中的转赠通知仅在 NEXO 服务器上可用。',
+  'delivery.giftFromAnonymous': '匿名礼物',
+  'delivery.giftComment': '礼物留言',
+  'delivery.giftCommentPlaceholder': '写下祝福（可选）',
+  'delivery.giftAnonymous': '匿名赠送',
+  'delivery.giftAnonymousNote': '礼物上会显示“匿名”。在私人聊天中，收礼人仍可看到发送者。',
+  'delivery.giftServerOnly': '仅在 NEXO 服务器上可用。',
+  'delivery.giftSender': '发送者',
+  'delivery.giftAnonymousName': '匿名',
+  'delivery.giftCommentLabel': '留言',
+  'delivery.giftView': '查看礼物',
+  'delivery.giftSentNotice': '{sender} 赠送了价值 {amount} NEX 的礼物',
+  'delivery.giftFrom': '来自 {sender} 的礼物',
+  'delivery.giftNftNotice': '{sender} 转赠了独特礼物，转赠手续费为 25 NEX。',
+  'delivery.giftUnknownSender': '发送者信息不可用',
+  'delivery.giftNoComment': '无留言',
+
   'zeron.entry': 'Zeron 兑换码机器人',
   'zeron.subtitle': 'NEX 和 Premium 兑换码',
   'zeron.verified': '机器人由 Zeron 团队验证',
