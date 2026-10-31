@@ -21,6 +21,22 @@ import sailorCover from '../assets/gifts/nexo-sailor-cover.jpg'
 import sailorFloating from '../assets/gifts/nexo-sailor-floating.png'
 import sailorVideo from '../assets/gifts/Screen_Recording_20261029_221839.mp4'
 
+import art0 from '../assets/gifts/constellation/tnt-pop.jpg'
+import art1 from '../assets/gifts/constellation/mint-mug.jpg'
+import art2 from '../assets/gifts/constellation/midnight-noodles.jpg'
+import art3 from '../assets/gifts/constellation/freedom-socks.jpg'
+import art4 from '../assets/gifts/constellation/golden-stitch.jpg'
+import art5 from '../assets/gifts/constellation/velvet-ring.jpg'
+import art6 from '../assets/gifts/constellation/heart-pass.jpg'
+import art7 from '../assets/gifts/constellation/shadow-orb.jpg'
+import art8 from '../assets/gifts/constellation/dream-orb.jpg'
+import art9 from '../assets/gifts/constellation/golden-clover.jpg'
+import art10 from '../assets/gifts/constellation/flame-rocket.jpg'
+import art11 from '../assets/gifts/constellation/emerald-clover.jpg'
+import art12 from '../assets/gifts/constellation/ember-tree.jpg'
+import art13 from '../assets/gifts/constellation/jade-pup.jpg'
+import art14 from '../assets/gifts/constellation/lava-light.jpg'
+
 /** Illustrated artwork per gift model key (bundled with the app). */
 export const GIFT_ART: Record<string, string> = {
   'crystal-wolf': crystalWolf,
@@ -39,6 +55,21 @@ export const GIFT_ART: Record<string, string> = {
   'nexo-riders': nexoRidersCover,
   'nexo-vampire-kiss': vampireKissCover,
   'nexo-sailor': sailorCover,
+  'nexo-tnt-pop': art0,
+  'nexo-mint-mug': art1,
+  'nexo-midnight-noodles': art2,
+  'nexo-freedom-socks': art3,
+  'nexo-golden-stitch': art4,
+  'nexo-velvet-ring': art5,
+  'nexo-heart-pass': art6,
+  'nexo-shadow-orb': art7,
+  'nexo-dream-orb': art8,
+  'nexo-golden-clover': art9,
+  'nexo-flame-rocket': art10,
+  'nexo-emerald-clover': art11,
+  'nexo-ember-tree': art12,
+  'nexo-jade-pup': art13,
+  'nexo-lava-light': art14,
 }
 
 /** Reveal animation per gift model key (played once when the NFT is opened). */

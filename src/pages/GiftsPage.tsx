@@ -241,7 +241,7 @@ export default function GiftsPage() {
                         <div className="gift-card-name">{model.name}</div>
                         <div className="gift-card-sub">{model.collection}</div>
                         <div className="gift-card-value">
-                          {listing ? <NexAmount amount={listing.price} size={15} /> : <span>≈ <NexAmount amount={model.floor_price} size={15} /></span>}
+                          {listing ? <NexAmount amount={listing.price} size={15} /> : model.collection === 'NEXO Kaleidoscope' ? <span>{t('gifts.storePrice')}: <NexAmount amount={model.floor_price} size={15} /></span> : <span>≈ <NexAmount amount={model.floor_price} size={15} /></span>}
                         </div>
                       </div>
                     </article>
@@ -477,7 +477,7 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
           <div key={r.label} className="kv-row"><span>{r.label}</span><strong>{r.value}</strong></div>
         ))}
         <div className="kv-row">
-          <span>{t((model.key === 'nexo-vampire-kiss' || model.key === 'nexo-sailor') ? 'gifts.storePrice' : 'gifts.value')}</span>
+          <span>{t((model.collection === 'NEXO Kaleidoscope' || model.key === 'nexo-vampire-kiss' || model.key === 'nexo-sailor') ? 'gifts.storePrice' : 'gifts.value')}</span>
           <strong><NexAmount amount={model.floor_price} size={15} /></strong>
         </div>
         {price !== null && (

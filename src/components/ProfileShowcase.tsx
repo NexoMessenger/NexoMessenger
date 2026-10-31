@@ -232,7 +232,7 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
       value: isOwn ? t('common.you') : owner ? <>{owner.display_name} <span style={{ color: 'var(--text-3)' }}>@{owner.username}</span></> : '—',
     },
     {
-      label: selection.kind === 'nft' ? t((model.key === 'nexo-vampire-kiss' || model.key === 'nexo-sailor') ? 'gifts.storePrice' : 'gifts.value') : t('gifts.price'),
+      label: selection.kind === 'nft' ? t((model.collection === 'NEXO Kaleidoscope' || model.key === 'nexo-vampire-kiss' || model.key === 'nexo-sailor') ? 'gifts.storePrice' : 'gifts.value') : t('gifts.price'),
       value: <span className="nex-amount"><NexCoin size={15} /><span>{fmtNex(model.floor_price)}</span><span className="nex-balance-label">NEX</span></span>,
     },
   ]
