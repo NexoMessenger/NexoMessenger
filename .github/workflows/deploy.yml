@@ -168,6 +168,7 @@ jobs:
           Environment=HOST=0.0.0.0
           Environment=PORT=$NEXO_PORT
           Environment=NEXO_DATA_DIR=$DEPLOY_DIR/data
+          EnvironmentFile=-$DEPLOY_DIR/data/groq.env
           Restart=always
           RestartSec=3
           User=$(whoami)
@@ -182,7 +183,11 @@ jobs:
             sleep 3
             $SUDO systemctl is-active nexo || true
           else
-            PORT=$NEXO_PORT HOST=0.0.0.0 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
+            if [ -f "$DEPLOY_DIR/data/groq.env" ]; then
+              PORT=$NEXO_PORT HOST=0.0.0.0 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node --env-file="$DEPLOY_DIR/data/groq.env" server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
+            else
+              PORT=$NEXO_PORT HOST=0.0.0.0 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
+            fi
             sleep 3
           fi
 

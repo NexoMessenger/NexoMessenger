@@ -15,7 +15,7 @@
  */
 import express from 'express'
 import webpush from 'web-push'
-import { createDeepSeek } from './ai-deepseek.mjs'
+import { createGroq } from './ai-groq.mjs'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -521,14 +521,16 @@ app.get('/api/users', auth, (req, res) => {
   res.json({ profiles: ids.map((id) => profileOf(id)).filter(Boolean) })
 })
 
-/* ---------- Astra: paid DeepSeek API ---------- */
-// Key is read only from the server environment or its persistent data directory.
-function deepSeekKey() {
-  const envKey = (process.env.DEEPSEEK_API_KEY || '').trim()
-  if (envKey) return envKey
-  try { return fs.readFileSync(path.join(DATA_DIR, 'deepseek.key'), 'utf8').trim() } catch { return '' }
-}
-const aiProvider = createDeepSeek({ getKey: deepSeekKey })
+/* ---------- Astra: Groq cloud API ---------- */
+const groqKey = () => (process.env.GROQ_API_KEY || '').trim()
+const aiProvider = createGroq({
+  getKey: groqKey,
+  baseUrl: process.env.GROQ_BASE_URL || undefined,
+  model: process.env.GROQ_MODEL || undefined,
+  timeoutMs: process.env.GROQ_TIMEOUT_MS || undefined,
+})
+const aiStartup = aiProvider.status()
+if (!aiStartup.ready) console.warn(`[AI] Groq is not ready: ${aiStartup.reason}. Check the server configuration.`)
 let aiBusy = false
 if (!Array.isArray(db.aiChats)) db.aiChats = []
 if (!db.aiUsage || typeof db.aiUsage !== 'object') db.aiUsage = { day: '', total: 0, users: {} }
@@ -540,10 +542,10 @@ app.get('/api/ai/history', auth, (req, res) => {
 app.post('/api/ai/message', auth, async (req, res) => {
   const text = typeof req.body?.text === 'string' ? req.body.text.trim() : ''
   if (!text || text.length > 2000) return fail(res, 400, 'AI_INVALID_INPUT')
-  if (!deepSeekKey()) return fail(res, 503, 'AI_NOT_CONFIGURED')
+  if (!groqKey()) return fail(res, 503, 'AI_NOT_CONFIGURED')
   if (aiBusy) return fail(res, 429, 'AI_BUSY')
-  // Server-wide and per-account daily attempt limits protect a paid key from abuse.
-  // Limits are counts, not a financial spending cap. Count attempts before making the request.
+  // Server-wide and per-account UTC daily attempt limits help protect shared provider quota.
+  // Count attempts before making the request, including provider failures.
   const day = new Date().toISOString().slice(0, 10)
   if (db.aiUsage.day !== day) db.aiUsage = { day, total: 0, users: {} }
   if (db.aiUsage.total >= 40 || (db.aiUsage.users[req.me.id] || 0) >= 10) return fail(res, 429, 'AI_DAILY_LIMIT')
@@ -557,7 +559,10 @@ app.post('/api/ai/message', auth, async (req, res) => {
       { role: 'system', content: 'You are Astra, the NEXO AI assistant. Respond in the language of the user. Be kind, helpful and honest about uncertainty. You are an AI and can make mistakes.' },
       ...history, { role: 'user', content: text },
     ])
-    if (result.error) return fail(res, result.error === 'AI_RATE_LIMIT' ? 429 : 503, result.error)
+    if (result.error) {
+      console.warn(`[AI] Groq request failed: ${result.error}`)
+      return fail(res, result.error === 'AI_RATE_LIMIT' ? 429 : 503, result.error)
+    }
     const userMessage = { id: uid(), role: 'user', content: text, created_at: now() }
     const reply = { id: uid(), role: 'assistant', content: result.answer, created_at: now() }
     let stored = db.aiChats.find(item => item.user_id === req.me.id)

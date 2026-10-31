@@ -14,7 +14,7 @@ await new Promise(resolve => listener.close(resolve))
 const dir = await mkdtemp(path.join(tmpdir(), 'nexo-ai-test-'))
 const base = `http://127.0.0.1:${port}`
 const child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', 'server/index.mjs'], {
-  env: { ...process.env, PORT: String(port), NEXO_DATA_DIR: dir, DEEPSEEK_API_KEY: 'test-key' }, stdio: ['ignore', 'pipe', 'pipe'],
+  env: { ...process.env, PORT: String(port), NEXO_DATA_DIR: dir, GROQ_API_KEY: 'test-key' }, stdio: ['ignore', 'pipe', 'pipe'],
 })
 let logs = ''
 child.stdout.on('data', data => { logs += data.toString() })
@@ -40,7 +40,7 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.equal((await request('/api/ai/history', bob.token)).json.messages.length, 0)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'quota' })).json.error, 'AI_RATE_LIMIT')
     assert.equal((await request('/api/ai/history', alice.token)).json.messages.length, 2)
-    assert.equal((await request('/api/ai/message', alice.token, { text: 'balance' })).json.error, 'AI_BALANCE')
+    assert.equal((await request('/api/ai/message', alice.token, { text: 'forbidden' })).json.error, 'AI_FORBIDDEN')
     assert.equal((await request('/api/ai/message', alice.token, { text: 'x'.repeat(2001) })).status, 400)
     for (let i = 0; i < 7; i++) assert.equal((await request('/api/ai/message', alice.token, { text: 'ok' })).status, 200)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'over' })).json.error, 'AI_DAILY_LIMIT')
