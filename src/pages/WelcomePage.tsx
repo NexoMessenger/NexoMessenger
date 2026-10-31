@@ -46,6 +46,7 @@ export default function WelcomePage() {
         <button className="btn start-btn" onClick={() => navigate('/login')}>
           {t('welcome.start')} <span aria-hidden="true">→</span>
         </button>
+        <p className="auth-switch"><a href="./privacy.html">{t('welcome.privacy')}</a></p>
       </main>
 
       <DigitalCodeStrip />
