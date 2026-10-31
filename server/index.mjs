@@ -16,6 +16,7 @@
 import express from 'express'
 import webpush from 'web-push'
 import { createGigachat } from './ai-gigachat.mjs'
+import { ASTRA_INSTRUCTIONS } from './astra-instructions.mjs'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -556,7 +557,7 @@ app.post('/api/ai/message', auth, async (req, res) => {
     const chat = db.aiChats.find(item => item.user_id === req.me.id)
     const history = (chat?.messages || []).slice(-6).map(m => ({ role: m.role, content: m.content.slice(0, 2000) }))
     const result = await aiProvider.answer([
-      { role: 'system', content: 'You are Astra, the NEXO AI assistant. Respond in the language of the user. Be kind, helpful and honest about uncertainty. You are an AI and can make mistakes.' },
+      { role: 'system', content: ASTRA_INSTRUCTIONS },
       ...history, { role: 'user', content: text },
     ])
     if (result.error) {
