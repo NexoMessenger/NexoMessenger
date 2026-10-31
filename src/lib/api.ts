@@ -314,13 +314,23 @@ export async function getAiStatus(): Promise<AiStatus> {
   if (!isSrv()) return { ready: false, reason: 'unsupported' }
   return srv<AiStatus>('/api/ai/status')
 }
-export async function getAiHistory(): Promise<AiMessage[]> {
+export interface AiThread { id: string; title: string; updated_at: string }
+export type AiRewriteAction = 'correct' | 'improve' | 'shorten'
+export async function listAiThreads(): Promise<AiThread[]> {
   if (!isSrv()) return []
-  return (await srv<{ messages: AiMessage[] }>('/api/ai/history')).messages
+  return (await srv<{ threads: AiThread[] }>('/api/ai/threads')).threads
 }
-export async function askAi(text: string): Promise<AiMessage[]> {
+export async function getAiHistory(threadId: string): Promise<AiMessage[]> {
+  if (!isSrv()) return []
+  return (await srv<{ messages: AiMessage[] }>(`/api/ai/history?thread_id=${encodeURIComponent(threadId)}`)).messages
+}
+export async function askAi(text: string, threadId: string | null): Promise<{ thread_id: string; messages: AiMessage[] }> {
   if (!isSrv()) throw new Error('AI is unavailable in this mode.')
-  return (await srv<{ messages: AiMessage[] }>('/api/ai/message', { method: 'POST', body: { text } })).messages
+  return srv('/api/ai/message', { method: 'POST', body: { text, thread_id: threadId } })
+}
+export async function rewriteAi(text: string, action: AiRewriteAction): Promise<string> {
+  if (!isSrv()) throw new Error('AI is unavailable in this mode.')
+  return (await srv<{ text: string }>('/api/ai/rewrite', { method: 'POST', body: { text, action } })).text
 }
 
 /* ============================== DIRECT CHATS ============================== */

@@ -8,6 +8,21 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'nexo.tools': 'NEXO AI',
+  'nexo.correct': 'Fix mistakes',
+  'nexo.improve': 'Improve text',
+  'nexo.shorten': 'Shorten text',
+  'nexo.privacy': 'The selected message will be sent to GigaChat. Do not share sensitive data. The result is not sent automatically.',
+  'nexo.result': 'Result',
+  'nexo.copy': 'Copy result',
+  'nexo.copied': 'Copied',
+  'nexo.error': 'Could not process text. Check AI availability and try again.',
+  'nexo.tooLong': 'Text exceeds 2000 characters.',
+  'ai.newChat': 'New chat',
+  'ai.chats': 'Chat history',
+  'ai.noChats': 'No previous chats yet.',
+  'ai.chatsError': 'Could not load chat history.',
+
   'astra.open': 'Open NEXO AI',
   'astra.choose': 'Choose an assistant',
   'astra.name': 'Astra',
@@ -589,6 +604,21 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'nexo.tools': 'NEXO AI',
+  'nexo.correct': 'Исправить ошибки',
+  'nexo.improve': 'Улучшить текст',
+  'nexo.shorten': 'Сократить текст',
+  'nexo.privacy': 'Выбранное сообщение будет отправлено в GigaChat. Не передавай секретные данные. Результат не отправляется автоматически.',
+  'nexo.result': 'Результат',
+  'nexo.copy': 'Скопировать результат',
+  'nexo.copied': 'Скопировано',
+  'nexo.error': 'Не удалось обработать текст. Проверь доступность ИИ и попробуй снова.',
+  'nexo.tooLong': 'Текст превышает 2000 символов.',
+  'ai.newChat': 'Новый чат',
+  'ai.chats': 'История чатов',
+  'ai.noChats': 'Прошлых чатов пока нет.',
+  'ai.chatsError': 'Не удалось загрузить историю чатов.',
+
   'astra.open': 'Открыть NEXO AI',
   'astra.choose': 'Выбери помощника',
   'astra.name': 'Астра',
@@ -1168,6 +1198,21 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'nexo.tools': 'NEXO AI',
+  'nexo.correct': 'Виправити помилки',
+  'nexo.improve': 'Покращити текст',
+  'nexo.shorten': 'Скоротити текст',
+  'nexo.privacy': 'Вибране повідомлення буде надіслано до GigaChat. Не передавай секретні дані. Результат не надсилається автоматично.',
+  'nexo.result': 'Результат',
+  'nexo.copy': 'Скопіювати результат',
+  'nexo.copied': 'Скопійовано',
+  'nexo.error': 'Не вдалося обробити текст. Перевір доступність ШІ та спробуй знову.',
+  'nexo.tooLong': 'Текст перевищує 2000 символів.',
+  'ai.newChat': 'Новий чат',
+  'ai.chats': 'Історія чатів',
+  'ai.noChats': 'Попередніх чатів поки немає.',
+  'ai.chatsError': 'Не вдалося завантажити історію чатів.',
+
   'astra.open': 'Відкрити NEXO AI',
   'astra.choose': 'Обери помічника',
   'astra.name': 'Астра',
@@ -1747,6 +1792,21 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'nexo.tools': 'NEXO AI',
+  'nexo.correct': '纠正错误',
+  'nexo.improve': '改善文字',
+  'nexo.shorten': '精简文字',
+  'nexo.privacy': '所选消息将发送至 GigaChat。请勿分享敏感信息。结果不会自动发送。',
+  'nexo.result': '结果',
+  'nexo.copy': '复制结果',
+  'nexo.copied': '已复制',
+  'nexo.error': '无法处理文本。请检查 AI 是否可用后重试。',
+  'nexo.tooLong': '文本超过 2000 字符。',
+  'ai.newChat': '新对话',
+  'ai.chats': '聊天记录',
+  'ai.noChats': '暂无历史对话。',
+  'ai.chatsError': '无法加载聊天记录。',
+
   'astra.open': '打开 NEXO AI',
   'astra.choose': '选择助手',
   'astra.name': '阿斯特拉',

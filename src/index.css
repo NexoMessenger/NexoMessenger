@@ -1345,3 +1345,12 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 @keyframes astra-greet { 0%, 100% { transform: rotate(0) translateY(0); } 25% { transform: rotate(-3deg) translateY(-3px); } 75% { transform: rotate(3deg) translateY(-3px); } }
 @media (min-width: 769px) { .ai-bubble-launcher { bottom: 22px; } }
 @media (prefers-reduced-motion: reduce) { .astra-figure, .astra-figure-greeting { animation: none; } }
+/* AI message actions: bounded scrolling keeps controls reachable on phones. */
+.msg-menu { max-height: calc(100dvh - 16px); overflow-y: auto; overscroll-behavior: contain; }
+.nexo-tool-entry { color: #d4bbff; font-weight: 700; }
+.nexo-tools { padding: 4px 8px 10px; border-bottom: 1px solid var(--border); }
+.nexo-tools p { color: var(--text-2); font-size: 12px; margin: 6px 0; }
+.nexo-tools .btn { margin: 3px 4px 3px 0; }
+.nexo-result { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow-y: auto; }
+.ai-history { padding: 12px; overflow-y: auto; max-height: 40dvh; border-bottom: 1px solid var(--border); }
+.ai-history button { display: block; width: 100%; text-align: left; margin: 5px 0; overflow-wrap: anywhere; }
