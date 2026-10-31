@@ -463,7 +463,7 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
     <Modal title={`${model.name} ${fmtSerial(item.serial)}`} onClose={onClose}>
       <div className="gift-detail-art">
         {GIFT_VIDEO[model.key] ? (
-          <video key={item.id} src={GIFT_VIDEO[model.key]} poster={giftArt(model.key)}
+          <video className={model.key === 'nexo-sailor' ? 'gift-video-contain' : undefined} key={item.id} src={GIFT_VIDEO[model.key]} poster={giftArt(model.key)}
             autoPlay loop muted playsInline aria-label={model.name} />
         ) : (
           <GiftArtView modelKey={model.key} iconSize={110} />
@@ -477,7 +477,7 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
           <div key={r.label} className="kv-row"><span>{r.label}</span><strong>{r.value}</strong></div>
         ))}
         <div className="kv-row">
-          <span>{t(model.key === 'nexo-vampire-kiss' ? 'gifts.storePrice' : 'gifts.value')}</span>
+          <span>{t((model.key === 'nexo-vampire-kiss' || model.key === 'nexo-sailor') ? 'gifts.storePrice' : 'gifts.value')}</span>
           <strong><NexAmount amount={model.floor_price} size={15} /></strong>
         </div>
         {price !== null && (
