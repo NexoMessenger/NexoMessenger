@@ -284,7 +284,7 @@ export default function ChatRoomPage() {
         </div>
       )}
 
-      <Composer placeholder={`${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
+      <Composer key={id} placeholder={`${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`direct-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)}
         premiumEmojiEnabled={isPremiumActive(profile)}

@@ -276,7 +276,7 @@ export default function GroupRoomPage() {
         </div>
       )}
 
-      <Composer placeholder={t('groups.messagePlaceholder', { name: group?.name || '' })} sending={sending}
+      <Composer key={id} placeholder={t('groups.messagePlaceholder', { name: group?.name || '' })} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`group-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)}
         premiumEmojiEnabled={isPremiumActive(profile)}

@@ -8,6 +8,11 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'nexo.draftTools': 'Improve draft with AI',
+  'nexo.draftPrivacy': 'Choosing an action sends your draft to GigaChat. Do not include sensitive information. Review the result before using it; nothing is sent to the chat automatically.',
+  'nexo.useDraft': 'Use this text',
+  'nexo.draftChanged': 'The draft has changed. Run the tool again before applying the result.',
+
   'nexo.tools': 'NEXO AI',
   'nexo.correct': 'Fix mistakes',
   'nexo.improve': 'Improve text',
@@ -604,6 +609,11 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'nexo.draftTools': 'Улучшить текст с ИИ',
+  'nexo.draftPrivacy': 'При выборе действия черновик будет отправлен в GigaChat. Не передавай секретные данные. Проверь результат: в чат он автоматически не отправится.',
+  'nexo.useDraft': 'Использовать текст',
+  'nexo.draftChanged': 'Черновик изменился. Запусти обработку заново, прежде чем применять результат.',
+
   'nexo.tools': 'NEXO AI',
   'nexo.correct': 'Исправить ошибки',
   'nexo.improve': 'Улучшить текст',
@@ -1198,6 +1208,11 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'nexo.draftTools': 'Покращити текст з ШІ',
+  'nexo.draftPrivacy': 'Після вибору дії чернетку буде надіслано до GigaChat. Не передавай секретні дані. Перевір результат: у чат він автоматично не надійде.',
+  'nexo.useDraft': 'Використати текст',
+  'nexo.draftChanged': 'Чернетку змінено. Запусти обробку знову, перш ніж застосувати результат.',
+
   'nexo.tools': 'NEXO AI',
   'nexo.correct': 'Виправити помилки',
   'nexo.improve': 'Покращити текст',
@@ -1792,6 +1807,11 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'nexo.draftTools': '使用 AI 改善草稿',
+  'nexo.draftPrivacy': '选择操作后草稿将发送至 GigaChat。请勿分享敏感信息。请先检查结果；它不会自动发送到聊天。',
+  'nexo.useDraft': '使用此文本',
+  'nexo.draftChanged': '草稿已更改，请重新处理后再应用结果。',
+
   'nexo.tools': 'NEXO AI',
   'nexo.correct': '纠正错误',
   'nexo.improve': '改善文字',

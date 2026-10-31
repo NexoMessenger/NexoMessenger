@@ -1354,3 +1354,17 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .nexo-result { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow-y: auto; }
 .ai-history { padding: 12px; overflow-y: auto; max-height: 40dvh; border-bottom: 1px solid var(--border); }
 .ai-history button { display: block; width: 100%; text-align: left; margin: 5px 0; overflow-wrap: anywhere; }
+/* Draft AI tools stay beside the input; previews live in a scrollable modal. */
+.composer-input { min-width: 0; }
+.composer-ai-btn { color: var(--violet); }
+.composer-ai-panel { overflow-y: auto; max-height: min(60dvh, 500px); overscroll-behavior: contain; }
+.composer-ai-panel p { font-size: 13px; color: var(--text-2); }
+.composer-ai-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.composer-ai-preview { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; }
+.composer-ai-preview p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.composer-ai-panel .composer-ai-error { color: #fda4af; }
+@media (max-width: 420px) {
+  .composer.composer-with-ai { gap: 5px; padding-left: 8px; padding-right: 8px; }
+  .composer-ai-btn { width: 38px; height: 42px; }
+  .composer.composer-with-ai .composer-input { padding-left: 10px; padding-right: 10px; }
+}
