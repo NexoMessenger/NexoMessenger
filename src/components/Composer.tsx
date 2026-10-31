@@ -261,7 +261,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
     } catch (e) {
       if (aiRequest.current === request) {
         const code = e instanceof Error ? e.message : ''
-        const message = code === 'AI_DAILY_LIMIT' ? 'ai.dailyLimit' : code === 'AI_RATE_LIMIT' ? 'ai.rateLimit' : code === 'AI_BUSY' ? 'ai.busy' : code === 'AI_CERT_ERROR' ? 'ai.certError' : code === 'AI_AUTH_ERROR' ? 'ai.authError' : code === 'AI_FORBIDDEN' ? 'ai.forbidden' : code === 'AI_NOT_CONFIGURED' ? 'ai.setup' : 'nexo.error'
+        const message = code === 'AI_DAILY_LIMIT' ? 'ai.dailyLimit' : code === 'AI_SERVER_DAILY_LIMIT' ? 'ai.serverDailyLimit' : code === 'AI_ATTEMPT_LIMIT' ? 'ai.attemptLimit' : code === 'AI_RATE_LIMIT' ? 'ai.rateLimit' : code === 'AI_BUSY' ? 'ai.busy' : code === 'AI_CERT_ERROR' ? 'ai.certError' : code === 'AI_AUTH_ERROR' ? 'ai.authError' : code === 'AI_FORBIDDEN' ? 'ai.forbidden' : code === 'AI_NOT_CONFIGURED' ? 'ai.setup' : 'nexo.error'
         setAiError(t(message))
       }
     } finally { if (aiRequest.current === request) setAiWorking(false) }

@@ -555,16 +555,34 @@ app.get('/api/ai/history', auth, (req, res) => {
   if (id && !chat) return fail(res, 404, 'AI_CHAT_NOT_FOUND')
   res.json({ messages: chat?.messages || [] })
 })
+// Attempts remain bounded even during provider outages. Only successful replies
+// consume the smaller reply quota shared by chat and draft rewriting.
+function currentAiUsage() {
+  const day = new Date().toISOString().slice(0, 10)
+  if (db.aiUsage.day !== day) db.aiUsage = { day, total: 0, users: {}, successTotal: 0, successUsers: {} }
+  // Older versions only recorded attempts, so successes cannot be reconstructed
+  // reliably (especially rewrites). Preserve those attempts, start a new success
+  // counter once, and never alter saved chats or reset the abuse counter.
+  if (!Number.isInteger(db.aiUsage.successTotal)) db.aiUsage.successTotal = 0
+  if (!db.aiUsage.successUsers || typeof db.aiUsage.successUsers !== 'object') db.aiUsage.successUsers = {}
+  return db.aiUsage
+}
 function beginAi(req, res) {
   if (!gigachatKey()) { fail(res, 503, 'AI_NOT_CONFIGURED'); return false }
   if (aiBusy) { fail(res, 429, 'AI_BUSY'); return false }
-  const day = new Date().toISOString().slice(0, 10)
-  if (db.aiUsage.day !== day) db.aiUsage = { day, total: 0, users: {} }
-  if (db.aiUsage.total >= 40 || (db.aiUsage.users[req.me.id] || 0) >= 10) { fail(res, 429, 'AI_DAILY_LIMIT'); return false }
+  const usage = currentAiUsage()
+  if (usage.successTotal >= 40) { fail(res, 429, 'AI_SERVER_DAILY_LIMIT'); return false }
+  if ((usage.successUsers[req.me.id] || 0) >= 10) { fail(res, 429, 'AI_DAILY_LIMIT'); return false }
+  if (usage.total >= 120 || (usage.users[req.me.id] || 0) >= 30) { fail(res, 429, 'AI_ATTEMPT_LIMIT'); return false }
   aiBusy = true
-  db.aiUsage.total++; db.aiUsage.users[req.me.id] = (db.aiUsage.users[req.me.id] || 0) + 1
+  usage.total++; usage.users[req.me.id] = (usage.users[req.me.id] || 0) + 1
   try { persist() } catch (error) { aiBusy = false; throw error }
   return true
+}
+function recordAiSuccess(userId) {
+  const usage = currentAiUsage()
+  usage.successTotal++
+  usage.successUsers[userId] = (usage.successUsers[userId] || 0) + 1
 }
 function aiFailure(res, result) {
   console.warn(`[AI] GigaChat request failed: ${result.error}`)
@@ -589,6 +607,7 @@ app.post('/api/ai/message', auth, async (req, res) => {
     if (!stored) { stored = { id: uid(), user_id: req.me.id, created_at: now(), messages: [] }; db.aiChats.push(stored) }
     stored.messages.push(userMessage, reply)
     stored.messages = stored.messages.slice(-100)
+    recordAiSuccess(req.me.id)
     persist()
     res.json({ thread_id: stored.id, messages: [userMessage, reply] })
   } finally { aiBusy = false }
@@ -609,6 +628,8 @@ app.post('/api/ai/rewrite', auth, async (req, res) => {
       { role: 'user', content: text },
     ])
     if (result.error) return aiFailure(res, result)
+    recordAiSuccess(req.me.id)
+    persist()
     res.json({ text: result.answer })
   } finally { aiBusy = false }
 })

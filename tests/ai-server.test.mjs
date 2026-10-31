@@ -32,7 +32,7 @@ test('authenticated, private AI conversations and quota failures', async () => {
   if (!logs.includes('listening on')) throw new Error('Test server did not start')
     assert.equal((await request('/api/ai/history')).status, 401)
     const register = async name => (await request('/api/auth/register', null, { email: `${name}@example.test`, password: 'secret1', username: name, displayName: name })).json
-    const alice = await register('aliceai'); const bob = await register('bobai')
+    const alice = await register('aliceai'); const bob = await register('bobai'); const charlie = await register('charlieai')
     assert.ok(alice.token && bob.token)
     assert.equal((await request('/api/ai/status', alice.token)).json.ready, true)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'Hello' })).json.messages[1].content, 'Mock response')
@@ -42,8 +42,12 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.equal((await request('/api/ai/history', alice.token)).json.messages.length, 2)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'forbidden' })).json.error, 'AI_FORBIDDEN')
     assert.equal((await request('/api/ai/message', alice.token, { text: 'x'.repeat(2001) })).status, 400)
-    for (let i = 0; i < 7; i++) assert.equal((await request('/api/ai/message', alice.token, { text: 'ok' })).status, 200)
+    for (let i = 0; i < 9; i++) assert.equal((await request('/api/ai/message', alice.token, { text: 'ok' })).status, 200)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'over' })).json.error, 'AI_DAILY_LIMIT')
+    // Failed provider responses do not consume successful replies, but attempts
+    // are independently bounded so repeated failures cannot be abused.
+    for (let i = 0; i < 30; i++) assert.equal((await request('/api/ai/message', charlie.token, { text: 'quota' })).json.error, 'AI_RATE_LIMIT')
+    assert.equal((await request('/api/ai/message', charlie.token, { text: 'ok' })).json.error, 'AI_ATTEMPT_LIMIT')
     // New conversations stay separate and cannot be read or used by another user.
     const first = await request('/api/ai/message', bob.token, { text: 'First topic', thread_id: null })
     const second = await request('/api/ai/message', bob.token, { text: 'Second topic', thread_id: null })
@@ -66,6 +70,7 @@ test('authenticated, private AI conversations and quota failures', async () => {
     const db = JSON.parse(await readFile(dbPath, 'utf8'))
     const old = db.aiChats.find(c => c.id === first.json.thread_id)
     delete old.id; delete old.created_at
+    db.aiUsage.successTotal = 40 // other accounts can exhaust the shared cap
     await writeFile(dbPath, JSON.stringify(db))
     logs = ''
     child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', 'server/index.mjs'], {
@@ -83,6 +88,28 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.ok(migrated?.id)
     assert.equal((await request('/api/ai/history?thread_id=' + migrated.id, bob.token)).json.messages[0].content, 'First topic')
     assert.ok(JSON.parse(await readFile(dbPath, 'utf8')).aiChats.find(c => c.id === migrated.id))
+    assert.equal((await request('/api/ai/message', bob.token, { text: 'ok' })).json.error, 'AI_SERVER_DAILY_LIMIT')
+    // Upgrade legacy attempt-only data without deleting chats or discarding
+    // the old abuse counter; failures must no longer look like reply limits.
+    child.kill('SIGTERM'); if (child.exitCode === null) await once(child, 'exit')
+    const legacy = JSON.parse(await readFile(dbPath, 'utf8'))
+    delete legacy.aiUsage.successTotal; delete legacy.aiUsage.successUsers
+    legacy.aiUsage.total = 10; legacy.aiUsage.users = { [alice.profile.id]: 10 }
+    await writeFile(dbPath, JSON.stringify(legacy))
+    logs = ''
+    child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', 'server/index.mjs'], {
+      env: { ...process.env, PORT: String(port), NEXO_DATA_DIR: dir, GIGACHAT_AUTH_KEY: 'test-key' }, stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    child.stdout.on('data', data => { logs += data.toString() }); child.stderr.on('data', data => { logs += data.toString() })
+    for (let i = 0; i < 100 && !logs.includes('listening on'); i++) {
+      if (child.exitCode !== null) throw new Error('Legacy server exited')
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    assert.match(logs, /listening on/)
+    assert.equal((await request('/api/ai/message', alice.token, { text: 'quota' })).json.error, 'AI_RATE_LIMIT')
+    const upgraded = JSON.parse(await readFile(dbPath, 'utf8'))
+    assert.equal(upgraded.aiUsage.total, 11); assert.equal(upgraded.aiUsage.successTotal, 0)
+    assert.ok(upgraded.aiChats.find(c => c.id === migrated.id))
 } finally {
   child.kill('SIGTERM')
   if (child.exitCode === null) await once(child, 'exit')

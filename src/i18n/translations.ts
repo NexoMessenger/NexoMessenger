@@ -44,7 +44,9 @@ export const en = {
   'astra.select': 'Choose Astra',
   'astra.hello': 'Hello! I’m Astra, your NEXO Messenger assistant. How can I help?',
   'ai.balance': 'The AI service is unavailable. Contact the administrator.',
-  'ai.dailyLimit': 'Daily safety limit reached. Try again tomorrow (UTC).',
+  'ai.dailyLimit': 'Daily account limit reached: 10 successful AI responses per UTC day, shared with draft tools.',
+  'ai.serverDailyLimit': 'The shared server limit of 40 successful AI responses per UTC day is reached.',
+  'ai.attemptLimit': 'Too many AI attempts today. Try again after the UTC day resets.',
 
   'ai.modelUnavailable': 'The free Qwen model currently has no available provider. Try again later.',
   'ai.networkError': 'Cannot reach OpenRouter from the server. Try again later.',
@@ -655,7 +657,9 @@ export const ru: Record<TranslationKey, string> = {
   'astra.select': 'Выбрать Астру',
   'astra.hello': 'Привет! Я Астра, помощница мессенджера NEXO. Чем помочь?',
   'ai.balance': 'Сервис ИИ недоступен. Обратись к администратору.',
-  'ai.dailyLimit': 'Дневной лимит безопасности исчерпан. Попробуй завтра (по UTC).',
+  'ai.dailyLimit': 'Достигнут лимит аккаунта: 10 успешных ответов ИИ за день по UTC, включая палочку.',
+  'ai.serverDailyLimit': 'Исчерпан общий лимит сервера: 40 успешных ответов ИИ за день по UTC.',
+  'ai.attemptLimit': 'Слишком много попыток обращения к ИИ за сегодня. Попробуй после смены дня по UTC.',
 
   'ai.modelUnavailable': 'У бесплатной модели Qwen сейчас нет доступного провайдера. Попробуй позже.',
   'ai.networkError': 'Сервер не может связаться с OpenRouter. Попробуй позже.',
@@ -1264,7 +1268,9 @@ export const uk: Record<TranslationKey, string> = {
   'astra.select': 'Обрати Астру',
   'astra.hello': 'Привіт! Я Астра, помічниця месенджера NEXO. Чим допомогти?',
   'ai.balance': 'Сервіс ШІ недоступний. Звернись до адміністратора.',
-  'ai.dailyLimit': 'Денний ліміт безпеки вичерпано. Спробуй завтра (за UTC).',
+  'ai.dailyLimit': 'Досягнуто ліміту акаунта: 10 успішних відповідей ШІ за день UTC, зокрема для інструментів чернетки.',
+  'ai.serverDailyLimit': 'Вичерпано спільний ліміт сервера: 40 успішних відповідей ШІ за день UTC.',
+  'ai.attemptLimit': 'Забагато спроб звернення до ШІ сьогодні. Спробуй після зміни дня за UTC.',
 
   'ai.modelUnavailable': 'У безкоштовної моделі Qwen зараз немає доступного провайдера. Спробуй пізніше.',
   'ai.networkError': 'Сервер не може зв’язатися з OpenRouter. Спробуй пізніше.',
@@ -1873,7 +1879,9 @@ export const zh: Record<TranslationKey, string> = {
   'astra.select': '选择阿斯特拉',
   'astra.hello': '你好！我是阿斯特拉，NEXO Messenger 的助手。有什么可以帮你？',
   'ai.balance': 'AI 服务不可用，请联系管理员。',
-  'ai.dailyLimit': '已达到每日安全限制，请明天再试（UTC）。',
+  'ai.dailyLimit': '已达到账户限制：每天（UTC）最多 10 次成功的 AI 回复，包括草稿工具。',
+  'ai.serverDailyLimit': '服务器每天（UTC）40 次成功的 AI 回复共享限额已用完。',
+  'ai.attemptLimit': '今天尝试使用 AI 的次数过多，请在 UTC 日期重置后重试。',
 
   'ai.modelUnavailable': '免费 Qwen 模型目前没有可用服务商，请稍后重试。',
   'ai.networkError': '服务器无法连接 OpenRouter，请稍后重试。',
