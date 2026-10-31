@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import net from 'node:net'
 import path from 'node:path'
@@ -14,7 +14,7 @@ test('cloud voice authenticates, restricts content and persists per-user quota',
   const base = `http://127.0.0.1:${port}`
   let child
   const start = async () => {
-    child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', '--import', './tests/mock-fish.mjs', 'server/index.mjs'], { env: { ...process.env, NEXO_DATA_DIR: dir, PORT: String(port), FISH_API_KEY: 'fake', FISH_TEST_USER_ID: 'demo_user', GIGACHAT_AUTH_KEY: 'test-key' }, stdio: ['ignore', 'pipe', 'pipe'] })
+    child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', '--import', './tests/mock-fish.mjs', 'server/index.mjs'], { env: { ...process.env, NEXO_DATA_DIR: dir, PORT: String(port), FISH_API_KEY: 'fake', FISH_TEST_USER_ID: 'demo_user', GIGACHAT_AUTH_KEY: 'test-key', FISH_MOCK_LOG: path.join(dir, 'fish-calls.log') }, stdio: ['ignore', 'pipe', 'pipe'] })
     let logs = ''; child.stdout.on('data', d => { logs += d }); child.stderr.on('data', d => { logs += d })
     for (let i = 0; i < 100 && !logs.includes('listening on'); i++) await new Promise(r => setTimeout(r, 50))
     assert.match(logs, /listening on/)
@@ -33,12 +33,23 @@ test('cloud voice authenticates, restricts content and persists per-user quota',
     const id = response.messages[1].id
     assert.equal((await request('/api/ai/voice', other.token, { message_id: id, locale: 'ru' })).status, 400)
     assert.equal((await request('/api/ai/voice', demo.token, { message_id: response.messages[0].id, locale: 'ru' })).status, 400)
-    const audio = await request('/api/ai/voice', demo.token, { message_id: id, locale: 'ru' })
-    assert.equal(audio.status, 200); assert.equal(await audio.text(), 'mock mp3')
-    for (let i = 0; i < 49; i++) { const r = await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'en' }); assert.equal(r.status, 200); assert.equal(await r.text(), 'mock mp3') }
+    // The same greeting is generated once for all accounts and survives restarts.
+    const greetings = await Promise.all(Array.from({ length: 5 }, () => request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'ru' })))
+    for (const r of greetings) { assert.equal(r.status, 200); assert.equal(await r.text(), 'mock mp3') }
+    assert.equal((await readFile(path.join(dir, 'fish-calls.log'), 'utf8')).trim().split('\n').length, 1)
+    assert.equal((await request('/api/ai/voice', other.token, { message_id: 'greeting', locale: 'ru' })).status, 200)
     assert.equal((await request('/api/ai/voice', other.token, { message_id: 'greeting', locale: 'zh-CN' })).status, 200)
+    assert.equal((await readFile(path.join(dir, 'fish-calls.log'), 'utf8')).trim().split('\n').length, 2)
+    // Only normal answers consume the user's quota.
+    for (let i = 0; i < 50; i++) { const r = await request('/api/ai/voice', demo.token, { message_id: id, locale: 'ru' }); assert.equal(r.status, 200) }
+    assert.equal((await request('/api/ai/voice', demo.token, { message_id: id, locale: 'ru' })).status, 429)
+    assert.equal((await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'ru' })).status, 200)
+    const count = (await readFile(path.join(dir, 'fish-calls.log'), 'utf8')).trim().split('\n').length
+    assert.equal(count, 52)
     await stop(); await start()
-    assert.equal((await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'ru' })).status, 429)
+    assert.equal((await request('/api/ai/voice', demo.token, { message_id: id, locale: 'ru' })).status, 429)
+    assert.equal((await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'ru' })).status, 200)
+    assert.equal((await readFile(path.join(dir, 'fish-calls.log'), 'utf8')).trim().split('\n').length, count)
 
   } finally { if (child && child.exitCode === null) await stop(); await rm(dir, { recursive: true, force: true }) }
 })

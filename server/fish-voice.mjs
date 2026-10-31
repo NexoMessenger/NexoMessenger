@@ -1,4 +1,5 @@
 // Cloud speech is available only when the server has a Fish Audio key.
+export const FISH_MODEL = 's2.1-pro-free'
 export const FISH_VOICE_ID = 'df3144db39a34a02bdeeb2d3ad172211'
 export const FISH_GREETINGS = {
   en: 'Hello! I’m Astra, your NEXO Messenger assistant. How can I help?',
@@ -11,7 +12,7 @@ export async function synthesizeFish(text, { key, fetchImpl = fetch } = {}) {
   try {
     const response = await fetchImpl('https://api.fish.audio/v1/tts', {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30000),
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', model: 's2.1-pro-free' },
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', model: FISH_MODEL },
       body: JSON.stringify({ text, reference_id: FISH_VOICE_ID, format: 'mp3' }),
     })
     if (!response.ok || !response.body || !/^audio\//i.test(response.headers.get('content-type') || '')) return null

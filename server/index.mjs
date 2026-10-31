@@ -16,7 +16,7 @@
 import express from 'express'
 import webpush from 'web-push'
 import { createGigachat } from './ai-gigachat.mjs'
-import { FISH_GREETING, FISH_GREETINGS, synthesizeFish } from './fish-voice.mjs'
+import { FISH_GREETING, FISH_GREETINGS, FISH_MODEL, FISH_VOICE_ID, synthesizeFish } from './fish-voice.mjs'
 import { ASTRA_INSTRUCTIONS } from './astra-instructions.mjs'
 import { registerGoogleRoutes } from './google-oauth.mjs'
 import { createServer } from 'node:http'
@@ -679,20 +679,68 @@ app.post('/api/ai/voice-test', auth, async (req, res) => {
     res.set({ 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }).send(audio)
   } finally { fishBusy = false }
 })
-// Public voice feature: authenticated, only own saved answers, with separate
-// per-user persistent limit to bound third-party usage.
+// Cache fixed greetings only (never user messages) in persistent server data.
+// The hash invalidates old recordings when text, voice or model changes.
+const greetingAudioDir = path.join(DATA_DIR, 'astra-greetings')
+const greetingInFlight = new Map()
+function greetingPath(locale) {
+  const version = crypto.createHash('sha256').update(JSON.stringify([locale, FISH_GREETINGS[locale], FISH_VOICE_ID, FISH_MODEL])).digest('hex')
+  return path.join(greetingAudioDir, `${version}.mp3`)
+}
+function readGreeting(locale) {
+  try {
+    const audio = fs.readFileSync(greetingPath(locale))
+    return audio.length > 0 && audio.length <= 4 * 1024 * 1024 ? audio : null
+  } catch { return null }
+}
+function sendVoice(res, audio) {
+  return res.set({ 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }).send(audio)
+}
 app.get('/api/ai/voice/status', auth, (req, res) => res.json({ available: Boolean(process.env.FISH_API_KEY?.trim()) }))
 let cloudVoiceBusy = false
 app.post('/api/ai/voice', auth, async (req, res) => {
   if (!process.env.FISH_API_KEY?.trim()) return fail(res, 503, 'VOICE_UNAVAILABLE')
   const id = req.body?.message_id
   const locale = req.body?.locale
+  const isGreeting = id === 'greeting' && typeof locale === 'string' && Object.hasOwn(FISH_GREETINGS, locale)
   let text = ''
-  if (id === 'greeting' && typeof locale === 'string' && Object.hasOwn(FISH_GREETINGS, locale)) text = FISH_GREETINGS[locale]
+  if (isGreeting) text = FISH_GREETINGS[locale]
   else if (typeof id === 'string' && id.length < 100 && id !== 'greeting') {
     text = db.aiChats.filter(c => c.user_id === req.me.id).flatMap(c => c.messages || []).find(m => m.id === id && m.role === 'assistant')?.content || ''
   }
   if (!text || text.length > 4000) return fail(res, 400, 'VOICE_INVALID_INPUT')
+  if (isGreeting) {
+    const cached = readGreeting(locale)
+    if (cached) return sendVoice(res, cached)
+    // Concurrent requests for the same greeting share one synthesis.
+    let pending = greetingInFlight.get(locale)
+    if (!pending) {
+      if (cloudVoiceBusy || fishBusy) return fail(res, 429, 'VOICE_BUSY')
+      const day = new Date().toISOString().slice(0, 10)
+      if (!db.fishGreetingUsage || db.fishGreetingUsage.day !== day) db.fishGreetingUsage = { day, locales: {} }
+      if ((db.fishGreetingUsage.locales[locale] || 0) >= 10) return fail(res, 429, 'VOICE_LIMIT')
+      cloudVoiceBusy = true
+      pending = (async () => {
+        try {
+          db.fishGreetingUsage.locales[locale] = (db.fishGreetingUsage.locales[locale] || 0) + 1
+          persist()
+          const audio = await synthesizeFish(text, { key: process.env.FISH_API_KEY.trim() })
+          if (!audio) return null
+          fs.mkdirSync(greetingAudioDir, { recursive: true, mode: 0o700 })
+          const destination = greetingPath(locale)
+          const temp = `${destination}.${crypto.randomBytes(8).toString('hex')}.tmp`
+          try { fs.writeFileSync(temp, audio, { mode: 0o600, flag: 'wx' }); fs.renameSync(temp, destination) }
+          finally { try { fs.unlinkSync(temp) } catch {} }
+          return audio
+        } catch { console.error('[AI] Failed to prepare greeting audio'); return null }
+        finally { cloudVoiceBusy = false }
+      })()
+      greetingInFlight.set(locale, pending)
+      pending.finally(() => { if (greetingInFlight.get(locale) === pending) greetingInFlight.delete(locale) })
+    }
+    const audio = await pending
+    return audio ? sendVoice(res, audio) : fail(res, 503, 'VOICE_PROVIDER_ERROR')
+  }
   if (cloudVoiceBusy || fishBusy) return fail(res, 429, 'VOICE_BUSY')
   const day = new Date().toISOString().slice(0, 10)
   if (!db.fishVoiceUsage || db.fishVoiceUsage.day !== day) db.fishVoiceUsage = { day, attempts: 0, users: {} }
@@ -703,7 +751,7 @@ app.post('/api/ai/voice', auth, async (req, res) => {
     usage.attempts++; usage.users[req.me.id] = (usage.users[req.me.id] || 0) + 1; persist()
     const audio = await synthesizeFish(text, { key: process.env.FISH_API_KEY.trim() })
     if (!audio) return fail(res, 503, 'VOICE_PROVIDER_ERROR')
-    res.set({ 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }).send(audio)
+    return sendVoice(res, audio)
   } finally { cloudVoiceBusy = false }
 })
 // Upgrade old single-conversation records in place without losing their messages.
