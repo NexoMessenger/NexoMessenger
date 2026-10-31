@@ -37,6 +37,42 @@ import art12 from '../assets/gifts/constellation/ember-tree.jpg'
 import art13 from '../assets/gifts/constellation/jade-pup.jpg'
 import art14 from '../assets/gifts/constellation/lava-light.jpg'
 
+import extraArt0 from '../assets/gifts/kaleidoscope-extra/moon-witch.jpg'
+import extraArt1 from '../assets/gifts/kaleidoscope-extra/pilot-pup.jpg'
+import extraArt2 from '../assets/gifts/kaleidoscope-extra/dart-champion.jpg'
+import extraArt3 from '../assets/gifts/kaleidoscope-extra/frost-witch.jpg'
+import extraArt4 from '../assets/gifts/kaleidoscope-extra/tropical-treat.jpg'
+import extraArt5 from '../assets/gifts/kaleidoscope-extra/candy-stocking.jpg'
+import extraArt6 from '../assets/gifts/kaleidoscope-extra/matcha-scoop.jpg'
+import extraArt7 from '../assets/gifts/kaleidoscope-extra/hazard-doll.jpg'
+import extraArt8 from '../assets/gifts/kaleidoscope-extra/disco-pup.jpg'
+import extraArt9 from '../assets/gifts/kaleidoscope-extra/matcha-bowl.jpg'
+import extraArt10 from '../assets/gifts/kaleidoscope-extra/golden-brew.jpg'
+import extraArt11 from '../assets/gifts/kaleidoscope-extra/cocoa-cone.jpg'
+import extraArt12 from '../assets/gifts/kaleidoscope-extra/sunflower-glow.jpg'
+import extraArt13 from '../assets/gifts/kaleidoscope-extra/crimson-crane.jpg'
+import extraArt14 from '../assets/gifts/kaleidoscope-extra/golden-serpent.jpg'
+import extraArt15 from '../assets/gifts/kaleidoscope-extra/neon-serpent.jpg'
+import extraArt16 from '../assets/gifts/kaleidoscope-extra/frost-serpent.jpg'
+import extraArt17 from '../assets/gifts/kaleidoscope-extra/butterfly-glow.jpg'
+import extraArt18 from '../assets/gifts/kaleidoscope-extra/pixel-pop.jpg'
+import extraArt19 from '../assets/gifts/kaleidoscope-extra/star-loupe.jpg'
+import extraArt20 from '../assets/gifts/kaleidoscope-extra/spiral-pop.jpg'
+import extraArt21 from '../assets/gifts/kaleidoscope-extra/kiwi-pop.jpg'
+import extraArt22 from '../assets/gifts/kaleidoscope-extra/ruby-fuzz.jpg'
+import extraArt23 from '../assets/gifts/kaleidoscope-extra/cosmic-loupe.jpg'
+import extraArt24 from '../assets/gifts/kaleidoscope-extra/starlight-scoop.jpg'
+import extraArt25 from '../assets/gifts/kaleidoscope-extra/frog-box.jpg'
+import extraArt26 from '../assets/gifts/kaleidoscope-extra/geo-forest.jpg'
+import extraArt27 from '../assets/gifts/kaleidoscope-extra/geo-berry.jpg'
+import extraArt28 from '../assets/gifts/kaleidoscope-extra/geo-ocean.jpg'
+import extraArt29 from '../assets/gifts/kaleidoscope-extra/rose-cap.jpg'
+import extraArt30 from '../assets/gifts/kaleidoscope-extra/rose-peach.jpg'
+import extraArt31 from '../assets/gifts/kaleidoscope-extra/amber-peach.jpg'
+import extraArt32 from '../assets/gifts/kaleidoscope-extra/rainbow-cap.jpg'
+import extraArt33 from '../assets/gifts/kaleidoscope-extra/spectrum-peach.jpg'
+import extraArt34 from '../assets/gifts/kaleidoscope-extra/party-bear.jpg'
+
 /** Illustrated artwork per gift model key (bundled with the app). */
 export const GIFT_ART: Record<string, string> = {
   'crystal-wolf': crystalWolf,
@@ -55,6 +91,41 @@ export const GIFT_ART: Record<string, string> = {
   'nexo-riders': nexoRidersCover,
   'nexo-vampire-kiss': vampireKissCover,
   'nexo-sailor': sailorCover,
+  'nexo-moon-witch': extraArt0,
+  'nexo-pilot-pup': extraArt1,
+  'nexo-dart-champion': extraArt2,
+  'nexo-frost-witch': extraArt3,
+  'nexo-tropical-treat': extraArt4,
+  'nexo-candy-stocking': extraArt5,
+  'nexo-matcha-scoop': extraArt6,
+  'nexo-hazard-doll': extraArt7,
+  'nexo-disco-pup': extraArt8,
+  'nexo-matcha-bowl': extraArt9,
+  'nexo-golden-brew': extraArt10,
+  'nexo-cocoa-cone': extraArt11,
+  'nexo-sunflower-glow': extraArt12,
+  'nexo-crimson-crane': extraArt13,
+  'nexo-golden-serpent': extraArt14,
+  'nexo-neon-serpent': extraArt15,
+  'nexo-frost-serpent': extraArt16,
+  'nexo-butterfly-glow': extraArt17,
+  'nexo-pixel-pop': extraArt18,
+  'nexo-star-loupe': extraArt19,
+  'nexo-spiral-pop': extraArt20,
+  'nexo-kiwi-pop': extraArt21,
+  'nexo-ruby-fuzz': extraArt22,
+  'nexo-cosmic-loupe': extraArt23,
+  'nexo-starlight-scoop': extraArt24,
+  'nexo-frog-box': extraArt25,
+  'nexo-geo-forest': extraArt26,
+  'nexo-geo-berry': extraArt27,
+  'nexo-geo-ocean': extraArt28,
+  'nexo-rose-cap': extraArt29,
+  'nexo-rose-peach': extraArt30,
+  'nexo-amber-peach': extraArt31,
+  'nexo-rainbow-cap': extraArt32,
+  'nexo-spectrum-peach': extraArt33,
+  'nexo-party-bear': extraArt34,
   'nexo-tnt-pop': art0,
   'nexo-mint-mug': art1,
   'nexo-midnight-noodles': art2,

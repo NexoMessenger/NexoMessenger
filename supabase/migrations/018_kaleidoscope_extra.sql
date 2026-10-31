@@ -1,0 +1,82 @@
+-- Static cropped artwork, in-app store prices, no rarity or supply claims.
+insert into public.gift_models (key, kind, collection, name, pattern, background, rarity_model, rarity_pattern, rarity_background, total_supply, floor_price)
+values
+  ('nexo-moon-witch', 'collectible', 'NEXO Kaleidoscope', 'NEXO Moon Witch', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-pilot-pup', 'collectible', 'NEXO Kaleidoscope', 'NEXO Pilot Pup', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-dart-champion', 'collectible', 'NEXO Kaleidoscope', 'NEXO Dart Champion', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-frost-witch', 'collectible', 'NEXO Kaleidoscope', 'NEXO Frost Witch', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-tropical-treat', 'collectible', 'NEXO Kaleidoscope', 'NEXO Tropical Treat', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-candy-stocking', 'collectible', 'NEXO Kaleidoscope', 'NEXO Candy Stocking', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-matcha-scoop', 'collectible', 'NEXO Kaleidoscope', 'NEXO Matcha Scoop', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-hazard-doll', 'collectible', 'NEXO Kaleidoscope', 'NEXO Hazard Doll', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-disco-pup', 'collectible', 'NEXO Kaleidoscope', 'NEXO Disco Pup', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-matcha-bowl', 'collectible', 'NEXO Kaleidoscope', 'NEXO Matcha Bowl', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-golden-brew', 'collectible', 'NEXO Kaleidoscope', 'NEXO Golden Brew', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-cocoa-cone', 'collectible', 'NEXO Kaleidoscope', 'NEXO Cocoa Cone', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-sunflower-glow', 'collectible', 'NEXO Kaleidoscope', 'NEXO Sunflower Glow', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-crimson-crane', 'collectible', 'NEXO Kaleidoscope', 'NEXO Crimson Crane', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-golden-serpent', 'collectible', 'NEXO Kaleidoscope', 'NEXO Golden Serpent', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-neon-serpent', 'collectible', 'NEXO Kaleidoscope', 'NEXO Neon Serpent', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-frost-serpent', 'collectible', 'NEXO Kaleidoscope', 'NEXO Frost Serpent', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-butterfly-glow', 'collectible', 'NEXO Kaleidoscope', 'NEXO Butterfly Glow', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-pixel-pop', 'collectible', 'NEXO Kaleidoscope', 'NEXO Pixel Pop', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-star-loupe', 'collectible', 'NEXO Kaleidoscope', 'NEXO Star Loupe', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-spiral-pop', 'collectible', 'NEXO Kaleidoscope', 'NEXO Spiral Pop', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-kiwi-pop', 'collectible', 'NEXO Kaleidoscope', 'NEXO Kiwi Pop', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-ruby-fuzz', 'collectible', 'NEXO Kaleidoscope', 'NEXO Ruby Fuzz', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-cosmic-loupe', 'collectible', 'NEXO Kaleidoscope', 'NEXO Cosmic Loupe', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-starlight-scoop', 'collectible', 'NEXO Kaleidoscope', 'NEXO Starlight Scoop', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-frog-box', 'collectible', 'NEXO Kaleidoscope', 'NEXO Frog Box', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-geo-forest', 'collectible', 'NEXO Kaleidoscope', 'NEXO Geo Forest', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-geo-berry', 'collectible', 'NEXO Kaleidoscope', 'NEXO Geo Berry', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-geo-ocean', 'collectible', 'NEXO Kaleidoscope', 'NEXO Geo Ocean', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-rose-cap', 'collectible', 'NEXO Kaleidoscope', 'NEXO Rose Cap', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-rose-peach', 'collectible', 'NEXO Kaleidoscope', 'NEXO Rose Peach', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-amber-peach', 'collectible', 'NEXO Kaleidoscope', 'NEXO Amber Peach', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-rainbow-cap', 'collectible', 'NEXO Kaleidoscope', 'NEXO Rainbow Cap', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-spectrum-peach', 'collectible', 'NEXO Kaleidoscope', 'NEXO Spectrum Peach', '', '', 0, 0, 0, 0, 1500),
+  ('nexo-party-bear', 'regular', 'Regular', 'NEXO Party Bear', '', '', 0, 0, 0, 0, 50)
+on conflict (key) do nothing;
+
+-- Four store copies per new collectible; never recreate existing stock on reruns.
+insert into public.gift_items (serial, model_key)
+select 12040 + (27 + model.idx) * 7919 + copies.i * 104729, model.key
+from (values
+  ('nexo-moon-witch', 0),
+  ('nexo-pilot-pup', 1),
+  ('nexo-dart-champion', 2),
+  ('nexo-frost-witch', 3),
+  ('nexo-tropical-treat', 4),
+  ('nexo-candy-stocking', 5),
+  ('nexo-matcha-scoop', 6),
+  ('nexo-hazard-doll', 7),
+  ('nexo-disco-pup', 8),
+  ('nexo-matcha-bowl', 9),
+  ('nexo-golden-brew', 10),
+  ('nexo-cocoa-cone', 11),
+  ('nexo-sunflower-glow', 12),
+  ('nexo-crimson-crane', 13),
+  ('nexo-golden-serpent', 14),
+  ('nexo-neon-serpent', 15),
+  ('nexo-frost-serpent', 16),
+  ('nexo-butterfly-glow', 17),
+  ('nexo-pixel-pop', 18),
+  ('nexo-star-loupe', 19),
+  ('nexo-spiral-pop', 20),
+  ('nexo-kiwi-pop', 21),
+  ('nexo-ruby-fuzz', 22),
+  ('nexo-cosmic-loupe', 23),
+  ('nexo-starlight-scoop', 24),
+  ('nexo-frog-box', 25),
+  ('nexo-geo-forest', 26),
+  ('nexo-geo-berry', 27),
+  ('nexo-geo-ocean', 28),
+  ('nexo-rose-cap', 29),
+  ('nexo-rose-peach', 30),
+  ('nexo-amber-peach', 31),
+  ('nexo-rainbow-cap', 32),
+  ('nexo-spectrum-peach', 33)
+) as model(key, idx)
+cross join generate_series(0, 3) as copies(i)
+where not exists (select 1 from public.gift_items where model_key = model.key)
+on conflict (serial) do nothing;
