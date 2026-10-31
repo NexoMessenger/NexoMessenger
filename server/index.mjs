@@ -15,7 +15,7 @@
  */
 import express from 'express'
 import webpush from 'web-push'
-import { createGroq } from './ai-groq.mjs'
+import { createGigachat } from './ai-gigachat.mjs'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -521,16 +521,16 @@ app.get('/api/users', auth, (req, res) => {
   res.json({ profiles: ids.map((id) => profileOf(id)).filter(Boolean) })
 })
 
-/* ---------- Astra: Groq cloud API ---------- */
-const groqKey = () => (process.env.GROQ_API_KEY || '').trim()
-const aiProvider = createGroq({
-  getKey: groqKey,
-  baseUrl: process.env.GROQ_BASE_URL || undefined,
-  model: process.env.GROQ_MODEL || undefined,
-  timeoutMs: process.env.GROQ_TIMEOUT_MS || undefined,
+/* ---------- Astra: GigaChat cloud API ---------- */
+const gigachatKey = () => (process.env.GIGACHAT_AUTH_KEY || '').trim()
+const aiProvider = createGigachat({
+  getKey: gigachatKey,
+  model: process.env.GIGACHAT_MODEL || undefined,
+  timeoutMs: process.env.GIGACHAT_TIMEOUT_MS || undefined,
+  caFile: process.env.GIGACHAT_CA_FILE || undefined,
 })
 const aiStartup = aiProvider.status()
-if (!aiStartup.ready) console.warn(`[AI] Groq is not ready: ${aiStartup.reason}. Check the server configuration.`)
+if (!aiStartup.ready) console.warn(`[AI] GigaChat is not ready: ${aiStartup.reason}. Check the server configuration.`)
 let aiBusy = false
 if (!Array.isArray(db.aiChats)) db.aiChats = []
 if (!db.aiUsage || typeof db.aiUsage !== 'object') db.aiUsage = { day: '', total: 0, users: {} }
@@ -542,7 +542,7 @@ app.get('/api/ai/history', auth, (req, res) => {
 app.post('/api/ai/message', auth, async (req, res) => {
   const text = typeof req.body?.text === 'string' ? req.body.text.trim() : ''
   if (!text || text.length > 2000) return fail(res, 400, 'AI_INVALID_INPUT')
-  if (!groqKey()) return fail(res, 503, 'AI_NOT_CONFIGURED')
+  if (!gigachatKey()) return fail(res, 503, 'AI_NOT_CONFIGURED')
   if (aiBusy) return fail(res, 429, 'AI_BUSY')
   // Server-wide and per-account UTC daily attempt limits help protect shared provider quota.
   // Count attempts before making the request, including provider failures.
@@ -560,9 +560,10 @@ app.post('/api/ai/message', auth, async (req, res) => {
       ...history, { role: 'user', content: text },
     ])
     if (result.error) {
-      console.warn(`[AI] Groq request failed: ${result.error}`)
+      console.warn(`[AI] GigaChat request failed: ${result.error}`)
       return fail(res, result.error === 'AI_RATE_LIMIT' ? 429 : 503, result.error)
     }
+    console.info('[AI] GigaChat response received')
     const userMessage = { id: uid(), role: 'user', content: text, created_at: now() }
     const reply = { id: uid(), role: 'assistant', content: result.answer, created_at: now() }
     let stored = db.aiChats.find(item => item.user_id === req.me.id)

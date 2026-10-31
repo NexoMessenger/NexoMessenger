@@ -14,7 +14,7 @@ await new Promise(resolve => listener.close(resolve))
 const dir = await mkdtemp(path.join(tmpdir(), 'nexo-ai-test-'))
 const base = `http://127.0.0.1:${port}`
 const child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', 'server/index.mjs'], {
-  env: { ...process.env, PORT: String(port), NEXO_DATA_DIR: dir, GROQ_API_KEY: 'test-key' }, stdio: ['ignore', 'pipe', 'pipe'],
+  env: { ...process.env, PORT: String(port), NEXO_DATA_DIR: dir, GIGACHAT_AUTH_KEY: 'test-key' }, stdio: ['ignore', 'pipe', 'pipe'],
 })
 let logs = ''
 child.stdout.on('data', data => { logs += data.toString() })

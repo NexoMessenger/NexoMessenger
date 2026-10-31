@@ -4,7 +4,10 @@ globalThis.fetch = async (url, options = {}) => {
   if (String(url).startsWith('https://openrouter.ai/api/v1/models/')) {
     return new Response(JSON.stringify({ data: { endpoints: [{}] } }), { status: 200 })
   }
-  if (String(url) === 'https://api.groq.com/openai/v1/chat/completions') {
+  if (String(url) === 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth') {
+    return new Response(JSON.stringify({ access_token: 'mock-token', expires_at: Date.now() + 1800000 }), { status: 200 })
+  }
+  if (String(url) === 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions') {
     const data = JSON.parse(options.body)
     if (data.messages.at(-1).content === 'quota') return new Response('', { status: 429 })
     if (data.messages.at(-1).content === 'forbidden') return new Response('', { status: 403 })

@@ -35,7 +35,7 @@ export default function AiPage() {
       setMessages(prev => [...prev, ...pair].slice(-100)); setText('')
     } catch (e) {
       const code = e instanceof Error ? e.message : ''
-      const keys: Record<string, TranslationKey> = { AI_RATE_LIMIT: 'ai.rateLimit', AI_AUTH_ERROR: 'ai.authError', AI_FORBIDDEN: 'ai.forbidden', AI_NOT_CONFIGURED: 'ai.setup', AI_BUSY: 'ai.busy', AI_BALANCE: 'ai.balance', AI_DAILY_LIMIT: 'ai.dailyLimit' }
+      const keys: Record<string, TranslationKey> = { AI_RATE_LIMIT: 'ai.rateLimit', AI_AUTH_ERROR: 'ai.authError', AI_FORBIDDEN: 'ai.forbidden', AI_CERT_ERROR: 'ai.certError', AI_NOT_CONFIGURED: 'ai.setup', AI_BUSY: 'ai.busy', AI_BALANCE: 'ai.balance', AI_DAILY_LIMIT: 'ai.dailyLimit' }
       setError(t(keys[code] || 'ai.sendError'))
     }
     finally { setSending(false) }
@@ -59,7 +59,7 @@ export default function AiPage() {
     <div ref={scroller} className="messages-scroll ai-messages">
       <div className="astra-intro"><Astra greeting /><div className="astra-greeting glass">{t('astra.hello')}</div></div>
       <div className="ai-disclaimer glass">{t('ai.disclaimer')}</div>
-      {status && !ready && <div className="ai-notice glass" role="status"><p>{t(status.reason === 'missing_key' ? 'ai.setup' : status.reason === 'model_unavailable' ? 'ai.modelUnavailable' : status.reason === 'unsupported' ? 'ai.unsupported' : 'ai.networkError')}</p><button className="btn btn-sm" onClick={() => void check()}>{t('ai.retry')}</button></div>}
+      {status && !ready && <div className="ai-notice glass" role="status"><p>{t(status.reason === 'missing_key' ? 'ai.setup' : status.reason === 'invalid_cert' ? 'ai.certError' : status.reason === 'model_unavailable' ? 'ai.modelUnavailable' : status.reason === 'unsupported' ? 'ai.unsupported' : 'ai.networkError')}</p><button className="btn btn-sm" onClick={() => void check()}>{t('ai.retry')}</button></div>}
       {messages.length === 0 && <div className="ai-empty">{t('ai.welcome')}</div>}
       {messages.map(message => <div key={message.id} className={`msg-row ${message.role === 'user' ? 'mine' : 'theirs'}`}>
         <div className="msg-col"><div className="bubble ai-bubble">{message.content}</div><span className="ai-time">{new Date(message.created_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span></div>
