@@ -48,6 +48,9 @@ export const IconSettings = (p: IconProps) => (
 export const IconBell = (p: IconProps) => (
   <svg {...base(p)}><path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z" /><path d="M10 19a2.2 2.2 0 0 0 4 0" /></svg>
 )
+export const IconWand = (p: IconProps) => (
+  <svg {...base(p)}><path d="m4 20 10.5-10.5 3 3L7 23H4v-3ZM13 11l3 3M18 2v4M16 4h4M7 3v3M5.5 4.5h3M20 16v3M18.5 17.5h3" /></svg>
+)
 export const IconAttach = (p: IconProps) => (
   <svg {...base(p)}><path d="m20.3 11.7-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9.3-9.3a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.3a1.8 1.8 0 0 1-2.6-2.6l8.5-8.6" /></svg>
 )

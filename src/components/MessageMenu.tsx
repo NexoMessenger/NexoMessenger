@@ -116,11 +116,6 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
   const backdropPressed = useRef(false)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const [armed, setArmed] = useState(false)
-  const [tools, setTools] = useState(false)
-  const [result, setResult] = useState('')
-  const [toolError, setToolError] = useState('')
-  const [working, setWorking] = useState(false)
-  const [copied, setCopied] = useState(false)
   const { msg, rect } = target
   const canCopy = Boolean(msg.body?.trim())
   const canEdit = mine && canCopy
@@ -138,7 +133,7 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
     let top = rect.top - h - 8
     if (top < 8) top = Math.min(rect.bottom + 8, vh - h - 8)
     setPos({ left, top: Math.max(8, top) })
-  }, [rect, mine, tools, result, toolError])
+  }, [rect, mine])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -180,18 +175,6 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
             ))}
           </div>
         )}
-        {canCopy && <button className="msg-menu-item nexo-tool-entry" role="menuitem" onClick={() => { setTools(v => !v); setResult(''); setToolError('') }}><span>NEXO ✦</span><span>{t('nexo.tools')}</span></button>}
-        {canCopy && tools && <div className="nexo-tools">
-          <p>{t('nexo.privacy')}</p>
-          {(['correct', 'improve', 'shorten'] as const).map(action => <button key={action} className="btn btn-sm" disabled={working || msg.body.length > 2000} onClick={async () => {
-            setWorking(true); setToolError(''); setResult(''); setCopied(false)
-            try { setResult(await api.rewriteAi(msg.body, action)) } catch { setToolError(t('nexo.error')) } finally { setWorking(false) }
-          }}>{t(`nexo.${action}`)}</button>)}
-          {msg.body.length > 2000 && <p role="alert">{t('nexo.tooLong')}</p>}
-          {working && <p role="status">{t('ai.thinking')}</p>}
-          {toolError && <p role="alert">{toolError}</p>}
-          {result && <div><strong>{t('nexo.result')}</strong><p className="nexo-result">{result}</p><button className="btn btn-sm" onClick={async () => setCopied(await copyText(result))}>{copied ? t('nexo.copied') : t('nexo.copy')}</button></div>}
-        </div>}
         {canCopy && (
           <button className="msg-menu-item" role="menuitem" onClick={onCopy}>
             <IconCopy size={17} /><span>{t('msg.copy')}</span>

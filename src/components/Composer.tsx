@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AttachmentInfo } from '../lib/types'
-import { ErrorBox, errText } from './ui'
+import { ErrorBox, Modal, errText } from './ui'
+import * as api from '../lib/api'
 import { useI18n } from '../i18n'
 import {
   IconAttach, IconSend, IconImage, IconFile, IconMic, IconVideoCircle,
-  IconSticker, IconStop, IconTrash, IconPlay, IconPause,
+  IconSticker, IconStop, IconTrash, IconPlay, IconPause, IconWand,
 } from './icons'
 import { StickerPicker } from './FoxStickers'
 import { NEXO_ANIMATED_EMOJI } from '../lib/premiumData'
@@ -37,6 +38,12 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
   const [stickerOpen, setStickerOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiWorking, setAiWorking] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiResult, setAiResult] = useState('')
+  const [aiSource, setAiSource] = useState('')
+  const aiRequest = useRef(0)
   const [failedMedia, setFailedMedia] = useState<{ blob: Blob; duration: number; name: string } | null>(null)
 
   // audio recording state
@@ -64,6 +71,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
 
   // Stop mic/camera + timers if the composer unmounts (leaving the chat).
   useEffect(() => () => {
+    aiRequest.current++
     stopStream()
     window.clearInterval(timerRef.current)
     if (recUrl) URL.revokeObjectURL(recUrl)
@@ -78,6 +86,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
   // Edit mode prefill (only when the edit target actually changes).
   const lastInitKey = useRef('')
   useEffect(() => {
+    aiRequest.current++; setAiOpen(false); setAiWorking(false); setAiResult(''); setAiError('')
     if (initialTextKey && initialTextKey !== lastInitKey.current) {
       lastInitKey.current = initialTextKey
       setText(initialText || '')
@@ -104,7 +113,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
   }
 
   const submit = async () => {
-    if (sending || uploading) return
+    if (sending || uploading || aiOpen || aiWorking) return
     if (!text.trim() && !pending) return
     const body = text; const att = pending || undefined
     setText(''); setPending(null)
@@ -202,6 +211,26 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
 
   const busy = sending || uploading
 
+  const closeAi = () => {
+    aiRequest.current++; setAiOpen(false); setAiWorking(false); setAiResult(''); setAiError('')
+  }
+  const rewrite = async (action: api.AiRewriteAction) => {
+    const source = text
+    if (!source.trim() || source.length > 2000 || aiWorking || busy) return
+    const request = ++aiRequest.current
+    setAiWorking(true); setAiResult(''); setAiError(''); setAiSource(source)
+    try {
+      const output = await api.rewriteAi(source, action)
+      if (aiRequest.current === request) setAiResult(output)
+    } catch (e) {
+      if (aiRequest.current === request) {
+        const code = e instanceof Error ? e.message : ''
+        const message = code === 'AI_DAILY_LIMIT' ? 'ai.dailyLimit' : code === 'AI_RATE_LIMIT' ? 'ai.rateLimit' : code === 'AI_BUSY' ? 'ai.busy' : code === 'AI_CERT_ERROR' ? 'ai.certError' : code === 'AI_AUTH_ERROR' ? 'ai.authError' : code === 'AI_FORBIDDEN' ? 'ai.forbidden' : code === 'AI_NOT_CONFIGURED' ? 'ai.setup' : 'nexo.error'
+        setAiError(t(message))
+      }
+    } finally { if (aiRequest.current === request) setAiWorking(false) }
+  }
+
   return (
     <div>
       <div style={{ padding: '0 16px' }}><ErrorBox error={error} /></div>
@@ -285,7 +314,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
           <button className="send-btn" onClick={sendRecordedAudio} disabled={busy} aria-label={t('composer.sendRecording')}><IconSend size={18} /></button>
         </div>
       ) : (
-        <div className="composer">
+        <div className={`composer${text.trim() ? ' composer-with-ai' : ''}`}>
           <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.txt,.zip,.doc,.docx"
             onChange={(e) => pickFile(e.target.files?.[0])} />
           <button className="icon-btn composer-btn" onClick={() => fileRef.current?.click()}
@@ -295,6 +324,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
           <textarea ref={taRef} className="composer-input" rows={1} placeholder={placeholder} value={text}
             onChange={(e) => { setText(e.target.value); grow(); handleTyping() }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }} />
+          {text.trim() && <button className="icon-btn composer-btn composer-ai-btn" type="button" disabled={busy} onClick={() => { setAiOpen(true); setAiResult(''); setAiError('') }} aria-label={t('nexo.draftTools')} title={t('nexo.draftTools')}><IconWand size={19} /></button>}
           {text.trim() || pending ? (
             <button className="send-btn" onClick={submit} disabled={busy} aria-label={t('composer.send')}>
               {sending ? '…' : <IconSend size={18} />}
@@ -308,6 +338,22 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
         </div>
       )}
 
+      {aiOpen && <Modal title={t('nexo.draftTools')} onClose={closeAi}>
+        <div className="composer-ai-panel">
+          <p>{t('nexo.draftPrivacy')}</p>
+          {text.length > 2000 && <p role="alert">{t('nexo.tooLong')}</p>}
+          <div className="composer-ai-actions">
+            {(['correct', 'improve', 'shorten'] as const).map(action => <button type="button" className="btn btn-sm" key={action} disabled={aiWorking || busy || !text.trim() || text.length > 2000} onClick={() => void rewrite(action)}>{t(`nexo.${action}`)}</button>)}
+          </div>
+          {aiWorking && <p role="status">{t('ai.thinking')}</p>}
+          {aiError && <p className="composer-ai-error" role="alert">{aiError}</p>}
+          {aiResult && <div className="composer-ai-preview">
+            <strong>{t('nexo.result')}</strong><p>{aiResult}</p>
+            {text !== aiSource && <p role="status">{t('nexo.draftChanged')}</p>}
+            <button type="button" className="btn btn-primary btn-sm" disabled={text !== aiSource || busy} onClick={() => { setText(aiResult); closeAi(); requestAnimationFrame(() => { grow(); taRef.current?.focus() }) }}>{t('nexo.useDraft')}</button>
+          </div>}
+        </div>
+      </Modal>}
       {videoOpen && (
         <VideoRecorder
           onClose={() => setVideoOpen(false)}

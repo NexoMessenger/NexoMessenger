@@ -55,6 +55,8 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.equal((await request('/api/ai/history?thread_id=' + first.json.thread_id, alice.token)).status, 404)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'intrude', thread_id: first.json.thread_id })).status, 404)
     assert.deepEqual((await request('/api/ai/rewrite', bob.token, { text: 'hello there', action: 'correct' })).json, { text: 'Mock response' })
+    for (const action of ['improve', 'shorten']) assert.deepEqual((await request('/api/ai/rewrite', bob.token, { text: 'draft', action })).json, { text: 'Mock response' })
+    assert.equal((await request('/api/ai/rewrite', bob.token, { text: 'x'.repeat(2001), action: 'correct' })).status, 400)
     assert.equal((await request('/api/ai/rewrite', bob.token, { text: 'hello', action: 'unknown' })).status, 400)
     assert.equal((await request('/api/ai/rewrite', null, { text: 'hello', action: 'correct' })).status, 401)
     assert.equal((await request('/api/ai/history?thread_id=' + first.json.thread_id, bob.token)).json.messages.length, 2)
