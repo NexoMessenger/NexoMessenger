@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Reaction } from '../lib/types'
 import { IconPlay, IconPause } from './icons'
+import { useI18n } from '../i18n'
 
 export const REACTION_SET = ['❤️', '😂', '🔥', '😮', '😢', '👍', '👎', '🎉']
 
@@ -186,6 +187,8 @@ export function AudioBubble({ url, duration = 0, label }: { url: string; duratio
 
 /** Telegram-style round video message: tap to play/pause, ring progress. */
 export function VideoCircle({ url, duration = 0, label }: { url: string; duration?: number; label: string }) {
+  const { t } = useI18n()
+  const [error, setError] = useState(false)
   const ref = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -197,25 +200,27 @@ export function VideoCircle({ url, duration = 0, label }: { url: string; duratio
     const v = ref.current
     if (!v) return
     if (playing) v.pause()
-    else v.play().catch(() => setPlaying(false))
+    else v.play().catch(() => { setPlaying(false); setError(true) })
   }
 
   return (
     <div className="video-circle-wrap">
-      <button className="video-circle" onClick={toggle} aria-label={label}>
+      <button className="video-circle" onClick={toggle} aria-label={`${playing ? t('composer.videoPause') : t('composer.videoPlay')}: ${label}`}>
         <video ref={ref} src={url} playsInline preload="metadata" muted={false}
-          onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
+          onPlay={() => { setPlaying(true); setError(false) }} onPause={() => setPlaying(false)}
+          onError={() => setError(true)}
           onEnded={() => { setPlaying(false); setProgress(0) }}
           onLoadedMetadata={() => { const d = ref.current?.duration; if (d && isFinite(d)) setTotal(d) }}
-          onTimeUpdate={() => { const v = ref.current; if (v && v.duration) setProgress(v.currentTime / v.duration) }} />
+          onTimeUpdate={() => { const v = ref.current; const d = v && isFinite(v.duration) ? v.duration : total; if (v && d > 0) setProgress(Math.min(1, v.currentTime / d)) }} />
         <svg className="video-ring" viewBox="0 0 168 168" aria-hidden="true">
           <circle cx="84" cy="84" r={R} className="video-ring-bg" />
           <circle cx="84" cy="84" r={R} className="video-ring-fg"
             strokeDasharray={C} strokeDashoffset={C * (1 - progress)} />
         </svg>
         {!playing && <span className="video-play-badge"><IconPlay size={20} /></span>}
-        <span className="video-duration">{fmtDuration(total)}</span>
+        <span className="video-duration">{fmtDuration(playing && isFinite(total) ? Math.max(0, total * (1 - progress)) : total)}</span>
       </button>
+      {error && <span className="video-play-error" role="alert">{t('composer.videoPlaybackError')}</span>}
     </div>
   )
 }
