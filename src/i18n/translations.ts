@@ -8,6 +8,15 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'composer.videoHoldLabel': 'Hold to record a video message',
+  'composer.videoStarting': 'Starting camera… keep holding',
+  'composer.videoFinishing': 'Finishing…',
+  'composer.videoHoldHint': 'Release to send · slide left to cancel',
+  'composer.videoTooShort': 'Hold until the camera starts and record at least half a second. If asked, allow camera and microphone access, then try again.',
+  'composer.videoPlaybackError': 'Could not play this video on this device.',
+  'composer.videoPlay': 'Play video message',
+  'composer.videoPause': 'Pause video message',
+
   'nexo.draftTools': 'Improve draft with AI',
   'nexo.draftPrivacy': 'Choosing an action sends your draft to GigaChat. Do not include sensitive information. Review the result before using it; nothing is sent to the chat automatically.',
   'nexo.useDraft': 'Use this text',
@@ -609,6 +618,15 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'composer.videoHoldLabel': 'Удерживай для записи видеокружка',
+  'composer.videoStarting': 'Включаем камеру… продолжай удерживать',
+  'composer.videoFinishing': 'Завершаем…',
+  'composer.videoHoldHint': 'Отпусти для отправки · сдвинь влево для отмены',
+  'composer.videoTooShort': 'Держи кнопку до включения камеры и запиши хотя бы полсекунды. Если браузер попросит доступ к камере и микрофону, разреши его и попробуй ещё раз.',
+  'composer.videoPlaybackError': 'Не удалось воспроизвести видео на этом устройстве.',
+  'composer.videoPlay': 'Воспроизвести видеокружок',
+  'composer.videoPause': 'Приостановить видеокружок',
+
   'nexo.draftTools': 'Улучшить текст с ИИ',
   'nexo.draftPrivacy': 'При выборе действия черновик будет отправлен в GigaChat. Не передавай секретные данные. Проверь результат: в чат он автоматически не отправится.',
   'nexo.useDraft': 'Использовать текст',
@@ -1208,6 +1226,15 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'composer.videoHoldLabel': 'Утримуй для запису відеокружечка',
+  'composer.videoStarting': 'Вмикаємо камеру… продовжуй утримувати',
+  'composer.videoFinishing': 'Завершуємо…',
+  'composer.videoHoldHint': 'Відпусти, щоб надіслати · посунь ліворуч для скасування',
+  'composer.videoTooShort': 'Тримай кнопку до ввімкнення камери та запиши хоча б пів секунди. Якщо браузер попросить доступ до камери й мікрофона, дозволь його та спробуй знову.',
+  'composer.videoPlaybackError': 'Не вдалося відтворити відео на цьому пристрої.',
+  'composer.videoPlay': 'Відтворити відеокружечок',
+  'composer.videoPause': 'Призупинити відеокружечок',
+
   'nexo.draftTools': 'Покращити текст з ШІ',
   'nexo.draftPrivacy': 'Після вибору дії чернетку буде надіслано до GigaChat. Не передавай секретні дані. Перевір результат: у чат він автоматично не надійде.',
   'nexo.useDraft': 'Використати текст',
@@ -1807,6 +1834,15 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'composer.videoHoldLabel': '按住录制视频消息',
+  'composer.videoStarting': '正在启动摄像头…请继续按住',
+  'composer.videoFinishing': '正在完成…',
+  'composer.videoHoldHint': '松开发送 · 向左滑动取消',
+  'composer.videoTooShort': '请按住直到摄像头启动，并录制至少半秒。如浏览器请求摄像头和麦克风权限，请允许后重试。',
+  'composer.videoPlaybackError': '无法在此设备上播放视频。',
+  'composer.videoPlay': '播放视频消息',
+  'composer.videoPause': '暂停视频消息',
+
   'nexo.draftTools': '使用 AI 改善草稿',
   'nexo.draftPrivacy': '选择操作后草稿将发送至 GigaChat。请勿分享敏感信息。请先检查结果；它不会自动发送到聊天。',
   'nexo.useDraft': '使用此文本',

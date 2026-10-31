@@ -10,7 +10,7 @@ import {
 import { StickerPicker } from './FoxStickers'
 import { NEXO_ANIMATED_EMOJI } from '../lib/premiumData'
 import { AudioBubble, fmtDuration } from './MessageExtras'
-import VideoRecorder, { mediaSupported, pickMime } from './VideoRecorder'
+import VideoRecorder, { mediaSupported, pickMime, type VideoHoldIntent } from './VideoRecorder'
 
 const AUDIO_MIMES = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus']
 const MAX_AUDIO_SEC = 300
@@ -38,6 +38,8 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
   const [stickerOpen, setStickerOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [videoOpen, setVideoOpen] = useState(false)
+  const [videoIntent, setVideoIntent] = useState<VideoHoldIntent>('cancel')
+  const videoGesture = useRef<{ pointerId: number | null; x: number; cancel: boolean } | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [aiWorking, setAiWorking] = useState(false)
   const [aiError, setAiError] = useState('')
@@ -63,6 +65,40 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
   const fileRef = useRef<HTMLInputElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const lastTyping = useRef(0)
+
+  // Capture release even if the pointer moves outside the button or the overlay opens.
+  useEffect(() => {
+    const finish = (event: PointerEvent) => {
+      const gesture = videoGesture.current
+      if (!gesture || gesture.pointerId !== event.pointerId) return
+      videoGesture.current = null
+      setVideoIntent(event.type === 'pointercancel' || gesture.cancel ? 'cancel' : 'send')
+    }
+    const move = (event: PointerEvent) => {
+      const gesture = videoGesture.current
+      if (gesture && gesture.pointerId === event.pointerId && event.clientX < gesture.x - 90) gesture.cancel = true
+    }
+    const cancel = () => { if (videoGesture.current) { videoGesture.current = null; setVideoIntent('cancel') } }
+    window.addEventListener('pointerup', finish, true)
+    window.addEventListener('pointercancel', finish, true)
+    window.addEventListener('pointermove', move, true)
+    window.addEventListener('blur', cancel)
+    const visibility = () => { if (document.hidden) cancel() }
+    document.addEventListener('visibilitychange', visibility)
+    return () => {
+      window.removeEventListener('pointerup', finish, true)
+      window.removeEventListener('pointercancel', finish, true)
+      window.removeEventListener('pointermove', move, true)
+      window.removeEventListener('blur', cancel)
+      document.removeEventListener('visibilitychange', visibility)
+    }
+  }, [])
+  const beginVideoHold = (pointerId: number | null, x: number) => {
+    if (busy || videoGesture.current || videoOpen) return
+    setError('')
+    videoGesture.current = { pointerId, x, cancel: false }
+    setVideoIntent('holding'); setVideoOpen(true)
+  }
 
   const stopStream = () => {
     streamRef.current?.getTracks().forEach((tr) => tr.stop())
@@ -332,7 +368,11 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
           ) : (
             <>
               <button className="icon-btn composer-btn" onClick={startAudio} aria-label={t('composer.voice')} disabled={busy}><IconMic size={19} /></button>
-              <button className="icon-btn composer-btn" onClick={() => { setError(''); setVideoOpen(true) }} aria-label={t('composer.video')} disabled={busy}><IconVideoCircle size={19} /></button>
+              <button className="icon-btn composer-btn video-hold-button" type="button" aria-label={t('composer.videoHoldLabel')} title={t('composer.videoHoldLabel')} disabled={busy || Boolean(initialTextKey)}
+                onPointerDown={event => { if (event.button !== 0) return; event.preventDefault(); try { event.currentTarget.setPointerCapture(event.pointerId) } catch { /* optional */ }; beginVideoHold(event.pointerId, event.clientX) }}
+                onKeyDown={event => { if ((event.key === ' ' || event.key === 'Enter') && !event.repeat) { event.preventDefault(); beginVideoHold(null, 0) } }}
+                onKeyUp={event => { if ((event.key === ' ' || event.key === 'Enter') && videoGesture.current?.pointerId === null) { event.preventDefault(); videoGesture.current = null; setVideoIntent('send') } }}
+                onContextMenu={event => event.preventDefault()}><IconVideoCircle size={19} /></button>
             </>
           )}
         </div>
@@ -356,8 +396,10 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
       </Modal>}
       {videoOpen && (
         <VideoRecorder
-          onClose={() => setVideoOpen(false)}
-          onSend={(blob, dur) => sendMedia(blob, dur, `circle-${Date.now()}.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`)}
+          intent={videoIntent}
+          onClose={() => { videoGesture.current = null; setVideoOpen(false) }}
+          onError={setError}
+          onSend={(blob, dur) => void sendMedia(blob, dur, `circle-${Date.now()}.${blob.type.includes('mp4') ? 'mp4' : 'webm'}`)}
         />
       )}
     </div>
