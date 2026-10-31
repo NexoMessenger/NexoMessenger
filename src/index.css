@@ -1384,3 +1384,7 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 /* Extend Sailor's pink background around the original, uncropped video. */
 .gift-detail-art--sailor { background: #bc6569 url('./assets/gifts/nexo-sailor-backdrop.jpg') center / cover no-repeat; }
 .gift-detail-art video.gift-video-contain { object-fit: contain; background: transparent; }
+
+/* Correct the displayed camera direction consistently for preview, circles and calls.
+   Only the video pixels are flipped; controls and recorded files stay untouched. */
+.nexo-camera-frame { transform: scaleX(-1); }

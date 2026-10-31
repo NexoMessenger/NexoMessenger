@@ -206,7 +206,7 @@ export function VideoCircle({ url, duration = 0, label }: { url: string; duratio
   return (
     <div className="video-circle-wrap">
       <button className="video-circle" onClick={toggle} aria-label={`${playing ? t('composer.videoPause') : t('composer.videoPlay')}: ${label}`}>
-        <video ref={ref} src={url} playsInline preload="metadata" muted={false}
+        <video className={label.startsWith('circle-') ? 'nexo-camera-frame' : undefined} ref={ref} src={url} playsInline preload="metadata" muted={false}
           onPlay={() => { setPlaying(true); setError(false) }} onPause={() => setPlaying(false)}
           onError={() => setError(true)}
           onEnded={() => { setPlaying(false); setProgress(0) }}

@@ -118,7 +118,7 @@ export default function VideoRecorder({ intent, onSend, onClose, onError }: {
   }, [intent])
 
   return <div className="video-hold-overlay" role="status" aria-live="polite">
-    <div className="video-hold-preview"><video ref={videoRef} playsInline muted autoPlay />
+    <div className="video-hold-preview"><video className="nexo-camera-frame" ref={videoRef} playsInline muted autoPlay />
       {phase === 'recording' && <span className="video-hold-dot" aria-hidden="true" />}
     </div>
     <div className="video-hold-footer"><span>{phase === 'starting' ? t('composer.videoStarting') : phase === 'finishing' ? t('composer.videoFinishing') : `${fmtDuration(elapsed)} / ${fmtDuration(MAX_SEC)}`}</span><span>{t('composer.videoHoldHint')}</span></div>
