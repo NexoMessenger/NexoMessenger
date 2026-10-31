@@ -198,3 +198,7 @@ export const IconPhone = (p: IconProps) => (
 export const IconVideoCall = (p: IconProps) => (
   <svg {...base(p)}><rect x="3" y="6" width="12" height="12" rx="3" /><path d="m15 10 5-3v10l-5-3" /></svg>
 )
+
+export const IconVolume = (p: IconProps) => (
+  <svg {...base(p)}><path d="M4 10v4h4l5 4V6L8 10H4Z" strokeLinejoin="round" /><path d="M16 9a5 5 0 0 1 0 6M18.5 6.5a8.5 8.5 0 0 1 0 11" /></svg>
+)
