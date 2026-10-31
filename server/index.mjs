@@ -332,6 +332,44 @@ const canPostChannel = (cid, uidv) => {
   return Boolean(ch && (ch.owner_id === uidv || (m && (m.role === 'owner' || m.role === 'admin' || m.can_post))))
 }
 
+// Zeron is a NEXO-owned channel and a server-side test-code bot. Bind the
+// requested existing @wallet account once to its stable id, never to a name
+// supplied by a request. If it does not exist, issuance stays disabled.
+{
+  let changed = false
+  if (!db.zeronOwnerInitialized) {
+    const matches = db.profiles.filter(p => p.username?.toLowerCase() === 'wallet' && db.users.some(u => u.id === p.id))
+    if (matches.length === 1) db.zeronOwnerId = matches[0].id
+    db.zeronOwnerInitialized = true; changed = true
+  }
+  // If no wallet existed at the first upgrade, only an explicit operator-set
+  // immutable id can enable the feature; later registrations never bind it.
+  if (!db.zeronOwnerId && process.env.ZERON_OWNER_ID && db.users.some(u => u.id === process.env.ZERON_OWNER_ID) && profileOf(process.env.ZERON_OWNER_ID)) {
+    db.zeronOwnerId = process.env.ZERON_OWNER_ID; changed = true
+  }
+  const id = 'c_zeron_official'
+  if (!db.zeronChannelCreated && !db.channels.some(c => c.id === id)) {
+    const time = now()
+    db.channels.push({ id, name: 'Zeron', avatar_url: '', description: 'Official Zeron channel for NEXO Messenger.', owner_id: 'u_assistant', is_public: true, created_at: time })
+    db.channelMembers.push({ channel_id: id, user_id: 'u_assistant', role: 'owner', can_post: true, joined_at: time })
+    for (const [i, body] of [
+      'Welcome to Zeron, the official channel for NEXO Messenger updates.',
+      'NEX is NEXO’s virtual in-app currency, used for gifts and collectibles. It cannot be exchanged for real money.',
+      'NEXO Premium brings additional profile features. Follow this channel for official updates and announcements.',
+    ].entries()) db.posts.push({ id: uid(), channel_id: id, author_id: 'u_assistant', body, attachment_url: '', attachment_name: '', attachment_type: '', created_at: new Date(Date.now() + i).toISOString() })
+    db.zeronChannelCreated = true; changed = true
+  }
+  if (db.zeronChannelCreated && db.zeronOwnerId && !db.zeronAdminGranted) {
+    const existing = db.channelMembers.find(m => m.channel_id === id && m.user_id === db.zeronOwnerId)
+    if (existing) { existing.role = 'admin'; existing.can_post = true }
+    else db.channelMembers.push({ channel_id: id, user_id: db.zeronOwnerId, role: 'admin', can_post: true, joined_at: now() })
+    db.zeronAdminGranted = true; changed = true
+  }
+  if (!db.zeronChats || typeof db.zeronChats !== 'object') { db.zeronChats = {}; changed = true }
+  if (!Array.isArray(db.zeronOrders)) { db.zeronOrders = []; changed = true }
+  if (changed) persist()
+}
+
 function fail(res, status, message) { return res.status(status).json({ error: message }) }
 
 const authHits = new Map()
@@ -632,6 +670,73 @@ app.post('/api/ai/rewrite', auth, async (req, res) => {
     persist()
     res.json({ text: result.answer })
   } finally { aiBusy = false }
+})
+
+/* ---------- Zeron test-code bot ---------- */
+const ZERON_PRODUCTS = Object.freeze({ nex_100: { amount: 100 }, nex_500: { amount: 500 }, nex_1000: { amount: 1000 }, nex_5000: { amount: 5000 }, premium_30: { days: 30 } })
+const zeronEnabled = () => process.env.ZERON_TEST_CODES_ENABLED !== 'false'
+const zeronCanIssue = userId => Boolean(zeronEnabled() && db.zeronOwnerId && userId === db.zeronOwnerId)
+function zeronChat(userId) {
+  return db.zeronChats[userId] || { stage: 'home', selected: null, messages: [] }
+}
+function zeronAdd(chat, role, kind, product = null, code = null) {
+  chat.messages.push({ id: uid(), role, kind, product, code, created_at: now() })
+  chat.messages = chat.messages.slice(-100)
+}
+app.get('/api/zeron/chat', auth, (req, res) => {
+  res.json({ ...zeronChat(req.me.id), canIssue: zeronCanIssue(req.me.id) })
+})
+const zeronHits = new Map()
+function rateLimitZeron(req, res, next) {
+  const time = Date.now(), key = req.me.id
+  const hits = (zeronHits.get(key) || []).filter(t => time - t < 5 * 60 * 1000)
+  if (hits.length >= 120) return fail(res, 429, 'Too many requests. Try again later.')
+  hits.push(time); zeronHits.set(key, hits); next()
+}
+app.post('/api/zeron/action', auth, rateLimitZeron, (req, res) => {
+  const action = typeof req.body?.action === 'string' ? req.body.action : ''
+  const previous = db.zeronChats[req.me.id]
+  const chat = structuredClone(zeronChat(req.me.id))
+  let issued = null
+  if (action === 'start' || action === 'back') {
+    zeronAdd(chat, 'user', action); zeronAdd(chat, 'bot', 'welcome'); chat.stage = 'home'; chat.selected = null
+  } else if (action === 'nex' || action === 'premium') {
+    zeronAdd(chat, 'user', action); zeronAdd(chat, 'bot', action === 'nex' ? 'choose_nex' : 'choose_premium')
+    chat.stage = action; chat.selected = null
+  } else if (Object.hasOwn(ZERON_PRODUCTS, action)) {
+    const correctStage = action.startsWith('nex_') ? chat.stage === 'nex' : chat.stage === 'premium'
+    if (!correctStage) return fail(res, 400, 'ZERON_BAD_STATE')
+    zeronAdd(chat, 'user', 'select', action); zeronAdd(chat, 'bot', 'payment_test', action)
+    chat.stage = 'payment'; chat.selected = action
+  } else if (action === 'sbp') {
+    if (chat.stage !== 'payment') return fail(res, 400, 'ZERON_BAD_STATE')
+    zeronAdd(chat, 'user', 'sbp'); zeronAdd(chat, 'bot', 'confirm_test', chat.selected); chat.stage = 'confirm'
+  } else if (action === 'continue') {
+    if (chat.stage !== 'confirm' || !Object.hasOwn(ZERON_PRODUCTS, chat.selected || '')) return fail(res, 400, 'ZERON_BAD_STATE')
+    if (!zeronCanIssue(req.me.id)) return fail(res, 403, 'ZERON_TEST_RESTRICTED')
+    const day = new Date().toISOString().slice(0, 10), product = chat.selected
+    if (db.zeronOrders.some(x => x.user_id === req.me.id && x.product === product && x.day === day)) return fail(res, 429, 'ZERON_DAILY_LIMIT')
+    let code
+    do { code = `NEXO-TEST-${crypto.randomBytes(12).toString('hex').toUpperCase()}` }
+    while (db.gifts.promo.some(x => normalizePromoCode(x.code) === normalizePromoCode(code)) || db.premiumCodes.some(x => normalizePromoCode(x.code) === normalizePromoCode(code)))
+    const spec = ZERON_PRODUCTS[product]
+    const entry = { code, redeemed_by: null, redeemed_at: '', test_owner_id: req.me.id }
+    issued = { entry: spec.amount ? { ...entry, amount: spec.amount } : { ...entry, days: spec.days }, premium: !spec.amount, order: { user_id: req.me.id, product, day, created_at: now() } }
+    zeronAdd(chat, 'user', 'continue'); zeronAdd(chat, 'bot', 'code', product, code)
+    chat.stage = 'home'; chat.selected = null
+  } else return fail(res, 400, 'ZERON_INVALID_ACTION')
+  db.zeronChats[req.me.id] = chat
+  if (issued) {
+    (issued.premium ? db.premiumCodes : db.gifts.promo).push(issued.entry)
+    db.zeronOrders.push(issued.order)
+  }
+  try { persist() } catch (error) {
+    if (previous) db.zeronChats[req.me.id] = previous
+    else delete db.zeronChats[req.me.id]
+    if (issued) { (issued.premium ? db.premiumCodes : db.gifts.promo).pop(); db.zeronOrders.pop() }
+    throw error
+  }
+  res.json({ ...chat, canIssue: zeronCanIssue(req.me.id) })
 })
 
 /* ---------- direct chats ---------- */
@@ -1184,6 +1289,7 @@ app.post('/api/gifts/redeem', auth, rateLimitAuth, (req, res) => {
   if (!norm) return fail(res, 400, 'Invalid code.')
   const entry = db.gifts.promo.find((x) => normalizePromoCode(x.code) === norm)
   if (!entry) return fail(res, 404, 'Invalid code.')
+  if (entry.test_owner_id && entry.test_owner_id !== req.me.id) return fail(res, 403, 'This test code belongs to another account.')
   if (entry.redeemed_by) return fail(res, 409, 'This code has already been used.')
   const w = giftWallet(req.me.id)
   w.balance += entry.amount
@@ -1221,6 +1327,7 @@ app.post('/api/premium/redeem', auth, rateLimitAuth, (req, res) => {
   if (!norm) return fail(res, 400, 'Invalid code.')
   const entry = db.premiumCodes.find((x) => normalizePromoCode(x.code) === norm)
   if (!entry) return fail(res, 404, 'Invalid code.')
+  if (entry.test_owner_id && entry.test_owner_id !== req.me.id) return fail(res, 403, 'This test code belongs to another account.')
   if (entry.redeemed_by) return fail(res, 409, 'This code has already been used.')
   const base = Math.max(Date.now(), req.me.premium_until ? new Date(req.me.premium_until).getTime() : 0)
   const until = new Date(base + entry.days * 24 * 60 * 60 * 1000).toISOString()

@@ -61,6 +61,10 @@ export default function ChatsPage() {
         <span className="ai-avatar"><NexoMark size={25} /></span>
         <span className="row-main"><span className="row-title">NEXO AI</span><span className="row-preview">{t('ai.entry')}</span></span>
       </button>
+      {api.mode === 'server' && <button className="row-card glass zeron-entry" onClick={() => navigate('/zeron')}>
+        <span className="ai-avatar"><NexoMark size={25} /></span>
+        <span className="row-main"><span className="row-title">Zeron</span><span className="row-preview">{t('zeron.entry')}</span></span>
+      </button>}
       <ErrorBox error={error} />
       {loading ? (
         <div className="center-loader"><div className="spinner" />{t('chats.loading')}</div>

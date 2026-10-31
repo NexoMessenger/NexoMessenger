@@ -33,7 +33,7 @@ export default function ChannelRoomPage() {
   const load = async () => {
     if (!profile) return
     try {
-      const [ch, ps, mems] = await Promise.all([api.getChannel(id), api.listPosts(id), api.getChannelMembers(id)])
+      const [ch, ps, mems] = await Promise.all([api.getChannel(id), api.listPosts(id), api.getChannelMembers(id).catch((e) => { if (e instanceof Error && /access denied/i.test(e.message)) return [] as { profile: Profile; role: string; can_post: boolean }[]; throw e })])
       setChannel(ch); setPosts(ps); setMembers(mems); setError('')
       if (ch) setOwner(await api.getProfile(ch.owner_id))
     } catch (e) { setError(errText(e, t)) }
@@ -72,7 +72,7 @@ export default function ChannelRoomPage() {
         {channel && <GroupAvatar name={channel.name} url={channel.avatar_url} size={42} />}
         <div className="row-main">
           <div className="row-title">{channel?.name || 'Channel'}</div>
-          <div className="row-preview">{members.length} {t('common.subscribers')} · {channel?.is_public ? t('common.public') : t('common.private')}</div>
+          <div className="row-preview">{subscribed && <>{members.length} {t('common.subscribers')} · </>}{channel?.is_public ? t('common.public') : t('common.private')}</div>
         </div>
         {!isOwner && (
           <button className={`btn btn-sm ${subscribed ? '' : 'btn-primary'}`} onClick={toggleSubscribe}>
@@ -123,7 +123,7 @@ export default function ChannelRoomPage() {
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}><GroupAvatar name={channel.name} url={channel.avatar_url} size={72} /></div>
             <h3 style={{ margin: '12px 0 2px' }}>{channel.name}</h3>
-            <div style={{ color: 'var(--text-3)', fontSize: 13 }}>{channel.is_public ? t('common.public') : t('common.private')} · {members.length} {t('common.subscribers')}</div>
+            <div style={{ color: 'var(--text-3)', fontSize: 13 }}>{channel.is_public ? t('common.public') : t('common.private')}{subscribed && <> · {members.length} {t('common.subscribers')}</>}</div>
             {channel.description && <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>{channel.description}</p>}
             {owner && <p style={{ color: 'var(--text-3)', fontSize: 13 }}>{t('common.owner')}: {owner.display_name} (@{owner.username})</p>}
           </div>
