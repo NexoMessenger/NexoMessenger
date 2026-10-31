@@ -16,7 +16,7 @@ import nexoRidersFloating from '../assets/gifts/nexo-riders-floating.png'
 import nexoRidersVideo from '../assets/gifts/nexo-riders.webm'
 import vampireKissCover from '../assets/gifts/nexo-vampire-kiss.jpg'
 import vampireKissVideo from '../assets/gifts/15783.webm'
-import sailorCover from '../assets/gifts/nexo-sailor.jpg'
+import sailorCover from '../assets/gifts/nexo-sailor-cover.jpg'
 import sailorVideo from '../assets/gifts/Screen_Recording_20261029_221839.mp4'
 
 /** Illustrated artwork per gift model key (bundled with the app). */

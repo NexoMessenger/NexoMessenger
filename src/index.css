@@ -1381,5 +1381,6 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .video-ring-fg { stroke: #fff; }
 .video-play-error { display: block; max-width: 220px; color: #fda4af; font-size: 12px; }
 
-/* Preserve the full, original widescreen NEXO Sailor animation. */
-.gift-detail-art video.gift-video-contain { object-fit: contain; }
+/* Extend Sailor's pink background around the original, uncropped video. */
+.gift-detail-art--sailor { background: #bc6569 url('./assets/gifts/nexo-sailor-backdrop.jpg') center / cover no-repeat; }
+.gift-detail-art video.gift-video-contain { object-fit: contain; background: transparent; }
