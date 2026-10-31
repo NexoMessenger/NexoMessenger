@@ -111,7 +111,7 @@ export default function GiftsPage() {
     })
     if (sort === 'price-asc') out = [...out].sort((a, b) => a.price - b.price)
     else if (sort === 'price-desc') out = [...out].sort((a, b) => b.price - a.price)
-    else if (sort === 'rarity') out = [...out].sort((a, b) => a.model.rarity_model - b.model.rarity_model)
+    else if (sort === 'rarity') out = [...out].sort((a, b) => (a.model.rarity_model || Infinity) - (b.model.rarity_model || Infinity))
     return out
   }, [market, q, collection, modelKey, sort, source, maxPrice])
 
@@ -477,7 +477,7 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
           <div key={r.label} className="kv-row"><span>{r.label}</span><strong>{r.value}</strong></div>
         ))}
         <div className="kv-row">
-          <span>{t('gifts.value')}</span>
+          <span>{t(model.key === 'nexo-vampire-kiss' ? 'gifts.storePrice' : 'gifts.value')}</span>
           <strong><NexAmount amount={model.floor_price} size={15} /></strong>
         </div>
         {price !== null && (
