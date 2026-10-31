@@ -1425,3 +1425,27 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .gift-delivery-card p { white-space: pre-wrap; margin: 0; line-height: 1.4; }
 .gift-delivery-button { padding: 10px 25px; min-height: 44px; color: white; background: rgba(19,16,42,.45); border: 1px solid rgba(255,255,255,.16); border-radius: 22px; font-weight: 700; cursor: pointer; }
 .gift-comment-value, .kv-row > strong { overflow-wrap: anywhere; white-space: pre-wrap; }
+
+/* Account greeting and guided navigation */
+.onboarding-full, .onboarding-tour { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); background: rgba(7, 5, 15, .88); backdrop-filter: blur(16px); }
+.onboarding-card { position: relative; z-index: 2; width: min(100%, 440px); max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; text-align: center; padding: 38px 30px; border: 1px solid rgba(205,176,255,.24); border-radius: 30px; background: radial-gradient(circle at 50% 0, rgba(142,91,236,.24), transparent 55%), #171126; color: #f7f3ff; box-shadow: 0 30px 100px #0009, inset 0 1px #ffffff10; }
+.onboarding-card h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.17; margin: 18px 0 14px; letter-spacing: -.04em; overflow-wrap: anywhere; }
+.onboarding-card h1 span { color: #d9c1ff; }
+.onboarding-card p { color: #c4bbd3; font-size: 15px; line-height: 1.6; }
+.onboarding-logo { display: grid; place-items: center; margin: 0 auto 20px; width: 76px; height: 76px; color: white; border-radius: 24px; background: linear-gradient(145deg,#b68bff,#6234c7); box-shadow: 0 12px 40px #925bff55; }
+.onboarding-eyebrow { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #c4a5ff; font-weight: 800; }
+.onboarding-features { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 24px 0; }
+.onboarding-features span { padding: 7px 12px; border-radius: 99px; font-size: 12px; color: #dfd0f5; background: #ffffff0d; border: 1px solid #ffffff18; }
+.onboarding-buttons { display: grid; gap: 12px; margin-top: 26px; }.onboarding-buttons .btn { min-height: 48px; justify-content: center; }
+.onboarding-skip { border: 0; background: none; color: #c8bed5; padding: 12px; cursor: pointer; }
+.onboarding-tour { background: rgba(5,4,12,.76); backdrop-filter: none; }
+.tour-card { width: min(100%, 350px); padding: 26px 24px; }
+.tour-card h2 { margin: 12px 0 6px; font-size: 25px; }.tour-card p { margin: 0; }
+.onboarding-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }.onboarding-actions .btn { min-width: 110px; justify-content: center; }
+.onboarding-highlight { position: fixed; z-index: 0; border: 2px solid #d6bdff; border-radius: 18px; box-shadow: 0 0 0 4px #a97eff33, 0 0 30px #a97eff77; pointer-events: none; }
+.onboarding-arrow { position: fixed; inset: 0; z-index: 1; overflow: visible; pointer-events: none; filter: drop-shadow(0 0 6px #b98cff); }
+.session-toast { position: fixed; top: max(14px, env(safe-area-inset-top)); right: 16px; z-index: 9000; display: flex; gap: 12px; width: min(350px, calc(100vw - 32px)); overflow: hidden; padding: 16px 14px 19px; border: 1px solid #b498e94f; border-radius: 20px; background: #1c1730f2; color: #f7f3ff; box-shadow: 0 16px 50px #0009; }
+.session-toast-icon { flex: 0 0 40px; height: 40px; display: grid; place-items: center; border-radius: 13px; background: #8755dd; }.session-toast-content { min-width: 0; display: grid; gap: 2px; }.session-toast-content span,.session-toast-content small { overflow-wrap: anywhere; color: #d1c6df; }.session-toast-content small { font-size: 12px; }.session-toast button { margin-left: auto; align-self: start; border: 0; background: transparent; color: #d5c8e9; font-size: 22px; cursor: pointer; }
+.session-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #b58cff; transform-origin: left; animation: session-countdown 7s linear forwards; }
+@keyframes session-countdown { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .session-progress { animation: none; } }

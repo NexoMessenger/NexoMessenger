@@ -21,10 +21,10 @@ test('mock flow creates and signs in same account, ticket cannot be replayed',as
  let url=new URL(a.data.url); assert.equal(url.origin,'https://accounts.google.com');assert.equal(url.searchParams.get('code_challenge_method'),'S256');assert.ok(url.searchParams.get('nonce'))
  let cb=await f.callback(a);assert.equal(cb.status,303);assert.match(cb.headers.get('location'),/google_auth=complete/)
  const cookie=cb.headers.get('set-cookie').split(', ').find(s=>s.startsWith('nexo_google_ticket='))?.split(';')[0];assert.ok(cookie)
- let done=await f.request('/api/auth/google/complete',{method:'POST',headers:{cookie}});assert.equal(done.status,200);assert.ok((await done.json()).token);assert.equal(f.db.users.length,1);assert.equal(f.db.profiles.length,1);assert.equal(f.db.sessions.length,1)
+ let done=await f.request('/api/auth/google/complete',{method:'POST',headers:{cookie}});assert.equal(done.status,200);const first = await done.json(); assert.ok(first.token);assert.equal(first.isNew,true);assert.equal(f.db.users.length,1);assert.equal(f.db.profiles.length,1);assert.equal(f.db.sessions.length,1)
  assert.equal((await f.request('/api/auth/google/complete',{method:'POST',headers:{cookie}})).status,400)
  a=await f.start();cb=await f.callback(a);const c=cb.headers.get('set-cookie').split(', ').find(s=>s.startsWith('nexo_google_ticket='))?.split(';')[0]
- assert.equal((await f.request('/api/auth/google/complete',{method:'POST',headers:{cookie:c}})).status,200);assert.equal(f.db.users.length,1);assert.equal(f.db.sessions.length,2)
+ const second = await f.request('/api/auth/google/complete',{method:'POST',headers:{cookie:c}}); assert.equal(second.status,200); assert.equal((await second.json()).isNew,false);assert.equal(f.db.users.length,1);assert.equal(f.db.sessions.length,2)
 })
 test('rejects invalid state, origin, unverified email and pre-existing account',async t=>{
  const f=await fixture(t);assert.equal((await f.request('/api/auth/google/start',{method:'POST',headers:{origin:'http://evil.example'}})).status,403)

@@ -37,9 +37,10 @@ async function finishGoogleSignIn() {
   let result = 'error'
   try {
     const response = await fetch('/api/auth/google/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' })
-    const data = await response.json() as { token?: string; error?: string }
+    const data = await response.json() as { token?: string; error?: string; isNew?: boolean }
     if (response.ok && data.token) {
       // This is the existing NEXO session token, not a Google OAuth token.
+      try { sessionStorage.setItem('nexo_auth_event', data.isNew ? 'new' : 'login') } catch { /* optional */ }
       localStorage.setItem('nexo_server_token', data.token)
       result = 'success'
     } else if (data.error === 'GOOGLE_EMAIL_EXISTS') result = 'conflict'

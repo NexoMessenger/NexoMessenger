@@ -110,6 +110,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
       if (!taken) break
       username = `${base}${Math.floor(Math.random() * 9000 + 1000)}`
     }
+    try { if (sessionStorage.getItem('nexo_auth_event') === 'login') sessionStorage.setItem('nexo_auth_event', 'new') } catch { /* optional */ }
     const fresh: Profile = {
       id: user.id, username, display_name: meta.display_name || meta.full_name || meta.name || username,
       avatar_url: meta.avatar_url || meta.picture || '', bio: '', is_online: true, last_seen: now(), created_at: now(),
@@ -130,17 +131,20 @@ export async function signUp(email: string, password: string, username: string, 
   if (password.length < 6) err('Password must be at least 6 characters.')
   if (isSrv()) {
     const { token } = await srv<{ token: string }>('/api/auth/register', { method: 'POST', auth: false, body: { email, password, username, displayName } })
+    try { sessionStorage.setItem('nexo_auth_event', 'new') } catch { /* optional */ }
     setServerToken(token)
     return
   }
   if (isSb()) {
     const { data: taken } = await supabase!.from('profiles').select('id').eq('username', username).maybeSingle()
     if (taken) err('That @username is already taken.')
+    try { sessionStorage.setItem('nexo_auth_event', 'new') } catch { /* optional */ }
     const { data, error } = await supabase!.auth.signUp({
       email, password,
       options: { data: { username, display_name: displayName } },
     })
-    if (error) err(error.message)
+    if (error) { sessionStorage.removeItem('nexo_auth_event'); err(error.message) }
+    if (!data.session) sessionStorage.removeItem('nexo_auth_event')
     if (data.user && data.session) {
       await supabase!.from('profiles').upsert({
         id: data.user.id, username, display_name: displayName, is_online: true, last_seen: now(),
@@ -156,18 +160,21 @@ export async function signUp(email: string, password: string, username: string, 
   db.users.push({ id, email, passwordHash: await hashPassword(password, salt), salt })
   db.profiles.push({ id, username, display_name: displayName, avatar_url: '', bio: '', is_online: true, last_seen: now(), created_at: now() })
   db.sessionUserId = id
+  try { sessionStorage.setItem('nexo_auth_event', 'new') } catch { /* optional */ }
   saveDB(db)
 }
 
 export async function signIn(email: string, password: string): Promise<void> {
   if (isSrv()) {
     const { token } = await srv<{ token: string }>('/api/auth/login', { method: 'POST', auth: false, body: { email, password } })
+    try { sessionStorage.setItem('nexo_auth_event', 'login') } catch { /* optional */ }
     setServerToken(token)
     return
   }
   if (isSb()) {
+    try { sessionStorage.setItem('nexo_auth_event', 'login') } catch { /* optional */ }
     const { error } = await supabase!.auth.signInWithPassword({ email, password })
-    if (error) err(error.message === 'Invalid login credentials' ? 'Invalid email or password.' : error.message)
+    if (error) { sessionStorage.removeItem('nexo_auth_event'); err(error.message === 'Invalid login credentials' ? 'Invalid email or password.' : error.message) }
     return
   }
   const db = loadDB()
@@ -176,6 +183,7 @@ export async function signIn(email: string, password: string): Promise<void> {
   const ok = user.id === 'demo_user' ? password === 'demo1234' : (await hashPassword(password, user.salt)) === user.passwordHash
   if (!ok) err('Invalid email or password.')
   db.sessionUserId = user.id
+  try { sessionStorage.setItem('nexo_auth_event', 'login') } catch { /* optional */ }
   const p = db.profiles.find((x) => x.id === user.id)
   if (p) { p.is_online = true; p.last_seen = now() }
   saveDB(db)
@@ -224,11 +232,18 @@ export async function signInWithGoogle(): Promise<void> {
   if (!isSb()) {
     err('Google sign-in is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, enable the Google provider in Supabase → Authentication → Providers, and add your redirect URL. See README → "Google OAuth setup".')
   }
+  try { sessionStorage.setItem('nexo_auth_event', 'login') } catch { /* optional */ }
   const { error } = await supabase!.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.origin + window.location.pathname },
   })
-  if (error) err(error.message)
+  if (error) { sessionStorage.removeItem('nexo_auth_event'); err(error.message) }
+}
+
+export async function getCurrentEmail(): Promise<string | null> {
+  if (isSrv()) { try { return (await srv<{ email: string | null }>('/api/me')).email || null } catch { return null } }
+  if (isSb()) { const { data } = await supabase!.auth.getSession(); return data.session?.user.email || null }
+  const db = loadDB(); return db.users.find(u => u.id === db.sessionUserId)?.email || null
 }
 
 export function onAuthChange(cb: () => void): () => void {
