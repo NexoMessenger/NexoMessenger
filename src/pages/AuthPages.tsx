@@ -50,12 +50,16 @@ function PasswordInput({ value, onChange, autoComplete, placeholder }: {
 
 function GoogleButton() {
   const { t } = useI18n()
-  const [error, setError] = useState('')
+  const [error, setError] = useState(() => {
+    const status = new URL(window.location.href).searchParams.get('google_auth')
+    return status === 'conflict' ? t('google.conflict') : status === 'cancel' ? t('google.cancel') : status === 'error' ? t('google.failed') : ''
+  })
   const [busy, setBusy] = useState(false)
   const click = async () => {
     setBusy(true); setError('')
     try { await api.signInWithGoogle() } catch (e) {
-      setError(errText(e, t))
+      const code = e instanceof Error ? e.message : ''
+      setError(code === 'GOOGLE_NOT_CONFIGURED' ? t('google.notConfigured') : code === 'GOOGLE_ORIGIN_MISMATCH' ? t('google.origin') : code.startsWith('GOOGLE_') ? t('google.failed') : errText(e, t))
     } finally { setBusy(false) }
   }
   return (

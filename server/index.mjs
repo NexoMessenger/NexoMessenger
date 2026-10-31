@@ -17,6 +17,7 @@ import express from 'express'
 import webpush from 'web-push'
 import { createGigachat } from './ai-gigachat.mjs'
 import { ASTRA_INSTRUCTIONS } from './astra-instructions.mjs'
+import { registerGoogleRoutes } from './google-oauth.mjs'
 import { createServer } from 'node:http'
 import { WebSocketServer } from 'ws'
 import crypto from 'node:crypto'
@@ -495,6 +496,7 @@ app.use('/api/files', express.static(UPLOAD_DIR, { fallthrough: false, maxAge: '
 app.get('/api/health', (req, res) => res.json({ ok: true, mode: 'server', users: db.profiles.length }))
 
 /* ---------- auth ---------- */
+registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL: SESSION_TTL, touchGlobal })
 app.post('/api/auth/register', rateLimitAuth, (req, res) => {
   const { email, password, username, displayName } = req.body || {}
   const uname = String(username || '').toLowerCase().trim().replace(/^@/, '')
@@ -517,7 +519,7 @@ app.post('/api/auth/register', rateLimitAuth, (req, res) => {
 app.post('/api/auth/login', rateLimitAuth, (req, res) => {
   const { email, password } = req.body || {}
   const user = db.users.find((u) => u.email.toLowerCase() === String(email || '').toLowerCase())
-  if (!user || !verifyPassword(password || '', user)) return fail(res, 401, 'Invalid email or password.')
+  if (!user || !user.passwordHash || !user.salt || !verifyPassword(password || '', user)) return fail(res, 401, 'Invalid email or password.')
   const profile = profileOf(user.id)
   if (profile) { profile.is_online = true; profile.last_seen = now() }
   const token = tokenGen()

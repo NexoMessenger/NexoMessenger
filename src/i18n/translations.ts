@@ -8,6 +8,12 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'google.notConfigured': 'Google sign-in is not set up on this server yet. Contact the administrator.',
+  'google.origin': 'Open the configured HTTPS NEXO address to use Google sign-in.',
+  'google.cancel': 'Google sign-in was cancelled.',
+  'google.failed': 'Could not sign in with Google. Please try again.',
+  'google.conflict': 'This email already belongs to a NEXO account. Sign in with your existing method; accounts are not linked automatically.',
+
   'delivery.transferServerOnly': 'Chat transfer notices are available only on the NEXO server.',
   'delivery.giftFromAnonymous': 'Anonymous gift',
   'delivery.giftComment': 'Comment for the gift',
@@ -667,6 +673,12 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'google.notConfigured': 'Вход через Google пока не настроен на сервере. Обратись к администратору.',
+  'google.origin': 'Для входа через Google открой настроенный HTTPS-адрес NEXO.',
+  'google.cancel': 'Вход через Google отменён.',
+  'google.failed': 'Не удалось войти через Google. Попробуй ещё раз.',
+  'google.conflict': 'Этот email уже принадлежит аккаунту NEXO. Войди прежним способом: аккаунты автоматически не объединяются.',
+
   'delivery.transferServerOnly': 'Уведомления о передаче в чате доступны только на сервере NEXO.',
   'delivery.giftFromAnonymous': 'Анонимный подарок',
   'delivery.giftComment': 'Комментарий к подарку',
@@ -1324,6 +1336,12 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'google.notConfigured': 'Вхід через Google ще не налаштовано на сервері. Звернись до адміністратора.',
+  'google.origin': 'Для входу через Google відкрий налаштовану HTTPS-адресу NEXO.',
+  'google.cancel': 'Вхід через Google скасовано.',
+  'google.failed': 'Не вдалося увійти через Google. Спробуй ще раз.',
+  'google.conflict': 'Ця електронна адреса вже належить акаунту NEXO. Увійди попереднім способом: акаунти автоматично не об’єднуються.',
+
   'delivery.transferServerOnly': 'Сповіщення про передачу в чаті доступні лише на сервері NEXO.',
   'delivery.giftFromAnonymous': 'Анонімний подарунок',
   'delivery.giftComment': 'Коментар до подарунка',
@@ -1981,6 +1999,12 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'google.notConfigured': '服务器尚未配置 Google 登录，请联系管理员。',
+  'google.origin': '请打开已配置的 NEXO HTTPS 地址以使用 Google 登录。',
+  'google.cancel': 'Google 登录已取消。',
+  'google.failed': '无法使用 Google 登录，请重试。',
+  'google.conflict': '此邮箱已属于一个 NEXO 账号。请使用原方式登录；账号不会自动合并。',
+
   'delivery.transferServerOnly': '聊天中的转赠通知仅在 NEXO 服务器上可用。',
   'delivery.giftFromAnonymous': '匿名礼物',
   'delivery.giftComment': '礼物留言',
