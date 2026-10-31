@@ -35,7 +35,7 @@ test('cloud voice authenticates, restricts content and persists per-user quota',
     assert.equal((await request('/api/ai/voice', demo.token, { message_id: response.messages[0].id, locale: 'ru' })).status, 400)
     const audio = await request('/api/ai/voice', demo.token, { message_id: id, locale: 'ru' })
     assert.equal(audio.status, 200); assert.equal(await audio.text(), 'mock mp3')
-    for (let i = 0; i < 9; i++) { const r = await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'en' }); assert.equal(r.status, 200); assert.equal(await r.text(), 'mock mp3') }
+    for (let i = 0; i < 49; i++) { const r = await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'en' }); assert.equal(r.status, 200); assert.equal(await r.text(), 'mock mp3') }
     assert.equal((await request('/api/ai/voice', other.token, { message_id: 'greeting', locale: 'zh-CN' })).status, 200)
     await stop(); await start()
     assert.equal((await request('/api/ai/voice', demo.token, { message_id: 'greeting', locale: 'ru' })).status, 429)
