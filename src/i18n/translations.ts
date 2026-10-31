@@ -8,6 +8,7 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'welcome.privacy': 'Privacy policy (Russian)',
   'google.notConfigured': 'Google sign-in is not set up on this server yet. Contact the administrator.',
   'google.origin': 'Open the configured HTTPS NEXO address to use Google sign-in.',
   'google.cancel': 'Google sign-in was cancelled.',
@@ -673,6 +674,7 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'welcome.privacy': 'Политика конфиденциальности',
   'google.notConfigured': 'Вход через Google пока не настроен на сервере. Обратись к администратору.',
   'google.origin': 'Для входа через Google открой настроенный HTTPS-адрес NEXO.',
   'google.cancel': 'Вход через Google отменён.',
@@ -1336,6 +1338,7 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'welcome.privacy': 'Політика конфіденційності (російською)',
   'google.notConfigured': 'Вхід через Google ще не налаштовано на сервері. Звернись до адміністратора.',
   'google.origin': 'Для входу через Google відкрий налаштовану HTTPS-адресу NEXO.',
   'google.cancel': 'Вхід через Google скасовано.',
@@ -1999,6 +2002,7 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'welcome.privacy': '隐私政策（俄文）',
   'google.notConfigured': '服务器尚未配置 Google 登录，请联系管理员。',
   'google.origin': '请打开已配置的 NEXO HTTPS 地址以使用 Google 登录。',
   'google.cancel': 'Google 登录已取消。',

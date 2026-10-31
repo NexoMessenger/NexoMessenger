@@ -28,6 +28,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         {children}
+        <p className="auth-switch"><a href="./privacy.html">{t('welcome.privacy')}</a></p>
       </div>
     </div>
   )
