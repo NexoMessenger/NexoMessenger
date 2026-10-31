@@ -13,7 +13,7 @@ export const en = {
   'astra.name': 'Astra',
   'astra.description': 'Your NEXO AI assistant',
   'astra.select': 'Choose Astra',
-  'astra.hello': 'Hello!',
+  'astra.hello': 'Hello! I’m Astra, your NEXO Messenger assistant. How can I help?',
   'ai.balance': 'The AI service is unavailable. Contact the administrator.',
   'ai.dailyLimit': 'Daily safety limit reached. Try again tomorrow (UTC).',
 
@@ -594,7 +594,7 @@ export const ru: Record<TranslationKey, string> = {
   'astra.name': 'Астра',
   'astra.description': 'Твоя помощница NEXO AI',
   'astra.select': 'Выбрать Астру',
-  'astra.hello': 'Привет!',
+  'astra.hello': 'Привет! Я Астра, помощница мессенджера NEXO. Чем помочь?',
   'ai.balance': 'Сервис ИИ недоступен. Обратись к администратору.',
   'ai.dailyLimit': 'Дневной лимит безопасности исчерпан. Попробуй завтра (по UTC).',
 
@@ -1173,7 +1173,7 @@ export const uk: Record<TranslationKey, string> = {
   'astra.name': 'Астра',
   'astra.description': 'Твоя помічниця NEXO AI',
   'astra.select': 'Обрати Астру',
-  'astra.hello': 'Привіт!',
+  'astra.hello': 'Привіт! Я Астра, помічниця месенджера NEXO. Чим допомогти?',
   'ai.balance': 'Сервіс ШІ недоступний. Звернись до адміністратора.',
   'ai.dailyLimit': 'Денний ліміт безпеки вичерпано. Спробуй завтра (за UTC).',
 
@@ -1752,7 +1752,7 @@ export const zh: Record<TranslationKey, string> = {
   'astra.name': '阿斯特拉',
   'astra.description': '你的 NEXO AI 助手',
   'astra.select': '选择阿斯特拉',
-  'astra.hello': '你好！',
+  'astra.hello': '你好！我是阿斯特拉，NEXO Messenger 的助手。有什么可以帮你？',
   'ai.balance': 'AI 服务不可用，请联系管理员。',
   'ai.dailyLimit': '已达到每日安全限制，请明天再试（UTC）。',
 

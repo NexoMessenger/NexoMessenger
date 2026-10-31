@@ -9,6 +9,7 @@ globalThis.fetch = async (url, options = {}) => {
   }
   if (String(url) === 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions') {
     const data = JSON.parse(options.body)
+    if (data.messages[0]?.role !== 'system' || !data.messages[0].content.includes('NEXO navigation guide:') || !data.messages[0].content.includes('cannot click controls')) return new Response('', { status: 500 })
     if (data.messages.at(-1).content === 'quota') return new Response('', { status: 429 })
     if (data.messages.at(-1).content === 'forbidden') return new Response('', { status: 403 })
     return new Response(JSON.stringify({ choices: [{ message: { content: 'Mock response' } }] }), { status: 200 })
