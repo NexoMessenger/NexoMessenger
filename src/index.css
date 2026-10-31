@@ -1449,3 +1449,20 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .session-progress { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #b58cff; transform-origin: left; animation: session-countdown 7s linear forwards; }
 @keyframes session-countdown { to { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .session-progress { animation: none; } }
+
+/* Astra voice controls: use the browser's speech engine without blocking chat. */
+.astra-voice-settings { flex: 0 0 auto; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.astra-voice-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.astra-voice-top strong { font-size: 13px; }
+.astra-voice-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); }
+.astra-voice-toggle input { accent-color: #9468ed; width: 17px; height: 17px; }
+.astra-voice-settings p { color: var(--text-2); font-size: 12px; line-height: 1.4; margin: 8px 0; }
+.astra-voice-settings > label { font-size: 12px; color: var(--text-2); }
+.astra-voice-controls { display: flex; gap: 8px; align-items: center; margin-top: 5px; }
+.astra-voice-controls select { min-width: 0; flex: 1; height: 38px; font-size: 12px; }
+.astra-voice-controls .btn { flex: none; min-height: 38px; }
+.astra-voice-replay { display: inline-flex; vertical-align: middle; justify-content: center; align-items: center; margin-left: 8px; padding: 6px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); cursor: pointer; }
+.astra-voice-replay:hover, .astra-voice-replay:focus-visible { color: var(--accent); background: var(--surface-2); }
+.astra-greeting { max-width: min(220px, 55vw); overflow-wrap: anywhere; }
+.ai-room .room-head .row-main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.ai-room .room-head .row-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

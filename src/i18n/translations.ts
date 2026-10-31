@@ -8,6 +8,19 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'voice.settings': 'Astra’s voice',
+  'voice.auto': 'Read new replies aloud',
+  'voice.deviceInfo': 'The voice comes from your device or browser. Sound and availability vary by device.',
+  'voice.choose': 'Voice',
+  'voice.automatic': 'Automatic',
+  'voice.preview': 'Listen',
+  'voice.stop': 'Stop',
+  'voice.noVoices': 'No voices for this language are listed yet. Your device may use its default voice; check speech settings if you hear nothing.',
+  'voice.unsupported': 'Speech is not available in this browser.',
+  'voice.failed': 'Could not play the voice. Check your device sound or try another voice.',
+  'voice.playGreeting': 'Play greeting',
+  'voice.playAnswer': 'Read reply',
+
   'greeting.welcome': 'Welcome,',
   'greeting.back': 'Welcome back,',
   'greeting.intro': 'Your space to connect. Explore conversations, communities, channels and gifts in NEXO.',
@@ -699,6 +712,19 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'voice.settings': 'Голос Астры',
+  'voice.auto': 'Озвучивать новые ответы',
+  'voice.deviceInfo': 'Голос берётся из телефона или браузера. Звучание и доступные голоса зависят от устройства.',
+  'voice.choose': 'Голос',
+  'voice.automatic': 'Автоматически',
+  'voice.preview': 'Послушать',
+  'voice.stop': 'Остановить',
+  'voice.noVoices': 'Голоса для этого языка пока не найдены. Может использоваться голос по умолчанию; если звука нет, проверь настройки синтеза речи на телефоне.',
+  'voice.unsupported': 'В этом браузере озвучка недоступна.',
+  'voice.failed': 'Не удалось воспроизвести голос. Проверь звук телефона или выбери другой голос.',
+  'voice.playGreeting': 'Озвучить приветствие',
+  'voice.playAnswer': 'Озвучить ответ',
+
   'greeting.welcome': 'Добро пожаловать,',
   'greeting.back': 'С возвращением,',
   'greeting.intro': 'Твоё пространство для общения. Здесь есть чаты, сообщества, каналы и подарки.',
@@ -1388,6 +1414,19 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'voice.settings': 'Голос Астри',
+  'voice.auto': 'Озвучувати нові відповіді',
+  'voice.deviceInfo': 'Голос береться з телефону або браузера. Звучання й доступні голоси залежать від пристрою.',
+  'voice.choose': 'Голос',
+  'voice.automatic': 'Автоматично',
+  'voice.preview': 'Послухати',
+  'voice.stop': 'Зупинити',
+  'voice.noVoices': 'Голоси для цієї мови поки не знайдено. Може використовуватись голос за замовчуванням; якщо звуку немає, перевір налаштування синтезу мовлення.',
+  'voice.unsupported': 'У цьому браузері озвучення недоступне.',
+  'voice.failed': 'Не вдалося відтворити голос. Перевір звук пристрою або обери інший голос.',
+  'voice.playGreeting': 'Озвучити привітання',
+  'voice.playAnswer': 'Озвучити відповідь',
+
   'greeting.welcome': 'Ласкаво просимо,',
   'greeting.back': 'З поверненням,',
   'greeting.intro': 'Твій простір для спілкування: чати, спільноти, канали та подарунки.',
@@ -2077,6 +2116,19 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'voice.settings': '阿斯特拉的声音',
+  'voice.auto': '朗读新回复',
+  'voice.deviceInfo': '声音来自设备或浏览器，音色和可用声音因设备而异。',
+  'voice.choose': '声音',
+  'voice.automatic': '自动选择',
+  'voice.preview': '试听',
+  'voice.stop': '停止',
+  'voice.noVoices': '尚未找到此语言的声音。设备可能使用默认声音；如果没有声音，请检查语音合成设置。',
+  'voice.unsupported': '此浏览器不支持语音朗读。',
+  'voice.failed': '无法播放声音，请检查设备音量或选择其他声音。',
+  'voice.playGreeting': '朗读问候',
+  'voice.playAnswer': '朗读回复',
+
   'greeting.welcome': '欢迎，',
   'greeting.back': '欢迎回来，',
   'greeting.intro': '你的交流空间：聊天、社群、频道和礼物。',
