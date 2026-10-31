@@ -139,8 +139,8 @@ export function CallsProvider({ children }: { children: ReactNode }) {
         <h2>{call.name}</h2>
         <p>{call.phase === 'incoming' ? t('call.incoming') : call.phase === 'ringing' ? t('call.ringing') : call.phase === 'connecting' ? t('call.connecting') : t('call.connected')}</p>
         <div className={`call-videos ${call.kind === 'audio' ? 'audio-only' : ''}`}>
-          <video ref={remoteVideo} autoPlay playsInline />
-          {call.kind === 'video' && <video ref={localVideo} autoPlay playsInline muted className="call-self" />}
+          <video ref={remoteVideo} autoPlay playsInline className="nexo-camera-frame" />
+          {call.kind === 'video' && <video ref={localVideo} autoPlay playsInline muted className="call-self nexo-camera-frame" />}
         </div>
         <div className="call-controls">
           {call.phase === 'incoming' ? <button className="btn call-accept" onClick={() => void accept()}>{t('call.accept')}</button> : <>

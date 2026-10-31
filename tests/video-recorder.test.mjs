@@ -30,6 +30,7 @@ globalThis.MediaRecorder = FakeRecorder
 const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'silent' })
 const { default: Recorder } = await vite.ssrLoadModule('/src/components/VideoRecorder.tsx')
 const { default: Composer } = await vite.ssrLoadModule('/src/components/Composer.tsx')
+const { VideoCircle } = await vite.ssrLoadModule('/src/components/MessageExtras.tsx')
 const { fileToBase64 } = await vite.ssrLoadModule('/src/lib/api.ts')
 await vite.close()
 const container = document.getElementById('app')
@@ -45,6 +46,7 @@ test('holding and release records one blob; cancelling never sends', async () =>
   const send = (...args) => sent.push(args), close = () => { closed++ }, error = x => errors.push(x)
   await act(async () => { root.render(props('holding', send, close, error)); await flush() })
   assert.match(container.textContent, /Release to send/)
+  assert.ok(container.querySelector('.video-hold-preview video.nexo-camera-frame'))
   clock += 1100
   await act(async () => { root.render(props('send', send, close, error)); await flush() })
   assert.equal(sent.length, 1); assert.equal(sent[0][0].type, 'video/webm'); assert.equal(sent[0][1], 1)
@@ -120,6 +122,15 @@ test('codec commas in video MIME do not corrupt the uploaded payload', async () 
     const file = new File([bytes], 'attachment', { type })
     assert.deepEqual(Buffer.from(await fileToBase64(file), 'base64'), bytes, type)
   }
+})
+
+test('orientation correction is applied to video circles, not ordinary videos', async () => {
+  await act(async () => { root.render(React.createElement(VideoCircle, { url: '/api/files/circle.webm', label: 'circle-123.webm' })); await flush() })
+  assert.ok(container.querySelector('.video-circle video.nexo-camera-frame'))
+  assert.equal(container.querySelector('.video-ring').classList.contains('nexo-camera-frame'), false)
+  await act(async () => { root.render(React.createElement(VideoCircle, { url: '/api/files/movie.mp4', label: 'movie.mp4' })); await flush() })
+  assert.equal(container.querySelector('.video-circle video').classList.contains('nexo-camera-frame'), false)
+  await act(async () => root.render(null))
 })
 
 test.after(async () => { await act(async () => root.unmount()); Date.now = actualNow; dom.window.close(); stopEsbuild(); for (const handle of process._getActiveHandles()) if (handle.constructor.name === 'MessagePort') handle.unref() })
