@@ -291,7 +291,7 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
 
   return (
     <Modal title={item ? `${model.name} ${fmtSerial(item.serial)}` : model.name} onClose={onClose}>
-      <div className="gift-detail-art">
+      <div className={`gift-detail-art${model.key === 'nexo-sailor' ? ' gift-detail-art--sailor' : ''}`}>
         {selection.kind === 'nft' && GIFT_VIDEO[model.key] ? (
           <video className={model.key === 'nexo-sailor' ? 'gift-video-contain' : undefined} key={item?.id} src={GIFT_VIDEO[model.key]} poster={art} autoPlay loop muted playsInline aria-label={model.name} />
         ) : art ? (

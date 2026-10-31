@@ -461,7 +461,7 @@ function GiftDetailsModal({ sel, meId, balance, busy, onClose, onBuy, onUnlist, 
 
   return (
     <Modal title={`${model.name} ${fmtSerial(item.serial)}`} onClose={onClose}>
-      <div className="gift-detail-art">
+      <div className={`gift-detail-art${model.key === 'nexo-sailor' ? ' gift-detail-art--sailor' : ''}`}>
         {GIFT_VIDEO[model.key] ? (
           <video className={model.key === 'nexo-sailor' ? 'gift-video-contain' : undefined} key={item.id} src={GIFT_VIDEO[model.key]} poster={giftArt(model.key)}
             autoPlay loop muted playsInline aria-label={model.name} />
