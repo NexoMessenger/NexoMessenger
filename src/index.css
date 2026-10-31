@@ -1380,3 +1380,6 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .video-ring { inset: 0; width: 100%; height: 100%; }
 .video-ring-fg { stroke: #fff; }
 .video-play-error { display: block; max-width: 220px; color: #fda4af; font-size: 12px; }
+
+/* Preserve the full, original widescreen NEXO Sailor animation. */
+.gift-detail-art video.gift-video-contain { object-fit: contain; }

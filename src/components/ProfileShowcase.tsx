@@ -232,7 +232,7 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
       value: isOwn ? t('common.you') : owner ? <>{owner.display_name} <span style={{ color: 'var(--text-3)' }}>@{owner.username}</span></> : '—',
     },
     {
-      label: selection.kind === 'nft' ? t(model.key === 'nexo-vampire-kiss' ? 'gifts.storePrice' : 'gifts.value') : t('gifts.price'),
+      label: selection.kind === 'nft' ? t((model.key === 'nexo-vampire-kiss' || model.key === 'nexo-sailor') ? 'gifts.storePrice' : 'gifts.value') : t('gifts.price'),
       value: <span className="nex-amount"><NexCoin size={15} /><span>{fmtNex(model.floor_price)}</span><span className="nex-balance-label">NEX</span></span>,
     },
   ]
@@ -293,7 +293,7 @@ function ProfileGiftDetail({ selection, owner, isOwn, meId, onClose, onChanged }
     <Modal title={item ? `${model.name} ${fmtSerial(item.serial)}` : model.name} onClose={onClose}>
       <div className="gift-detail-art">
         {selection.kind === 'nft' && GIFT_VIDEO[model.key] ? (
-          <video key={item?.id} src={GIFT_VIDEO[model.key]} poster={art} autoPlay loop muted playsInline aria-label={model.name} />
+          <video className={model.key === 'nexo-sailor' ? 'gift-video-contain' : undefined} key={item?.id} src={GIFT_VIDEO[model.key]} poster={art} autoPlay loop muted playsInline aria-label={model.name} />
         ) : art ? (
           <img src={art} alt={model.name} />
         ) : (
