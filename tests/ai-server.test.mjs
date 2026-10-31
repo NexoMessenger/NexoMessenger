@@ -42,11 +42,11 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.equal((await request('/api/ai/history', alice.token)).json.messages.length, 2)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'forbidden' })).json.error, 'AI_FORBIDDEN')
     assert.equal((await request('/api/ai/message', alice.token, { text: 'x'.repeat(2001) })).status, 400)
-    for (let i = 0; i < 9; i++) assert.equal((await request('/api/ai/message', alice.token, { text: 'ok' })).status, 200)
+    for (let i = 0; i < 29; i++) assert.equal((await request('/api/ai/message', alice.token, { text: 'ok' })).status, 200)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'over' })).json.error, 'AI_DAILY_LIMIT')
     // Failed provider responses do not consume successful replies, but attempts
     // are independently bounded so repeated failures cannot be abused.
-    for (let i = 0; i < 30; i++) assert.equal((await request('/api/ai/message', charlie.token, { text: 'quota' })).json.error, 'AI_RATE_LIMIT')
+    for (let i = 0; i < 90; i++) assert.equal((await request('/api/ai/message', charlie.token, { text: 'quota' })).json.error, 'AI_RATE_LIMIT')
     assert.equal((await request('/api/ai/message', charlie.token, { text: 'ok' })).json.error, 'AI_ATTEMPT_LIMIT')
     // New conversations stay separate and cannot be read or used by another user.
     const first = await request('/api/ai/message', bob.token, { text: 'First topic', thread_id: null })
@@ -70,7 +70,7 @@ test('authenticated, private AI conversations and quota failures', async () => {
     const db = JSON.parse(await readFile(dbPath, 'utf8'))
     const old = db.aiChats.find(c => c.id === first.json.thread_id)
     delete old.id; delete old.created_at
-    db.aiUsage.successTotal = 40 // other accounts can exhaust the shared cap
+    db.aiUsage.successTotal = 120 // other accounts can exhaust the shared cap
     await writeFile(dbPath, JSON.stringify(db))
     logs = ''
     child = spawn(process.execPath, ['--import', './tests/mock-openrouter.mjs', 'server/index.mjs'], {
