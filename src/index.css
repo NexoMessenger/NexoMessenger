@@ -1466,3 +1466,6 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .astra-greeting { max-width: min(220px, 55vw); overflow-wrap: anywhere; }
 .ai-room .room-head .row-main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .ai-room .room-head .row-preview { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.astra-fish-test { flex: 0 0 auto; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.astra-fish-test strong { font-size: 13px; }
+.astra-fish-test p { font-size: 12px; color: var(--text-2); margin: 6px 0; }

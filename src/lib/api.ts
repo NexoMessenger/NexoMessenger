@@ -32,6 +32,17 @@ async function srv<T>(path: string, opts: { method?: string; body?: unknown; aut
   if (!res.ok) err(data.error || `Request failed (${res.status})`)
   return data as T
 }
+export async function fishVoiceTestAvailable(): Promise<boolean> {
+  if (!isSrv()) return false
+  return (await srv<{ available: boolean }>('/api/ai/voice-test/status')).available
+}
+export async function fishVoiceTest(messageId: string, signal: AbortSignal): Promise<Blob> {
+  const token = getServerToken()
+  const res = await fetch(`${apiBase}/api/ai/voice-test`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ message_id: messageId }), signal })
+  if (!res.ok) throw new Error('VOICE_PROVIDER_ERROR')
+  return res.blob()
+}
+
 export const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
   const r = new FileReader()
   // MIME parameters can contain commas (e.g. video/webm;codecs=vp8,opus).

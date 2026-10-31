@@ -8,6 +8,12 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'voice.fishTest': 'Private voice test',
+  'voice.fishInfo': 'Test only: text is sent to Fish Audio. Up to 10 attempts per day; availability and rights are not yet confirmed.',
+  'voice.fishListen': 'Play test greeting',
+  'voice.fishError': 'Fish Audio failed or the daily limit was reached. Try again later.',
+  'voice.fishAnswer': 'Play with test voice',
+
   'voice.settings': 'Astra’s voice',
   'voice.auto': 'Read new replies aloud',
   'voice.deviceInfo': 'The voice comes from your device or browser. Sound and availability vary by device.',
@@ -712,6 +718,12 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'voice.fishTest': 'Личный тест голоса',
+  'voice.fishInfo': 'Только для проверки: текст отправляется в Fish Audio. До 10 попыток в день; доступность и права пока не подтверждены.',
+  'voice.fishListen': 'Послушать тестовый голос',
+  'voice.fishError': 'Не удалось воспроизвести голос Fish Audio или достигнут дневной лимит. Попробуй позже.',
+  'voice.fishAnswer': 'Озвучить тестовым голосом',
+
   'voice.settings': 'Голос Астры',
   'voice.auto': 'Озвучивать новые ответы',
   'voice.deviceInfo': 'Голос берётся из телефона или браузера. Звучание и доступные голоса зависят от устройства.',
@@ -1414,6 +1426,12 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'voice.fishTest': 'Особистий тест голосу',
+  'voice.fishInfo': 'Лише для перевірки: текст надсилається до Fish Audio. До 10 спроб на день; доступність і права ще не підтверджено.',
+  'voice.fishListen': 'Прослухати тестовий голос',
+  'voice.fishError': 'Не вдалося відтворити голос Fish Audio або денний ліміт вичерпано. Спробуй пізніше.',
+  'voice.fishAnswer': 'Озвучити тестовим голосом',
+
   'voice.settings': 'Голос Астри',
   'voice.auto': 'Озвучувати нові відповіді',
   'voice.deviceInfo': 'Голос береться з телефону або браузера. Звучання й доступні голоси залежать від пристрою.',
@@ -2116,6 +2134,12 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'voice.fishTest': '私人语音测试',
+  'voice.fishInfo': '仅供测试：文本将发送至 Fish Audio。每天最多尝试 10 次；可用性和使用权尚未确认。',
+  'voice.fishListen': '试听测试语音',
+  'voice.fishError': 'Fish Audio 播放失败或已达到每日上限，请稍后重试。',
+  'voice.fishAnswer': '使用测试语音朗读',
+
   'voice.settings': '阿斯特拉的声音',
   'voice.auto': '朗读新回复',
   'voice.deviceInfo': '声音来自设备或浏览器，音色和可用声音因设备而异。',

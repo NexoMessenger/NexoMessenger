@@ -16,6 +16,7 @@
 import express from 'express'
 import webpush from 'web-push'
 import { createGigachat } from './ai-gigachat.mjs'
+import { FISH_GREETING, synthesizeFish } from './fish-voice.mjs'
 import { ASTRA_INSTRUCTIONS } from './astra-instructions.mjs'
 import { registerGoogleRoutes } from './google-oauth.mjs'
 import { createServer } from 'node:http'
@@ -652,6 +653,32 @@ let aiBusy = false
 if (!Array.isArray(db.aiChats)) db.aiChats = []
 if (!db.aiUsage || typeof db.aiUsage !== 'object') db.aiUsage = { day: '', total: 0, users: {} }
 app.get('/api/ai/status', auth, (req, res) => res.json(aiProvider.status()))
+// Private, explicitly enabled evaluation only. Text is restricted to this user's
+// saved assistant messages or a fixed greeting, with a persistent daily cap.
+const fishTestAllowed = req => Boolean(process.env.FISH_API_KEY?.trim() && process.env.FISH_TEST_USER_ID?.trim() && req.me.id === process.env.FISH_TEST_USER_ID.trim())
+app.get('/api/ai/voice-test/status', auth, (req, res) => res.json({ available: fishTestAllowed(req) }))
+let fishBusy = false
+app.post('/api/ai/voice-test', auth, async (req, res) => {
+  if (!fishTestAllowed(req)) return fail(res, 404, 'VOICE_UNAVAILABLE')
+  const id = req.body?.message_id
+  let text = ''
+  if (id === 'greeting') text = FISH_GREETING
+  else if (typeof id === 'string' && id.length < 100) {
+    text = db.aiChats.filter(c => c.user_id === req.me.id).flatMap(c => c.messages || []).find(m => m.id === id && m.role === 'assistant')?.content || ''
+  }
+  if (!text || text.length > 4000) return fail(res, 400, 'VOICE_INVALID_INPUT')
+  if (fishBusy) return fail(res, 429, 'VOICE_BUSY')
+  const day = new Date().toISOString().slice(0, 10)
+  if (!db.fishVoiceTest || db.fishVoiceTest.day !== day) db.fishVoiceTest = { day, attempts: 0 }
+  if (db.fishVoiceTest.attempts >= 10) return fail(res, 429, 'VOICE_LIMIT')
+  fishBusy = true
+  try {
+    db.fishVoiceTest.attempts++; persist()
+    const audio = await synthesizeFish(text, { key: process.env.FISH_API_KEY.trim() })
+    if (!audio) return fail(res, 503, 'VOICE_PROVIDER_ERROR')
+    res.set({ 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }).send(audio)
+  } finally { fishBusy = false }
+})
 // Upgrade old single-conversation records in place without losing their messages.
 let upgradedAi = false
 for (const chat of db.aiChats) {
