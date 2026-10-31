@@ -34,6 +34,7 @@ export const GIFT_MODELS: GiftModel[] = [
   { key: 'star-frog', kind: 'collectible', collection: 'Glow Garden', name: 'Star Frog', pattern: 'Tiny Crown', background: 'Mint Starlight', rarity_model: 1, rarity_pattern: 0.4, rarity_background: 1, total_supply: 8000, floor_price: 2100 },
   // Owner-provided artwork + reveal animation (assets/gifts/nexo-riders.*).
   { key: 'nexo-riders', kind: 'collectible', collection: 'NEXO Riders', name: 'NEXO Riders', pattern: 'Emerald Chrome', background: 'Obsidian', rarity_model: 1, rarity_pattern: 0.5, rarity_background: 1.5, total_supply: 1000, floor_price: 5000 },
+  { key: 'nexo-vampire-kiss', kind: 'collectible', collection: 'NEXO Vampire Kiss', name: 'NEXO Vampire Kiss', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 2800 },
   // ---- Regular gifts (non-unique, sendable in chats) ----
   { key: 'ruby-rose', kind: 'regular', collection: 'Regular', name: 'Ruby Rose', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 25 },
   { key: 'heart-charm', kind: 'regular', collection: 'Regular', name: 'Heart Charm', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 30 },

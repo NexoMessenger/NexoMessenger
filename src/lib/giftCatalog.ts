@@ -14,6 +14,8 @@ import nexGem from '../assets/gifts/nex-gem.jpg'
 import nexoRidersCover from '../assets/gifts/nexo-riders.png'
 import nexoRidersFloating from '../assets/gifts/nexo-riders-floating.png'
 import nexoRidersVideo from '../assets/gifts/nexo-riders.webm'
+import vampireKissCover from '../assets/gifts/nexo-vampire-kiss.jpg'
+import vampireKissVideo from '../assets/gifts/15783.webm'
 
 /** Illustrated artwork per gift model key (bundled with the app). */
 export const GIFT_ART: Record<string, string> = {
@@ -31,11 +33,13 @@ export const GIFT_ART: Record<string, string> = {
   'lucky-star': luckyStar,
   'nex-gem': nexGem,
   'nexo-riders': nexoRidersCover,
+  'nexo-vampire-kiss': vampireKissCover,
 }
 
 /** Reveal animation per gift model key (played once when the NFT is opened). */
 export const GIFT_VIDEO: Record<string, string> = {
   'nexo-riders': nexoRidersVideo,
+  'nexo-vampire-kiss': vampireKissVideo,
 }
 
 export const giftArt = (key: string): string | undefined => GIFT_ART[key]
