@@ -8,6 +8,11 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'voice.cloudEnable': 'Use Astra’s cloud voice',
+  'voice.cloudInfo': 'When enabled, Astra’s greeting and replies are sent to Fish Audio for speech generation. Do not share sensitive information.',
+  'voice.cloudLimit': 'Up to 10 attempts per user and 100 across NEXO per UTC day, including failures. Automatic playback may be blocked by your browser.',
+  'voice.cloudError': 'Voice unavailable, the limit was reached, or the browser blocked playback. Try the speaker button or try again later.',
+
   'voice.fishTest': 'Private voice test',
   'voice.fishInfo': 'Test only: text is sent to Fish Audio. Up to 10 attempts per day; availability and rights are not yet confirmed.',
   'voice.fishListen': 'Play test greeting',
@@ -718,6 +723,11 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'voice.cloudEnable': 'Использовать облачный голос Астры',
+  'voice.cloudInfo': 'При включении приветствие и ответы Астры отправляются в Fish Audio для озвучки. Не передавай секретные данные.',
+  'voice.cloudLimit': 'До 10 попыток на пользователя и 100 на весь NEXO в сутки по UTC, включая ошибки. Браузер может блокировать автоматическое воспроизведение.',
+  'voice.cloudError': 'Не удалось озвучить: сервис недоступен, достигнут лимит или браузер заблокировал звук. Нажми динамик или попробуй позже.',
+
   'voice.fishTest': 'Личный тест голоса',
   'voice.fishInfo': 'Только для проверки: текст отправляется в Fish Audio. До 10 попыток в день; доступность и права пока не подтверждены.',
   'voice.fishListen': 'Послушать тестовый голос',
@@ -1426,6 +1436,11 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'voice.cloudEnable': 'Використовувати хмарний голос Астри',
+  'voice.cloudInfo': 'Після ввімкнення привітання та відповіді Астри надсилаються до Fish Audio для озвучення. Не передавай секретні дані.',
+  'voice.cloudLimit': 'До 10 спроб на користувача та 100 на весь NEXO на добу за UTC, включно з помилками. Браузер може блокувати автоматичне відтворення.',
+  'voice.cloudError': 'Не вдалося озвучити: сервіс недоступний, ліміт вичерпано або браузер заблокував звук. Натисни динамік або спробуй пізніше.',
+
   'voice.fishTest': 'Особистий тест голосу',
   'voice.fishInfo': 'Лише для перевірки: текст надсилається до Fish Audio. До 10 спроб на день; доступність і права ще не підтверджено.',
   'voice.fishListen': 'Прослухати тестовий голос',
@@ -2134,6 +2149,11 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'voice.cloudEnable': '使用阿斯特拉的云端声音',
+  'voice.cloudInfo': '启用后，问候和回复会发送至 Fish Audio 生成语音。请勿分享敏感信息。',
+  'voice.cloudLimit': '每天（UTC）每位用户最多尝试 10 次，全站最多 100 次，失败也计入。浏览器可能阻止自动播放。',
+  'voice.cloudError': '语音服务不可用、已达到上限或浏览器阻止播放。请点击扬声器或稍后重试。',
+
   'voice.fishTest': '私人语音测试',
   'voice.fishInfo': '仅供测试：文本将发送至 Fish Audio。每天最多尝试 10 次；可用性和使用权尚未确认。',
   'voice.fishListen': '试听测试语音',
