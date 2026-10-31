@@ -1388,3 +1388,25 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 /* Correct the displayed camera direction consistently for preview, circles and calls.
    Only the video pixels are flipped; controls and recorded files stay untouched. */
 .nexo-camera-frame { transform: scaleX(-1); }
+/* Zeron bot: real server-backed test flow, never a real payment screen. */
+.zeron-entry { margin-top: 8px; }
+.zeron-head .row-main { min-width: 0; }
+.zeron-head .row-preview { display: block; }
+.zeron-verified { flex: none; padding: 10px 18px; text-align: center; color: var(--text-2); background: rgba(124,58,237,.12); border-bottom: 1px solid var(--border); font-size: 12px; }
+.zeron-verified span { color: #a78bfa; font-weight: 800; }
+.zeron-scroll { gap: 12px; }
+.zeron-welcome { max-width: 520px; width: 100%; align-self: flex-start; border-radius: 18px; overflow: hidden; }
+.zeron-welcome img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.zeron-welcome > div { padding: 16px; }
+.zeron-welcome p { margin: 8px 0 0; }
+.zeron-notice { color: var(--text-2); font-size: 12px; line-height: 1.45; }
+.zeron-bubble p { margin: 8px 0; font-size: 12px; }
+.zeron-code { display: block; margin: 10px 0; padding: 9px; background: rgba(0,0,0,.3); border-radius: 9px; color: #ddd6fe; user-select: all; overflow-wrap: anywhere; }
+.zeron-menu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; width: min(100%, 520px); align-self: flex-start; padding-bottom: 10px; }
+.zeron-menu-button { min-height: 47px; padding: 10px; border-radius: 12px; border: 1px solid var(--border); color: var(--text); background: rgba(30,30,42,.86); font-weight: 700; cursor: pointer; }
+.zeron-menu-button:disabled { opacity: .55; cursor: wait; }
+.zeron-channel { grid-column: 1 / -1; border-color: rgba(139,92,246,.4); }
+.zeron-error { color: #fda4af; font-size: 13px; }
+.zeron-dots { display: inline-block; overflow: hidden; vertical-align: bottom; width: 0; animation: zeronDots 1.2s steps(4, end) infinite; }
+@keyframes zeronDots { to { width: 1.1em; } }
+@media (prefers-reduced-motion: reduce) { .zeron-dots { animation: none; } }

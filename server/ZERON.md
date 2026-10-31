@@ -1,0 +1,7 @@
+# Zeron test bot (self-hosted server)
+
+The SBP step is explicitly simulated; it does not collect payment data, take money, or provide paid purchases. Only the bound account can generate and redeem test codes. Each option is limited to one issue per UTC day. Existing promo and Premium codes remain unchanged. Codes and bot history are stored in the existing persistent database, not in the frontend.
+
+On the first deployment, an existing unique `@wallet` account is bound once by immutable user ID. The name may change later without moving privileges. If there was no unique existing account at that first startup, later registrations are **not** automatically trusted, even after a restart. To enable the test in that case, the server operator must verify the actual account ID independently, set `ZERON_OWNER_ID` to that ID in the server's private environment file (outside the repository), and restart the server. This setting is ignored once an owner is bound; changing the username or environment cannot reassign an existing binding. The same verified ID receives the Zeron channel admin role when the channel is seeded.
+
+Set `ZERON_TEST_CODES_ENABLED=false` in the private server environment and restart to disable new test issuance. Previously issued codes remain redeemable by their bound account; disabling issuance does not pretend to connect a payment provider. A real payment integration must verify provider payment status on the server before granting any product.
