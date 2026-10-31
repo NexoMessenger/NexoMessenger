@@ -214,7 +214,13 @@ export async function resetPassword(email: string): Promise<void> {
 }
 
 export async function signInWithGoogle(): Promise<void> {
-  if (isSrv()) err('Google sign-in is not configured on this server. Use email and password.')
+  if (isSrv()) {
+    const { url } = await srv<{ url: string }>('/api/auth/google/start', { method: 'POST', body: {}, auth: false })
+    const target = new URL(url)
+    if (target.origin !== 'https://accounts.google.com') err('GOOGLE_FAILED')
+    window.location.assign(target.href)
+    return
+  }
   if (!isSb()) {
     err('Google sign-in is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, enable the Google provider in Supabase → Authentication → Providers, and add your redirect URL. See README → "Google OAuth setup".')
   }

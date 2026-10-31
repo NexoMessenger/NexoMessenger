@@ -99,7 +99,19 @@ the local demo store) — the frontend never sets balances or sellers.
 3. **Keys:** copy `.env.example` → `.env.local` and fill in your project URL + **anon** key (Project Settings → API). Never commit `.env.local`; never put the `service_role` key in frontend code.
 4. **Auth:** Authentication → Providers → Email (enable). For realtime, ensure the migration's `supabase_realtime` publication step succeeded.
 
-### Google OAuth setup (exact steps)
+### Google OAuth on the self-hosted server
+
+The button is unavailable until Google OAuth is configured. Use a working HTTPS domain serving **this server and the current application on the same origin**, with `/api` proxied to the server. HTTP is allowed only for localhost development; a public IP over HTTP will not work. The browser must reach the same HTTPS origin configured below; configure the proxy to preserve the `Host` header. Flows are stored in server memory for 10 minutes, so a restart or multi-instance routing can interrupt a sign-in.
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), configure the OAuth consent screen and create a Web application OAuth client. While in testing mode, add your Google account as a test user; Google may require verification before public use.
+2. Add the authorized JavaScript origin `https://YOUR-DOMAIN` and exact authorized redirect URI `https://YOUR-DOMAIN/api/auth/google/callback`. Do not use the Supabase callback for the self-hosted server.
+3. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI=https://YOUR-DOMAIN/api/auth/google/callback` in the server's private environment. Never commit the secret or put it in browser code. The existing VPS deployment loads `<deploy-dir>/data/gigachat.env` via systemd (or Node's `--env-file` fallback); preserve existing entries when adding these variables, restrict access, and restart the service. Do not paste credentials into chat or deployment logs. Use a separate development client for localhost.
+4. Verify that the domain serves the current self-hosted application rather than old static files, then perform a real registration and repeat sign-in using a Google test account. Google client credentials and a working HTTPS origin are required; automated mocks do not prove the live flow.
+
+The server checks Google's signed ID token, audience, issuer, expiration and nonce, and uses state and PKCE. Google tokens stay on the server. A previously registered email is **not** automatically linked: its owner must continue using the original login method. Existing Google users return to the same account using Google's stable subject ID. Account linking is not implemented.
+
+### Google OAuth with Supabase
+
 
 Google sign-in is real — it is never faked. Until these steps are done, the Google button returns an honest configuration error.
 
