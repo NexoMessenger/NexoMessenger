@@ -15,8 +15,10 @@ import nexoRidersCover from '../assets/gifts/nexo-riders.png'
 import nexoRidersFloating from '../assets/gifts/nexo-riders-floating.png'
 import nexoRidersVideo from '../assets/gifts/nexo-riders.webm'
 import vampireKissCover from '../assets/gifts/nexo-vampire-kiss.jpg'
+import vampireKissFloating from '../assets/gifts/nexo-vampire-kiss-floating.png'
 import vampireKissVideo from '../assets/gifts/15783.webm'
 import sailorCover from '../assets/gifts/nexo-sailor-cover.jpg'
+import sailorFloating from '../assets/gifts/nexo-sailor-floating.png'
 import sailorVideo from '../assets/gifts/Screen_Recording_20261029_221839.mp4'
 
 /** Illustrated artwork per gift model key (bundled with the app). */
@@ -48,8 +50,13 @@ export const GIFT_VIDEO: Record<string, string> = {
 
 export const giftArt = (key: string): string | undefined => GIFT_ART[key]
 
-/** Transparent profile-only cutout; the original NFT artwork remains unchanged elsewhere. */
-export const floatingGiftArt = (key: string): string | undefined => key === 'nexo-riders' ? nexoRidersFloating : giftArt(key)
+/** Transparent profile-only cutouts; store and detail artwork remain unchanged. */
+const FLOATING_GIFT_ART: Record<string, string> = {
+  'nexo-riders': nexoRidersFloating,
+  'nexo-vampire-kiss': vampireKissFloating,
+  'nexo-sailor': sailorFloating,
+}
+export const floatingGiftArt = (key: string): string | undefined => FLOATING_GIFT_ART[key] || giftArt(key)
 
 /** Gradient aura used for regular gifts without illustrated artwork. */
 export const REGULAR_GRADIENT: Record<string, string> = {
