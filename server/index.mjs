@@ -739,9 +739,9 @@ function beginAi(req, res) {
   if (!gigachatKey()) { fail(res, 503, 'AI_NOT_CONFIGURED'); return false }
   if (aiBusy) { fail(res, 429, 'AI_BUSY'); return false }
   const usage = currentAiUsage()
-  if (usage.successTotal >= 40) { fail(res, 429, 'AI_SERVER_DAILY_LIMIT'); return false }
-  if ((usage.successUsers[req.me.id] || 0) >= 10) { fail(res, 429, 'AI_DAILY_LIMIT'); return false }
-  if (usage.total >= 120 || (usage.users[req.me.id] || 0) >= 30) { fail(res, 429, 'AI_ATTEMPT_LIMIT'); return false }
+  if (usage.successTotal >= 120) { fail(res, 429, 'AI_SERVER_DAILY_LIMIT'); return false }
+  if ((usage.successUsers[req.me.id] || 0) >= 30) { fail(res, 429, 'AI_DAILY_LIMIT'); return false }
+  if (usage.total >= 360 || (usage.users[req.me.id] || 0) >= 90) { fail(res, 429, 'AI_ATTEMPT_LIMIT'); return false }
   aiBusy = true
   usage.total++; usage.users[req.me.id] = (usage.users[req.me.id] || 0) + 1
   try { persist() } catch (error) { aiBusy = false; throw error }
