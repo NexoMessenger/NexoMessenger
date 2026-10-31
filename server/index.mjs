@@ -680,7 +680,7 @@ app.post('/api/ai/voice-test', auth, async (req, res) => {
   } finally { fishBusy = false }
 })
 // Public voice feature: authenticated, only own saved answers, with separate
-// per-user and global persistent limits to bound third-party usage.
+// per-user persistent limit to bound third-party usage.
 app.get('/api/ai/voice/status', auth, (req, res) => res.json({ available: Boolean(process.env.FISH_API_KEY?.trim()) }))
 let cloudVoiceBusy = false
 app.post('/api/ai/voice', auth, async (req, res) => {
@@ -697,7 +697,7 @@ app.post('/api/ai/voice', auth, async (req, res) => {
   const day = new Date().toISOString().slice(0, 10)
   if (!db.fishVoiceUsage || db.fishVoiceUsage.day !== day) db.fishVoiceUsage = { day, attempts: 0, users: {} }
   const usage = db.fishVoiceUsage
-  if (usage.attempts >= 100 || (usage.users[req.me.id] || 0) >= 10) return fail(res, 429, 'VOICE_LIMIT')
+  if ((usage.users[req.me.id] || 0) >= 50) return fail(res, 429, 'VOICE_LIMIT')
   cloudVoiceBusy = true
   try {
     usage.attempts++; usage.users[req.me.id] = (usage.users[req.me.id] || 0) + 1; persist()
