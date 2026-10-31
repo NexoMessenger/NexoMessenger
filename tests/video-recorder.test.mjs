@@ -10,6 +10,7 @@ const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></h
 globalThis.window = dom.window
 globalThis.document = dom.window.document
 globalThis.File = dom.window.File
+globalThis.FileReader = dom.window.FileReader
 Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true })
 globalThis.localStorage = dom.window.localStorage
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -29,6 +30,7 @@ globalThis.MediaRecorder = FakeRecorder
 const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'silent' })
 const { default: Recorder } = await vite.ssrLoadModule('/src/components/VideoRecorder.tsx')
 const { default: Composer } = await vite.ssrLoadModule('/src/components/Composer.tsx')
+const { fileToBase64 } = await vite.ssrLoadModule('/src/lib/api.ts')
 await vite.close()
 const container = document.getElementById('app')
 const root = createRoot(container)
@@ -110,6 +112,14 @@ test('strict mode disposes the first asynchronous camera request', async () => {
   await act(async () => { root.render(React.createElement(React.StrictMode, null, props('send', send, close, error))); await flush() })
   assert.equal(sent, 1); assert.equal(closed, 1); assert.equal(trackStops, 2)
   await act(async () => root.render(null))
+})
+
+test('codec commas in video MIME do not corrupt the uploaded payload', async () => {
+  const bytes = Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0, 1, 2, 3, 255])
+  for (const type of ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/mp4', 'image/png']) {
+    const file = new File([bytes], 'attachment', { type })
+    assert.deepEqual(Buffer.from(await fileToBase64(file), 'base64'), bytes, type)
+  }
 })
 
 test.after(async () => { await act(async () => root.unmount()); Date.now = actualNow; dom.window.close(); stopEsbuild(); for (const handle of process._getActiveHandles()) if (handle.constructor.name === 'MessagePort') handle.unref() })

@@ -32,9 +32,16 @@ async function srv<T>(path: string, opts: { method?: string; body?: unknown; aut
   if (!res.ok) err(data.error || `Request failed (${res.status})`)
   return data as T
 }
-const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+export const fileToBase64 = (file: File) => new Promise<string>((resolve, reject) => {
   const r = new FileReader()
-  r.onload = () => resolve(String(r.result).split(',')[1] || '')
+  // MIME parameters can contain commas (e.g. video/webm;codecs=vp8,opus).
+  // Base64 itself never contains a comma, so only the last one separates data.
+  r.onload = () => {
+    const dataUrl = String(r.result)
+    const delimiter = dataUrl.lastIndexOf(',')
+    if (delimiter < 0) { reject(new Error('Unable to read file.')); return }
+    resolve(dataUrl.slice(delimiter + 1))
+  }
   r.onerror = reject
   r.readAsDataURL(file)
 })
