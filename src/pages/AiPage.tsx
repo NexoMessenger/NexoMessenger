@@ -38,7 +38,7 @@ export default function AiPage() {
       setThreadId(response.thread_id); setMessages(prev => [...prev, ...response.messages].slice(-100)); setText('')
     } catch (e) {
       const code = e instanceof Error ? e.message : ''
-      const keys: Record<string, TranslationKey> = { AI_RATE_LIMIT: 'ai.rateLimit', AI_AUTH_ERROR: 'ai.authError', AI_FORBIDDEN: 'ai.forbidden', AI_CERT_ERROR: 'ai.certError', AI_NOT_CONFIGURED: 'ai.setup', AI_BUSY: 'ai.busy', AI_BALANCE: 'ai.balance', AI_DAILY_LIMIT: 'ai.dailyLimit' }
+      const keys: Record<string, TranslationKey> = { AI_RATE_LIMIT: 'ai.rateLimit', AI_AUTH_ERROR: 'ai.authError', AI_FORBIDDEN: 'ai.forbidden', AI_CERT_ERROR: 'ai.certError', AI_NOT_CONFIGURED: 'ai.setup', AI_BUSY: 'ai.busy', AI_BALANCE: 'ai.balance', AI_DAILY_LIMIT: 'ai.dailyLimit', AI_SERVER_DAILY_LIMIT: 'ai.serverDailyLimit', AI_ATTEMPT_LIMIT: 'ai.attemptLimit' }
       setError(t(keys[code] || 'ai.sendError'))
     }
     finally { setSending(false) }
