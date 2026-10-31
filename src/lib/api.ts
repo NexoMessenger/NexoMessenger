@@ -309,7 +309,7 @@ export async function searchUsers(rawQuery: string, excludeId: string, limit = 2
 }
 
 export interface AiMessage { id: string; role: 'user' | 'assistant'; content: string; created_at: string }
-export type AiStatus = { ready: boolean; reason: 'missing_key' | 'model_unavailable' | 'network_error' | 'available' | 'unsupported' }
+export type AiStatus = { ready: boolean; reason: 'missing_key' | 'invalid_cert' | 'invalid_config' | 'model_unavailable' | 'network_error' | 'available' | 'unsupported' }
 export async function getAiStatus(): Promise<AiStatus> {
   if (!isSrv()) return { ready: false, reason: 'unsupported' }
   return srv<AiStatus>('/api/ai/status')

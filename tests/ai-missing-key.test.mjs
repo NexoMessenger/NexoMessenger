@@ -6,10 +6,10 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { once } from 'node:events'
 
-test('server starts without a Groq key and logs a safe warning', async () => {
-  const dir = await mkdtemp(path.join(tmpdir(), 'nexo-groq-missing-'))
+test('server starts without a GigaChat key and logs a safe warning', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'nexo-gigachat-missing-'))
   const env = { ...process.env, NEXO_DATA_DIR: dir, PORT: '0' }
-  delete env.GROQ_API_KEY
+  delete env.GIGACHAT_AUTH_KEY
   const child = spawn(process.execPath, ['server/index.mjs'], { env, stdio: ['ignore', 'pipe', 'pipe'] })
   let logs = ''
   child.stdout.on('data', data => { logs += data.toString() })
@@ -19,7 +19,7 @@ test('server starts without a Groq key and logs a safe warning', async () => {
       if (child.exitCode !== null) throw new Error('Server exited')
       await new Promise(resolve => setTimeout(resolve, 50))
     }
-    assert.match(logs, /Groq is not ready: missing_key/)
+    assert.match(logs, /GigaChat is not ready: missing_key/)
     assert.match(logs, /listening on/)
   } finally {
     child.kill('SIGTERM')
