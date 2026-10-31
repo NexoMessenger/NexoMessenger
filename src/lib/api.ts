@@ -32,13 +32,13 @@ async function srv<T>(path: string, opts: { method?: string; body?: unknown; aut
   if (!res.ok) err(data.error || `Request failed (${res.status})`)
   return data as T
 }
-export async function fishVoiceTestAvailable(): Promise<boolean> {
+export async function fishVoiceAvailable(): Promise<boolean> {
   if (!isSrv()) return false
-  return (await srv<{ available: boolean }>('/api/ai/voice-test/status')).available
+  return (await srv<{ available: boolean }>('/api/ai/voice/status')).available
 }
-export async function fishVoiceTest(messageId: string, signal: AbortSignal): Promise<Blob> {
+export async function fishVoice(messageId: string, locale: string, signal: AbortSignal): Promise<Blob> {
   const token = getServerToken()
-  const res = await fetch(`${apiBase}/api/ai/voice-test`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ message_id: messageId }), signal })
+  const res = await fetch(`${apiBase}/api/ai/voice`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ message_id: messageId, locale }), signal })
   if (!res.ok) throw new Error('VOICE_PROVIDER_ERROR')
   return res.blob()
 }

@@ -54,7 +54,7 @@ export function useAstraVoice(locale: string) {
     serial.current++
     if (supported) window.speechSynthesis.cancel()
     current.current = null
-    setSpeaking(false)
+    setSpeaking(false); setFailed(false)
   }, [supported])
   useEffect(() => {
     alive.current = true

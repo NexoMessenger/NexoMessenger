@@ -1,6 +1,12 @@
-// Fish Audio is disabled until explicitly configured for a single test account.
+// Cloud speech is available only when the server has a Fish Audio key.
 export const FISH_VOICE_ID = 'df3144db39a34a02bdeeb2d3ad172211'
-export const FISH_GREETING = 'Привет! Я Астра, помощница мессенджера NEXO. Чем помочь?'
+export const FISH_GREETINGS = {
+  en: 'Hello! I’m Astra, your NEXO Messenger assistant. How can I help?',
+  ru: 'Привет! Я Астра, помощница мессенджера NEXO. Чем помочь?',
+  uk: 'Привіт! Я Астра, помічниця месенджера NEXO. Чим допомогти?',
+  'zh-CN': '你好！我是阿斯特拉，NEXO Messenger 的助手。有什么可以帮你？',
+}
+export const FISH_GREETING = FISH_GREETINGS.ru
 export async function synthesizeFish(text, { key, fetchImpl = fetch } = {}) {
   try {
     const response = await fetchImpl('https://api.fish.audio/v1/tts', {
