@@ -39,7 +39,11 @@ export async function fishVoiceAvailable(): Promise<boolean> {
 export async function fishVoice(messageId: string, locale: string, signal: AbortSignal): Promise<Blob> {
   const token = getServerToken()
   const res = await fetch(`${apiBase}/api/ai/voice`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ message_id: messageId, locale }), signal })
-  if (!res.ok) throw new Error('VOICE_PROVIDER_ERROR')
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: unknown }
+    const allowed = ['VOICE_UNAVAILABLE', 'VOICE_PROVIDER_ERROR', 'VOICE_LIMIT', 'VOICE_BUSY', 'VOICE_INVALID_INPUT']
+    throw new Error(typeof body.error === 'string' && allowed.includes(body.error) ? body.error : 'VOICE_PROVIDER_ERROR')
+  }
   return res.blob()
 }
 
