@@ -114,6 +114,11 @@ jobs:
         # on this same VPS (same origin — no IP hardcoded in the code).
         run: npm run build:server
 
+      # Build on the runner, not the low-memory VPS. Keep the running server's
+      # dependencies intact until the replacement archive is complete.
+      - name: Prepare production dependencies
+        run: npm prune --omit=dev --no-audit --no-fund
+
       - name: Setup SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -174,6 +179,23 @@ jobs:
             sleep 10
           done
 
+      - name: Transfer prepared production dependencies
+        run: |
+          tar czf - node_modules | ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" "DEPLOY_DIR='$DEPLOY_DIR' bash -c '
+            set -eu
+            stage=\"\$DEPLOY_DIR/.deps-stage-\$\$\"
+            backup=\"\$DEPLOY_DIR/node_modules-before-deploy-\$\$\"
+            mkdir \"\$stage\"
+            tar xzf - -C \"\$stage\"
+            test -f \"\$stage/node_modules/express/package.json\"
+            if [ -e \"\$DEPLOY_DIR/node_modules\" ]; then mv \"\$DEPLOY_DIR/node_modules\" \"\$backup\"; fi
+            if ! mv \"\$stage/node_modules\" \"\$DEPLOY_DIR/node_modules\"; then
+              if [ -e \"\$backup\" ]; then mv \"\$backup\" \"\$DEPLOY_DIR/node_modules\"; fi
+              exit 1
+            fi
+            rmdir \"\$stage\"
+          '"
+
       - name: Install deps and (re)start NEXO server on VPS
         run: |
           ssh -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 "$VPS" "DEPLOY_DIR='$DEPLOY_DIR' bash -s" <<'REMOTE'
@@ -192,8 +214,8 @@ jobs:
           fi
           node --version
 
-          # 2) Server dependencies (express, ws)
-          npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund
+          # 2) Production dependencies were prepared on the runner and staged above.
+          test -f node_modules/express/package.json
 
           # 3) Ports: nginx (if present) stays on :80 and proxies to Node
           #    on :8080; without nginx Node serves :80 (root) or :8080.
@@ -278,7 +300,7 @@ jobs:
           fi
 
           # 5) Local health check — fails the step if server is down.
-          curl -sf http://127.0.0.1:$NEXO_PORT/api/health
+          curl -sf http://127.0.0.1:$NEXO_PORT/api/health || { echo "NEXO backend health check failed"; exit 1; }
           echo ""
           echo "NEXO server is up on port $NEXO_PORT (dir: $DEPLOY_DIR)"
           if [ "${NGINX_OK:-1}" = "0" ]; then

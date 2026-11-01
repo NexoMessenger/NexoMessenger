@@ -21,7 +21,7 @@ export default function AstraSplat({ greeting, activity, onFailure, fallback }: 
         element.addEventListener('webglcontextlost', contextLost)
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
         const waveView = greeting && !reduced
-        current.cameraEntity.setPosition(waveView ? 0 : -3.5, 1, waveView ? 3.5 : 0); current.cameraEntity.lookAt(0, 1, 0)
+        current.cameraEntity.setPosition(waveView ? 0 : 3.5, 1, waveView ? 3.5 : 0); current.cameraEntity.lookAt(0, 1, 0)
         current.start()
         const character = await Character.load(current, `${import.meta.env.BASE_URL}assets/astra.vsplat`)
         if (disposed) return
