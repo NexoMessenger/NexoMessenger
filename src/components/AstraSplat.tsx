@@ -8,7 +8,7 @@ export default function AstraSplat({ greeting, activity, onFailure, fallback }: 
   const activityRef = useRef(activity); activityRef.current = activity
   const failureRef = useRef(onFailure); failureRef.current = onFailure
   useEffect(() => {
-    let disposed = false, scene: Scene | undefined, timer = 0, frame = 0
+    let disposed = false, scene: Scene | undefined, timer = 0
     let contextLost: ((event: Event) => void) | undefined
     const element = canvas.current
     if (!element) return
@@ -27,7 +27,7 @@ export default function AstraSplat({ greeting, activity, onFailure, fallback }: 
         if (disposed) return
         await Promise.all([
           Animation.loadGlb(current, `${import.meta.env.BASE_URL}assets/astra-wave.glb`, 'wave'),
-          Animation.loadGlb(current, `${import.meta.env.BASE_URL}assets/astra-sit.glb`, 'sit'),
+          Animation.loadGlb(current, `${import.meta.env.BASE_URL}assets/astra-sit-alternative.glb`, 'sit'),
         ])
         if (disposed) return
         if (greeting && !reduced) character.playAnimation('wave', { loop: false })
@@ -40,18 +40,8 @@ export default function AstraSplat({ greeting, activity, onFailure, fallback }: 
             if (last !== activityRef.current) { last = activityRef.current; deadline = Date.now() + 40000 }
             if (Date.now() >= deadline) {
               setSitting(true)
-              character.crossfadeTo('sit', { duration: 0.6, loop: false })
-              // The two source motions face different directions; orbit smoothly to the sitting front.
-              const start = performance.now()
-              const orbit = (now: number) => {
-                if (disposed) return
-                const x = Math.min(1, (now - start) / 1500), smooth = x*x*(3-2*x)
-                const angle = smooth * Math.PI / 2
-                current.cameraEntity.setPosition(-3.5 * Math.sin(angle), 1, 3.5 * Math.cos(angle))
-                current.cameraEntity.lookAt(0, 1, 0)
-                if (x < 1) frame = requestAnimationFrame(orbit)
-              }
-              frame = requestAnimationFrame(orbit)
+              // The replacement is a seated idle; blend into it, then keep it playing.
+              character.crossfadeTo('sit', { duration: 1.5, loop: true })
               return
             }
             timer = window.setTimeout(check, 250)
@@ -61,7 +51,7 @@ export default function AstraSplat({ greeting, activity, onFailure, fallback }: 
       } catch (error) { console.error('Astra 3D failed:', error); if (!disposed) failureRef.current() }
     }
     const initTimer = window.setTimeout(() => { void init() }, 0)
-    return () => { disposed = true; window.clearTimeout(initTimer); window.clearTimeout(timer); cancelAnimationFrame(frame); if (contextLost) element.removeEventListener('webglcontextlost', contextLost); scene?.destroy() }
+    return () => { disposed = true; window.clearTimeout(initTimer); window.clearTimeout(timer); if (contextLost) element.removeEventListener('webglcontextlost', contextLost); scene?.destroy() }
   }, [greeting])
   return <div className={`astra-figure astra-3d${sitting ? ' astra-sitting' : ''}`} role="img" aria-label="Astra"><canvas ref={canvas} />{!ready && fallback}</div>
 }
