@@ -1501,3 +1501,16 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .autumn-badge-preview { padding: 18px 24px; text-align: center; font-size: 22px; min-height: 68px; }
 .premium-badge-options { display: flex; gap: 8px; flex-wrap: wrap; }
 .premium-badge-options button { flex: 1 1 120px; }
+
+/* Premium clover and sakura names: separate lightweight, non-interactive ornaments. */
+.nature-name { display: inline-block; position: relative; max-width: 100%; min-width: 0; line-height: 1.35; overflow: visible; isolation: isolate; }
+.nature-name-text { position: relative; z-index: 1; font-weight: 850; overflow-wrap: anywhere; }
+.nature-name-clover .nature-name-text { color: #218848; text-shadow: -1px -1px 0 #e3ffe8, 1px -1px 0 #e3ffe8, -1px 1px 0 #e3ffe8, 1px 1px 0 #e3ffe8, 0 2px 3px #0b5025; }
+.nature-name-sakura .nature-name-text { color: #ff7fc9; text-shadow: 0 0 2px #ffe4f3, 0 0 6px #ff258f, 0 0 11px #ed1686, 0 1px 2px #8f0755; }
+.nature-name-particles { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.nature-name-particle { position: absolute; display: block; line-height: 0; pointer-events: none; }
+.nature-name-clover .nature-name-particle { animation: clover-pulse 4.5s ease-in-out infinite; }
+.nature-name-sakura .nature-name-particle { opacity: 0; animation: sakura-fall 7s linear infinite; }
+@keyframes clover-pulse { 0%,100% { opacity: .75; transform: translate(-50%, -50%) scale(.85) rotate(-10deg); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(8deg); } }
+@keyframes sakura-fall { 0% { opacity: 0; transform: translate(-50%, -.4em) rotate(-20deg); } 15% { opacity: 1; } 70% { opacity: .9; } 100% { opacity: 0; transform: translate(calc(-50% + var(--nature-dx)), 1.8em) rotate(100deg); } }
+@media (prefers-reduced-motion: reduce) { .nature-name-particle { animation: none !important; opacity: .8 !important; transform: translate(-50%, -50%); } }
