@@ -1503,7 +1503,7 @@ export interface PremiumDecorPatch {
   emojiStatus?: string | null
   wornItemId?: string | null
   nameColor?: string
-  nameBadge?: '' | 'autumn' | 'clover' | 'sakura'
+  nameBadge?: '' | 'autumn' | 'clover' | 'sakura' | 'train'
   business?: BusinessInfo | null
   /** Item ids to pin to the profile background (max 8); null/[] clears. */
   bgGiftItemIds?: string[] | null
@@ -1514,7 +1514,7 @@ export interface PremiumDecorPatch {
 
 function assertPremiumDecor(patch: PremiumDecorPatch) {
   if (patch.emojiStatus != null && patch.emojiStatus !== '' && !EMOJI_STATUSES.includes(patch.emojiStatus)) err('Invalid code.')
-  if (patch.nameBadge !== undefined && !['', 'autumn', 'clover', 'sakura'].includes(patch.nameBadge)) err('Invalid code.')
+  if (patch.nameBadge !== undefined && !['', 'autumn', 'clover', 'sakura', 'train'].includes(patch.nameBadge)) err('Invalid code.')
   if (patch.nameColor !== undefined && patch.nameColor !== '' && !NAME_COLORS.some((c) => c.key === patch.nameColor)) err('Invalid code.')
   if (patch.font !== undefined && !(PROFILE_FONTS as readonly string[]).includes(patch.font)) err('Invalid code.')
   if (patch.profileTheme !== undefined && !(PROFILE_THEMES as readonly string[]).includes(patch.profileTheme)) err('Invalid code.')
