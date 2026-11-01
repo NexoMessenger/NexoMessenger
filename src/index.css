@@ -1519,6 +1519,9 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .train-name { display: inline-block; position: relative; max-width: 100%; min-width: 0; line-height: 1.35; isolation: isolate; }
 .train-name-text { position: relative; font-weight: 850; color: #d6e4eb; text-shadow: 0 1px 0 #576d7b, 0 0 3px #f4ffff, 0 0 8px #54c9ee, 0 0 13px #2686ad; overflow-wrap: anywhere; }
 .train-name-track { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
-.train-name-train { position: absolute; left: 0; top: 0; width: max(100%, 8em); height: 100%; animation: train-name-pass 3s linear infinite; }
-@keyframes train-name-pass { 0% { transform: translateX(-100%); } 27%, 100% { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .train-name-train { animation: none; display: none; } }
+.train-name-train { position: absolute; left: 0; top: 0; width: 25em; height: 100%; animation: train-name-pass 3s linear infinite; }
+@keyframes train-name-pass { 0% { left: 0; transform: translateX(-100%); } 45%, 100% { left: 100%; transform: translateX(0); } }
+.train-wind { transform-box: fill-box; animation: train-wind 0.4s ease-out infinite; }
+.train-wind-two { animation-delay: -0.2s; animation-duration: .55s; }
+@keyframes train-wind { 0% { opacity: 0; transform: translateX(8px); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateX(-20px); } }
+@media (prefers-reduced-motion: reduce) { .train-name-train { animation: none; display: none; } .train-wind { animation: none; } }
