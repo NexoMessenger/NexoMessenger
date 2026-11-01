@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { AttachmentInfo, Channel, ChannelPost, ChannelComment, Profile } from '../lib/types'
 import Composer from '../components/Composer'
+import { ChannelCommentsButton } from '../components/ChannelCommentsButton'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
 import { AttachmentView, Avatar, ErrorBox, GroupAvatar, Modal, ProfileName, fmtClock, errText } from '../components/ui'
@@ -120,7 +121,7 @@ export default function ChannelRoomPage() {
                 <AttachmentView url={post.attachment_url} name={post.attachment_name} type={post.attachment_type} />
                 {post.body && <div><AnimatedEmojiBody body={post.body} /></div>}
                 <div className="bubble-meta"><span>{new Date(post.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} · {fmtClock(post.created_at)}</span></div>
-                {api.mode === 'server' && (channel?.comments_enabled || (post.comment_count || 0) > 0) && <button type="button" className="btn btn-sm channel-comments-open" onClick={() => setCommentsPost(post)}>{t('channelComments.title')} · {post.comment_count || 0}</button>}
+                {api.mode === 'server' && channel && <ChannelCommentsButton enabled={Boolean(channel.comments_enabled)} count={post.comment_count || 0} onOpen={() => setCommentsPost(post)} />}
               </div>
             </div>
           )
@@ -155,7 +156,11 @@ export default function ChannelRoomPage() {
           </div>)}
         </div>
         <ErrorBox error={commentError} />
-        {!channel.comments_enabled ? <p>{t('channelComments.closed')}</p> : !subscribed ? <p>{t('channelComments.subscribe')}</p> : <form className="channel-comment-form" onSubmit={async event => {
+        {!channel.comments_enabled ? <div><p>{t('channelComments.closed')}</p>{isOwner && <button type="button" className="btn btn-primary" disabled={settingBusy} onClick={async () => {
+          setSettingBusy(true); setCommentError('')
+          try { await api.setChannelComments(id, true); setChannel(current => current ? { ...current, comments_enabled: true } : current); await load() }
+          catch (e) { setCommentError(errText(e, t)) } finally { setSettingBusy(false) }
+        }}>{t('channelComments.openNow')}</button>}</div> : !subscribed ? <p>{t('channelComments.subscribe')}</p> : <form className="channel-comment-form" onSubmit={async event => {
           event.preventDefault(); if (!commentText.trim() || commentBusy) return
           setCommentBusy(true); setCommentError('')
           try { await api.sendChannelComment(id, commentsPost.id, commentText); setCommentText(''); setComments(await api.listChannelComments(id, commentsPost.id)) }
@@ -179,7 +184,7 @@ export default function ChannelRoomPage() {
               try { await api.setChannelComments(id, e.target.checked); await load() }
               catch (error) { setSettingError(errText(error, t)) }
               finally { setSettingBusy(false) }
-            }} />{channel.comments_enabled ? t('channelComments.enabled') : t('channelComments.disabled')}</label>
+            }} />{t('channelComments.enableToggle')} · {channel.comments_enabled ? t('channelComments.enabled') : t('channelComments.disabled')}</label>
             <ErrorBox error={settingError} />
           </div>}
           {(isOwner || me?.role === 'admin') && (
