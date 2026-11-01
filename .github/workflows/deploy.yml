@@ -17,6 +17,28 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Prepare complete production dependencies on the runner
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --omit=dev --no-audit --no-fund
+      - name: Restore dependencies if the backend is down
+        run: |
+          tar czf - node_modules | ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" '
+            set -eu
+            if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then cat >/dev/null; exit 0; fi
+            if [ -f /var/www/nexo/server/index.mjs ] && [ -d /var/www/nexo/data ]; then DIR=/var/www/nexo
+            elif [ -f "$HOME/nexo/server/index.mjs" ] && [ -d "$HOME/nexo/data" ]; then DIR="$HOME/nexo"
+            else exit 1; fi
+            STAGE="$DIR/.recovery-deps-$(date +%s)"
+            mkdir "$STAGE"
+            tar xzf - -C "$STAGE"
+            [ -f "$STAGE/node_modules/express/package.json" ]
+            if [ -e "$DIR/node_modules" ]; then mv "$DIR/node_modules" "$DIR/node_modules-before-recovery-$(date +%s)"; fi
+            mv "$STAGE/node_modules" "$DIR/node_modules"
+            rmdir "$STAGE"
+          '
       - name: Check and restart the existing NEXO service if needed
         run: |
           set +e
