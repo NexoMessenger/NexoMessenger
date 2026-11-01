@@ -1485,5 +1485,8 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .ai-history .ai-history-row .icon-btn { flex: 0 0 40px; width: 40px; text-align: center; }
 .ai-messages .astra-intro { flex: 0 0 auto; }
 /* The splat is visual only; controls remain clickable when her legs overlap the bar. */
-.astra-sitting canvas { position: relative; z-index: 2; transform: translateY(65px); transition: transform 1.5s ease; }
+.astra-sitting canvas { position: relative; z-index: 2; transform: translateY(80px); transition: transform 1.5s ease; }
 .astra-taskbar { position: relative; z-index: 1; }
+
+/* Leave room below the controls for the dangling foot without covering chat content. */
+.astra-panel-wrap:has(.astra-sitting) { padding-bottom: 16px; }
