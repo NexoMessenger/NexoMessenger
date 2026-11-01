@@ -7,7 +7,7 @@ import Composer from '../components/Composer'
 import { GiftMessage } from '../components/GiftMessage'
 import { useCalls } from '../components/Calls'
 import { useI18n } from '../i18n'
-import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply } from '../components/icons'
+import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply, IconPalette } from '../components/icons'
 import { AttachmentView, Avatar, ProfileName, fmtClock, fmtLastSeen, errText } from '../components/ui'
 import { AnimatedEmojiBody, ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
 import { PREMIUM_REACTIONS, isPremiumActive } from '../lib/premiumData'
@@ -32,6 +32,9 @@ export default function ChatRoomPage() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [typingName, setTypingName] = useState('')
+  const [theme, setTheme] = useState<api.ChatTheme>('default')
+  const [themeOpen, setThemeOpen] = useState(false)
+  const [themeBusy, setThemeBusy] = useState(false)
   const [menuTarget, setMenuTarget] = useState<MenuTarget<Message> | null>(null)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [editing, setEditing] = useState<Message | null>(null)
@@ -98,6 +101,20 @@ export default function ChatRoomPage() {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, profile?.id])
+
+  useEffect(() => {
+    let cancelled = false
+    setTheme('default'); setThemeOpen(false)
+    if (api.mode === 'server') api.getChatTheme(id).then(value => { if (!cancelled) setTheme(value) }).catch(() => { if (!cancelled) setError(t('extras.themeError')) })
+    return () => { cancelled = true }
+  }, [id])
+
+  const chooseTheme = async (value: api.ChatTheme) => {
+    setThemeBusy(true)
+    try { await api.setChatTheme(id, value); setTheme(value); setThemeOpen(false) }
+    catch { setError(t('extras.themeError')) }
+    finally { setThemeBusy(false) }
+  }
 
   const bindMenu = useMessageMenu<Message>((tgt) => { setPickerFor(null); setMenuTarget(tgt) })
 
@@ -180,21 +197,27 @@ export default function ChatRoomPage() {
   const myLastOwn = [...messages].reverse().find((m) => m.sender_id === profile?.id)
   const myLastRead = Boolean(myLastOwn && peerReadAt && peerReadAt >= myLastOwn.created_at)
 
+  const isSaved = !!peer && peer.id === profile?.id
   let lastDay = ''
   return (
-    <div className="room-wrap">
+    <div className={`room-wrap chat-theme-${theme}`}>
       <div className="room-head">
         <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label={t('common.back')}><IconBack size={18} /></button>
-        <button className="room-head-profile" onClick={() => peer && navigate(`/user/${peer.id}`)} aria-label={t('profile.view')}>
+        <button className="room-head-profile" onClick={() => peer && !isSaved && navigate(`/user/${peer.id}`)} disabled={isSaved} aria-label={t('profile.view')}>
           {peer ? <Avatar profile={peer} size={42} showOnline /> : <span className="avatar" style={{ width: 42, height: 42 }}>?</span>}
           <span className="row-main">
-            <span className="row-title">{peer ? <ProfileName profile={peer} /> : t('room.conversation')}</span>
-            <span className="row-preview">{peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
+            <span className="row-title">{isSaved ? t('extras.saved') : peer ? <ProfileName profile={peer} /> : t('room.conversation')}</span>
+            <span className="row-preview">{isSaved ? t('extras.savedHint') : peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
           </span>
         </button>
-        <button className="icon-btn" aria-label={t('call.audio')} title={t('call.audio')} disabled={!peer} onClick={() => peer && startCall(id, peer.display_name, 'audio')}><IconPhone size={20} /></button>
-        <button className="icon-btn" aria-label={t('call.video')} title={t('call.video')} disabled={!peer} onClick={() => peer && startCall(id, peer.display_name, 'video')}><IconVideoCall size={21} /></button>
+        {api.mode === 'server' && <button className="icon-btn" type="button" aria-label={t('extras.chatTheme')} title={t('extras.chatTheme')} aria-expanded={themeOpen} onClick={() => setThemeOpen(value => !value)}><IconPalette size={19} /></button>}
+        <button className="icon-btn" aria-label={t('call.audio')} title={t('call.audio')} disabled={!peer || isSaved} onClick={() => peer && startCall(id, peer.display_name, 'audio')}><IconPhone size={20} /></button>
+        <button className="icon-btn" aria-label={t('call.video')} title={t('call.video')} disabled={!peer || isSaved} onClick={() => peer && startCall(id, peer.display_name, 'video')}><IconVideoCall size={21} /></button>
       </div>
+
+      {themeOpen && <div className="chat-theme-picker glass" role="group" aria-label={t('extras.chatTheme')}>
+        {(['default', 'ocean', 'sakura', 'night'] as const).map(value => <button type="button" key={value} className={`btn btn-sm ${theme === value ? 'btn-primary' : ''}`} disabled={themeBusy} aria-pressed={theme === value} onClick={() => void chooseTheme(value)}>{t(({ default: 'extras.themeDefault', ocean: 'extras.themeOcean', sakura: 'extras.themeSakura', night: 'extras.themeNight' } as const)[value])}</button>)}
+      </div>}
 
       {error && (
         <div style={{ padding: '10px 16px 0' }}>
@@ -287,7 +310,7 @@ export default function ChatRoomPage() {
         </div>
       )}
 
-      <Composer key={id} placeholder={`${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
+      <Composer key={id} placeholder={isSaved ? t('composer.message') : `${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
         onSend={send} onTyping={() => profile && api.sendTyping(`direct-${id}`, profile)}
         upload={(f) => api.uploadFile(f, profile!.id)}
         premiumEmojiEnabled={isPremiumActive(profile)}

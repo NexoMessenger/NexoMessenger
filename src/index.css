@@ -1541,3 +1541,16 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 @keyframes creative-spark { 0%,100% { opacity: .25; transform: translate(-50%, -50%) scale(.55); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } }
 @media (prefers-reduced-motion: reduce) { .creative-particle { animation: none; opacity: .65; transform: translate(-50%, -50%); } }
 .creative-rainbow .creative-name-text { background: linear-gradient(90deg, #ff9ab4, #ffe69a, #a8ffcd, #9bdfff, #e4b1ff); color: transparent; -webkit-background-clip: text; background-clip: text; text-shadow: none; filter: drop-shadow(0 0 3px #bc86df); }
+.profile-mood { margin: 10px auto 0; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+.premium-badge-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 8px 0 14px; }
+.premium-badge-card { min-width: 0; min-height: 96px; padding: 10px 8px; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.035); color: var(--text-1); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.premium-badge-card.active { border-color: var(--accent); background: rgba(139,92,246,.14); }
+.premium-badge-card:disabled { opacity: .65; cursor: default; }
+.premium-badge-card-preview { display: block; max-width: 100%; font-size: 16px; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.premium-badge-card:not(.active) .creative-particle, .premium-badge-card:not(.active) .nature-name-particle, .premium-badge-card:not(.active) .autumn-leaf { animation: none; opacity: .65; }
+.premium-badge-card:not(.active) .train-name-train { animation: none; display: none; }
+.astra-prompt-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.chat-theme-picker { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; flex-shrink: 0; }
+.chat-theme-ocean .messages-scroll { background: radial-gradient(ellipse at 20% 15%, rgba(20, 112, 152, .22), transparent 70%), linear-gradient(155deg, rgba(2,23,39,.65), rgba(2,8,19,.45)); }
+.chat-theme-sakura .messages-scroll { background: radial-gradient(ellipse at 80% 10%, rgba(190, 62, 128, .18), transparent 70%), linear-gradient(155deg, rgba(38,8,27,.65), rgba(13,6,20,.45)); }
+.chat-theme-night .messages-scroll { background: radial-gradient(ellipse at 50% 0%, rgba(98, 88, 190, .22), transparent 70%), linear-gradient(155deg, rgba(12,12,41,.65), rgba(5,6,20,.45)); }

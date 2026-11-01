@@ -5,7 +5,7 @@ import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { Avatar, EmptyState, ErrorBox, Modal, ProfileName, UserPicker, fmtTime, errText } from '../components/ui'
 import { useI18n } from '../i18n'
-import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, NexoMark } from '../components/icons'
+import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconStar, NexoMark } from '../components/icons'
 
 export default function ChatsPage() {
   const { profile } = useAuth()
@@ -65,16 +65,20 @@ export default function ChatsPage() {
         <span className="ai-avatar"><NexoMark size={25} /></span>
         <span className="row-main"><span className="row-title">Zeron</span><span className="row-preview">{t('zeron.entry')}</span></span>
       </button>}
+      {api.mode === 'server' && <button className="row-card glass" disabled={starting} onClick={() => {
+        setStarting(true); setError('')
+        void api.getSavedChat().then(id => navigate(`/chat/${id}`)).catch(e => setError(errText(e, t))).finally(() => setStarting(false))
+      }}><span className="ai-avatar"><IconStar size={22} /></span><span className="row-main"><span className="row-title">{t('extras.saved')}</span><span className="row-preview">{t('extras.savedHint')}</span></span></button>}
       <ErrorBox error={error} />
       {loading ? (
         <div className="center-loader"><div className="spinner" />{t('chats.loading')}</div>
-      ) : items.length === 0 ? (
+      ) : items.every(item => !!item.conv.saved_owner_id) ? (
         <EmptyState icon={<IconChats size={30} />} title={t('chats.emptyTitle')} text={t('chats.emptyText')}>
           <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.startFirst')}</button></div>
         </EmptyState>
       ) : (
         <div className="list">
-          {items.map(({ conv, other, lastMessage, unread }) => (
+          {items.filter(({ conv }) => !conv.saved_owner_id).map(({ conv, other, lastMessage, unread }) => (
             <button key={conv.id} className="row-card glass" onClick={() => navigate(`/chat/${conv.id}`)}>
               <Avatar profile={other} showOnline />
               <span className="row-main">

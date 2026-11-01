@@ -96,6 +96,14 @@ export default function PremiumPage() {
     } catch (e) { setError(errText(e, t)) } finally { setSaving('') }
   }
 
+  const badgePreview = (badge: NameBadge) => isCreativeBadge(badge) ? <CreativeName name={profile.display_name} kind={badge} /> : badge === 'train' ? <TrainName name={profile.display_name} /> : badge === 'clover' || badge === 'sakura' ? <NatureName name={profile.display_name} kind={badge} /> : badge === 'autumn' ? <AutumnName name={profile.display_name} /> : profile.display_name
+  const badgeOptions: { id: NameBadge; label: TranslationKey }[] = [
+    { id: '', label: 'premium.none' }, { id: 'autumn', label: 'premium.nameBadgeAutumn' },
+    { id: 'clover', label: 'premium.nameBadgeClover' }, { id: 'sakura', label: 'premium.nameBadgeSakura' },
+    { id: 'train', label: 'premium.nameBadgeTrain' },
+    ...CREATIVE_BADGES.map(b => ({ id: b.id, label: `premium.badge.${b.id}` as TranslationKey })),
+  ]
+
   const dayName = (day: number) => {
     // 2024-01-01 was a Monday.
     return new Date(2024, 0, 1 + day).toLocaleDateString(locale, { weekday: 'short' })
@@ -190,14 +198,11 @@ export default function PremiumPage() {
         <p className="premium-hint">{t('premium.nameBadgeHint')}</p>
         {locked}
         {api.mode === 'supabase' && <p className="premium-hint" role="status">{t('premium.nameBadgeUnavailable')}</p>}
-        <div className="autumn-badge-preview">{isCreativeBadge(nameBadge) ? <CreativeName name={profile.display_name} kind={nameBadge} /> : nameBadge === 'train' ? <TrainName name={profile.display_name} /> : nameBadge === 'clover' || nameBadge === 'sakura' ? <NatureName name={profile.display_name} kind={nameBadge} /> : nameBadge === 'autumn' ? <AutumnName name={profile.display_name} /> : profile.display_name}</div>
-        <div className="premium-badge-options" role="group" aria-label={t('premium.nameBadgeTitle')}>
-          <button type="button" className={`btn btn-sm ${nameBadge === '' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === ''} onClick={() => setNameBadge('')}>{t('premium.none')}</button>
-          <button type="button" className={`btn btn-sm ${nameBadge === 'autumn' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === 'autumn'} onClick={() => setNameBadge('autumn')}>{t('premium.nameBadgeAutumn')}</button>
-          <button type="button" className={`btn btn-sm ${nameBadge === 'clover' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === 'clover'} onClick={() => setNameBadge('clover')}>{t('premium.nameBadgeClover')}</button>
-          <button type="button" className={`btn btn-sm ${nameBadge === 'sakura' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === 'sakura'} onClick={() => setNameBadge('sakura')}>{t('premium.nameBadgeSakura')}</button>
-          <button type="button" className={`btn btn-sm ${nameBadge === 'train' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === 'train'} onClick={() => setNameBadge('train')}>{t('premium.nameBadgeTrain')}</button>
-          {CREATIVE_BADGES.map(badge => <button key={badge.id} type="button" className={`btn btn-sm ${nameBadge === badge.id ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === badge.id} onClick={() => setNameBadge(badge.id)}>{t(`premium.badge.${badge.id}` as TranslationKey)}</button>)}
+        <div className="autumn-badge-preview">{badgePreview(nameBadge)}</div>
+        <div className="premium-badge-gallery" role="group" aria-label={t('premium.nameBadgeTitle')}>
+          {badgeOptions.map(badge => <button key={badge.id} type="button" className={`premium-badge-card ${nameBadge === badge.id ? 'active' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === badge.id} onClick={() => setNameBadge(badge.id)}>
+            <span className="premium-badge-card-preview">{badgePreview(badge.id)}</span><span>{t(badge.label)}</span>
+          </button>)}
         </div>
         <button className="btn btn-primary btn-block" disabled={!active || api.mode === 'supabase' || saving === 'nameBadge'} onClick={() => void saveDecor('nameBadge', { nameBadge })}>{saving === 'nameBadge' ? t('common.saving') : t('common.save')}</button>
       </div>
