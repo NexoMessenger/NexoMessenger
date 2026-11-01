@@ -19,9 +19,8 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Check and restart the existing NEXO service if needed
         run: |
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" 'bash -s' <<'REMOTE' | while IFS= read -r line; do
-            case "$line" in FACT:*) echo "::notice title=NEXO recovery::${line#FACT:}";; *) echo "$line";; esac
-          done
+          set +e
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" 'bash -s' > /tmp/nexo-recovery-result <<'REMOTE'
           set -u
           if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
             echo 'FACT:local backend already responds'
@@ -46,6 +45,11 @@ jobs:
           echo 'FACT:local backend still does not respond'
           exit 1
           REMOTE
+          status=$?
+          while IFS= read -r line; do
+            case "$line" in FACT:*) echo "::notice title=NEXO recovery::${line#FACT:}";; *) echo "$line";; esac
+          done < /tmp/nexo-recovery-result
+          exit "$status"
         shell: bash
       - name: Verify public health
         run: curl -fsS --max-time 15 https://nexomessenger.space/api/health
