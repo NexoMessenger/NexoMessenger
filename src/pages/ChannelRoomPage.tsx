@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
-import type { AttachmentInfo, Channel, ChannelPost, Profile } from '../lib/types'
+import type { AttachmentInfo, Channel, ChannelPost, ChannelComment, Profile } from '../lib/types'
 import Composer from '../components/Composer'
 import { useI18n } from '../i18n'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings } from '../components/icons'
@@ -22,6 +22,13 @@ export default function ChannelRoomPage() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [showInfo, setShowInfo] = useState(false)
+  const [commentsPost, setCommentsPost] = useState<ChannelPost | null>(null)
+  const [comments, setComments] = useState<ChannelComment[]>([])
+  const [commentText, setCommentText] = useState('')
+  const [commentBusy, setCommentBusy] = useState(false)
+  const [commentError, setCommentError] = useState('')
+  const [settingBusy, setSettingBusy] = useState(false)
+  const [settingError, setSettingError] = useState('')
   const { t } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -45,6 +52,18 @@ export default function ChannelRoomPage() {
     return unsub
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, profile?.id])
+
+  useEffect(() => {
+    if (!commentsPost || api.mode !== 'server') return
+    let active = true
+    const loadComments = async () => {
+      try { const result = await api.listChannelComments(id, commentsPost.id); if (active) { setComments(result); setCommentError('') } }
+      catch (e) { if (active) setCommentError(errText(e, t)) }
+    }
+    setComments([]); setCommentText(''); setCommentError(''); void loadComments()
+    const unsub = api.subscribeRoom('channel', id, () => void loadComments())
+    return () => { active = false; unsub() }
+  }, [id, commentsPost?.id])
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }) }, [posts.length])
 
@@ -101,6 +120,7 @@ export default function ChannelRoomPage() {
                 <AttachmentView url={post.attachment_url} name={post.attachment_name} type={post.attachment_type} />
                 {post.body && <div><AnimatedEmojiBody body={post.body} /></div>}
                 <div className="bubble-meta"><span>{new Date(post.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} · {fmtClock(post.created_at)}</span></div>
+                {api.mode === 'server' && (channel?.comments_enabled || (post.comment_count || 0) > 0) && <button type="button" className="btn btn-sm channel-comments-open" onClick={() => setCommentsPost(post)}>{t('channelComments.title')} · {post.comment_count || 0}</button>}
               </div>
             </div>
           )
@@ -118,6 +138,31 @@ export default function ChannelRoomPage() {
         </div>
       )}
 
+      {commentsPost && channel && <Modal title={t('channelComments.title')} onClose={() => setCommentsPost(null)}>
+        <p className="channel-comments-post">{commentsPost.body || commentsPost.attachment_name || t('common.attachment')}</p>
+        <p className="channel-comments-post">{t('channelComments.recent')}</p>
+        <div className="channel-comments-list" aria-live="polite">
+          {comments.length === 0 && <p>{t('channelComments.empty')}</p>}
+          {comments.map(comment => <div className="channel-comment" key={comment.id}>
+            <div className="channel-comment-head"><strong>{comment.author ? <ProfileName profile={comment.author} /> : t('channelComments.unknown')}</strong><span>{fmtClock(comment.created_at)}</span></div>
+            <div className="channel-comment-body">{comment.body}</div>
+            {(isOwner || comment.author_id === profile?.id) && <button type="button" className="btn btn-sm" disabled={commentBusy} onClick={async () => {
+              if (!window.confirm(t('channelComments.confirmDelete'))) return
+              setCommentBusy(true); setCommentError('')
+              try { await api.deleteChannelComment(id, commentsPost.id, comment.id); setComments(await api.listChannelComments(id, commentsPost.id)) }
+              catch (e) { setCommentError(errText(e, t)) } finally { setCommentBusy(false) }
+            }}>{t('channelComments.delete')}</button>}
+          </div>)}
+        </div>
+        <ErrorBox error={commentError} />
+        {!channel.comments_enabled ? <p>{t('channelComments.closed')}</p> : !subscribed ? <p>{t('channelComments.subscribe')}</p> : <form className="channel-comment-form" onSubmit={async event => {
+          event.preventDefault(); if (!commentText.trim() || commentBusy) return
+          setCommentBusy(true); setCommentError('')
+          try { await api.sendChannelComment(id, commentsPost.id, commentText); setCommentText(''); setComments(await api.listChannelComments(id, commentsPost.id)) }
+          catch (e) { setCommentError(errText(e, t)) } finally { setCommentBusy(false) }
+        }}><textarea className="textarea" rows={2} maxLength={1000} value={commentText} onChange={event => setCommentText(event.target.value)} placeholder={t('channelComments.placeholder')} aria-label={t('channelComments.placeholder')} /><button className="btn btn-primary" disabled={commentBusy || !commentText.trim()} type="submit">{t('channelComments.send')}</button></form>}
+      </Modal>}
+
       {showInfo && channel && (
         <Modal title={t('channels.channelInfo')} onClose={() => setShowInfo(false)}>
           <div style={{ textAlign: 'center', marginBottom: 16 }}>
@@ -127,6 +172,16 @@ export default function ChannelRoomPage() {
             {channel.description && <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>{channel.description}</p>}
             {owner && <p style={{ color: 'var(--text-3)', fontSize: 13 }}>{t('common.owner')}: {owner.display_name} (@{owner.username})</p>}
           </div>
+          {isOwner && api.mode === 'server' && <div className="channel-comments-setting">
+            <div><strong>{t('channelComments.setting')}</strong><p>{t('channelComments.settingHint')}</p></div>
+            <label className="check-row"><input type="checkbox" checked={Boolean(channel.comments_enabled)} disabled={settingBusy} onChange={async e => {
+              setSettingBusy(true); setSettingError('')
+              try { await api.setChannelComments(id, e.target.checked); await load() }
+              catch (error) { setSettingError(errText(error, t)) }
+              finally { setSettingBusy(false) }
+            }} />{channel.comments_enabled ? t('channelComments.enabled') : t('channelComments.disabled')}</label>
+            <ErrorBox error={settingError} />
+          </div>}
           {(isOwner || me?.role === 'admin') && (
             <>
               <div className="section-label">{t('channels.publishing')}</div>

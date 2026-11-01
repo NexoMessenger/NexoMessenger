@@ -1554,3 +1554,13 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .chat-theme-ocean .messages-scroll { background: radial-gradient(ellipse at 20% 15%, rgba(20, 112, 152, .22), transparent 70%), linear-gradient(155deg, rgba(2,23,39,.65), rgba(2,8,19,.45)); }
 .chat-theme-sakura .messages-scroll { background: radial-gradient(ellipse at 80% 10%, rgba(190, 62, 128, .18), transparent 70%), linear-gradient(155deg, rgba(38,8,27,.65), rgba(13,6,20,.45)); }
 .chat-theme-night .messages-scroll { background: radial-gradient(ellipse at 50% 0%, rgba(98, 88, 190, .22), transparent 70%), linear-gradient(155deg, rgba(12,12,41,.65), rgba(5,6,20,.45)); }
+.channel-comments-open { display: block; margin-top: 8px; }
+.channel-comments-setting { margin: 12px 0 18px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; }
+.channel-comments-setting p, .channel-comments-post { color: var(--text-3); font-size: 13px; overflow-wrap: anywhere; }
+.channel-comments-post { max-height: 4.5em; overflow: auto; white-space: pre-wrap; }
+.channel-comments-list { max-height: 38dvh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+.channel-comment { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.channel-comment-head { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--text-2); }
+.channel-comment-head span { font-size: 12px; }
+.channel-comment-body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; }
+.channel-comment-form { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }

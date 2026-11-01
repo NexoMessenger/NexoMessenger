@@ -110,6 +110,7 @@ try {
   db = seed()
   persist()
 }
+if (!Array.isArray(db.channelComments)) db.channelComments = []
 function persist() {
   const tmp = DB_FILE + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(db))
@@ -1236,7 +1237,9 @@ app.get('/api/channels/:id/members', auth, (req, res) => {
 })
 
 app.post('/api/channels/:id/subscribe', auth, (req, res) => {
-  if (!db.channels.find((c) => c.id === req.params.id)) return fail(res, 404, 'Profile not found.')
+  const channel = db.channels.find((c) => c.id === req.params.id)
+  if (!channel) return fail(res, 404, 'Profile not found.')
+  if (!channel.is_public && !channelMember(channel.id, req.me.id)) return fail(res, 403, 'Access denied.')
   if (!channelMember(req.params.id, req.me.id)) {
     db.channelMembers.push({ channel_id: req.params.id, user_id: req.me.id, role: 'subscriber', can_post: false, joined_at: now() })
     persist(); touch('channel', req.params.id); touchGlobal()
@@ -1260,7 +1263,9 @@ app.patch('/api/channels/:id/members/:userId/poster', auth, (req, res) => {
 app.get('/api/channels/:id/posts', auth, (req, res) => {
   const c = db.channels.find((x) => x.id === req.params.id)
   if (!c || (!c.is_public && !channelMember(c.id, req.me.id))) return fail(res, 403, 'Access denied.')
-  res.json({ posts: db.posts.filter((p) => p.channel_id === c.id).sort((a, b) => a.created_at.localeCompare(b.created_at)) })
+  const counts = new Map()
+  for (const comment of db.channelComments) if (comment.channel_id === c.id) counts.set(comment.post_id, (counts.get(comment.post_id) || 0) + 1)
+  res.json({ posts: db.posts.filter((p) => p.channel_id === c.id).sort((a, b) => a.created_at.localeCompare(b.created_at)).map(p => ({ ...p, comment_count: counts.get(p.id) || 0 })) })
 })
 
 app.post('/api/channels/:id/posts', auth, (req, res) => {
@@ -1272,6 +1277,48 @@ app.post('/api/channels/:id/posts', auth, (req, res) => {
   db.posts.push(post)
   persist(); touch('channel', req.params.id); touchGlobal()
   res.json({ post })
+})
+
+/* Channel discussions: the owner controls whether subscribers may write. */
+app.put('/api/channels/:id/comments-setting', auth, (req, res) => {
+  const c = db.channels.find(x => x.id === req.params.id)
+  if (!c) return fail(res, 404, 'Channel not found.')
+  if (c.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  if (typeof req.body?.enabled !== 'boolean') return fail(res, 400, 'Invalid setting.')
+  c.comments_enabled = req.body.enabled
+  persist(); touch('channel', c.id); touchGlobal()
+  res.json({ enabled: c.comments_enabled })
+})
+function discussionAccess(req, res) {
+  const c = db.channels.find(x => x.id === req.params.id)
+  if (!c || (!c.is_public && !channelMember(c.id, req.me.id))) { fail(res, 403, 'Access denied.'); return null }
+  const post = db.posts.find(x => x.id === req.params.postId && x.channel_id === c.id)
+  if (!post) { fail(res, 404, 'Post not found.'); return null }
+  return { c, post }
+}
+app.get('/api/channels/:id/posts/:postId/comments', auth, (req, res) => {
+  const ctx = discussionAccess(req, res); if (!ctx) return
+  const comments = db.channelComments.filter(x => x.channel_id === ctx.c.id && x.post_id === ctx.post.id)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-200)
+    .map(x => ({ ...x, author: profileOf(x.author_id) }))
+  res.json({ comments })
+})
+app.post('/api/channels/:id/posts/:postId/comments', auth, (req, res) => {
+  const ctx = discussionAccess(req, res); if (!ctx) return
+  if (!ctx.c.comments_enabled || !channelMember(ctx.c.id, req.me.id)) return fail(res, 403, 'Comments are closed or subscription is required.')
+  const body = typeof req.body?.body === 'string' ? req.body.body.trim() : ''
+  if (!body || body.length > 1000) return fail(res, 400, 'Invalid comment.')
+  const comment = { id: uid(), channel_id: ctx.c.id, post_id: ctx.post.id, author_id: req.me.id, body, created_at: now() }
+  db.channelComments.push(comment); persist(); touch('channel', ctx.c.id)
+  res.json({ comment: { ...comment, author: profileOf(req.me.id) } })
+})
+app.delete('/api/channels/:id/posts/:postId/comments/:commentId', auth, (req, res) => {
+  const ctx = discussionAccess(req, res); if (!ctx) return
+  const index = db.channelComments.findIndex(x => x.id === req.params.commentId && x.channel_id === ctx.c.id && x.post_id === ctx.post.id)
+  if (index < 0) return fail(res, 404, 'Comment not found.')
+  if (db.channelComments[index].author_id !== req.me.id && ctx.c.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.channelComments.splice(index, 1); persist(); touch('channel', ctx.c.id)
+  res.json({ ok: true })
 })
 
 /* ---------- profile publications ---------- */
