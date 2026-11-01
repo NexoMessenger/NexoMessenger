@@ -1503,6 +1503,7 @@ export interface PremiumDecorPatch {
   emojiStatus?: string | null
   wornItemId?: string | null
   nameColor?: string
+  nameBadge?: '' | 'autumn'
   business?: BusinessInfo | null
   /** Item ids to pin to the profile background (max 8); null/[] clears. */
   bgGiftItemIds?: string[] | null
@@ -1513,6 +1514,7 @@ export interface PremiumDecorPatch {
 
 function assertPremiumDecor(patch: PremiumDecorPatch) {
   if (patch.emojiStatus != null && patch.emojiStatus !== '' && !EMOJI_STATUSES.includes(patch.emojiStatus)) err('Invalid code.')
+  if (patch.nameBadge !== undefined && patch.nameBadge !== '' && patch.nameBadge !== 'autumn') err('Invalid code.')
   if (patch.nameColor !== undefined && patch.nameColor !== '' && !NAME_COLORS.some((c) => c.key === patch.nameColor)) err('Invalid code.')
   if (patch.font !== undefined && !(PROFILE_FONTS as readonly string[]).includes(patch.font)) err('Invalid code.')
   if (patch.profileTheme !== undefined && !(PROFILE_THEMES as readonly string[]).includes(patch.profileTheme)) err('Invalid code.')
@@ -1523,10 +1525,11 @@ function assertPremiumDecor(patch: PremiumDecorPatch) {
  *  Setting any of them requires an active Premium — enforced by the backend. */
 export async function updatePremiumDecor(patch: PremiumDecorPatch): Promise<Profile> {
   assertPremiumDecor(patch)
+  if (patch.nameBadge !== undefined && isSb()) err('This feature is not available in Supabase mode.')
   if (isSrv()) return (await srv<{ profile: Profile }>('/api/premium/decor', { method: 'PUT', body: patch })).profile
   const me = await getCurrentProfile()
   if (!me) err('Session expired. Please sign in again.')
-  const wantsPremium = Boolean(patch.emojiStatus) || Boolean(patch.wornItemId) || Boolean(patch.nameColor) || Boolean(patch.business?.enabled)
+  const wantsPremium = Boolean(patch.emojiStatus) || Boolean(patch.wornItemId) || Boolean(patch.nameColor) || Boolean(patch.nameBadge) || Boolean(patch.business?.enabled)
     || Boolean(patch.bgGiftItemIds?.length) || Boolean(patch.music?.url)
     || (patch.font !== undefined && patch.font !== 'default') || (patch.profileTheme !== undefined && patch.profileTheme !== 'default')
   if (wantsPremium && !isPremiumActive(me)) err('NEXO Premium required.')
@@ -1556,6 +1559,7 @@ export async function updatePremiumDecor(patch: PremiumDecorPatch): Promise<Prof
   if (patch.emojiStatus !== undefined) next.emoji_status = patch.emojiStatus || ''
   if (patch.wornItemId !== undefined) next.worn_gift = worn
   if (patch.nameColor !== undefined) next.name_color = patch.nameColor || ''
+  if (patch.nameBadge !== undefined) next.name_badge = patch.nameBadge
   if (patch.business !== undefined) next.business = patch.business ? sanitizeBusiness(patch.business) : null
   if (bgGifts !== undefined) next.bg_gifts = bgGifts
   if (patch.music !== undefined) {

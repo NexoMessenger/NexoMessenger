@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import type { BusinessInfo, OwnedGift } from '../lib/types'
 import { useI18n } from '../i18n'
 import { BusinessBadge, ErrorBox, ProfileName, errText } from '../components/ui'
+import { AutumnName } from '../components/AutumnName'
 import { IconBack, IconClock, IconGem, IconGift, IconPalette, IconShield, IconStar, NexoMark } from '../components/icons'
 import { giftArt, fmtSerial } from '../lib/giftCatalog'
 import {
@@ -24,6 +25,7 @@ export default function PremiumPage() {
 
   const [emojiStatus, setEmojiStatus] = useState('')
   const [nameColor, setNameColor] = useState('')
+  const [nameBadge, setNameBadge] = useState<'' | 'autumn'>('')
   const [bgSelected, setBgSelected] = useState<string[]>([])
   const [musicTitle, setMusicTitle] = useState('')
   const [musicArtist, setMusicArtist] = useState('')
@@ -42,6 +44,7 @@ export default function PremiumPage() {
     if (!profile) return
     setEmojiStatus(profile.emoji_status || '')
     setNameColor(profile.name_color || '')
+    setNameBadge(profile.name_badge === 'autumn' ? 'autumn' : '')
     setBgSelected((profile.bg_gifts || []).map((g) => g.item_id))
     setMusicTitle(profile.profile_music?.title || '')
     setMusicArtist(profile.profile_music?.artist || '')
@@ -57,6 +60,7 @@ export default function PremiumPage() {
     { icon: <IconGem size={20} />, title: t('premium.f.wear'), text: t('premium.f.wearText') },
     { icon: <span className="premium-feat-emoji">🔥</span>, title: t('premium.f.emoji'), text: t('premium.f.emojiText') },
     { icon: <span className="premium-feat-emoji">💎</span>, title: t('premium.f.reactions'), text: t('premium.f.reactionsText') },
+    { icon: <IconStar size={20} />, title: t('premium.nameBadgeTitle'), text: t('premium.nameBadgeHint') },
     { icon: <IconPalette size={20} />, title: t('premium.f.colors'), text: t('premium.f.colorsText') },
     { icon: <IconClock size={20} />, title: t('premium.f.business'), text: t('premium.f.businessText') },
     { icon: <IconShield size={20} />, title: t('premium.f.noads'), text: t('premium.f.noadsText') },
@@ -174,6 +178,19 @@ export default function PremiumPage() {
           onClick={() => void saveDecor('status', { emojiStatus: emojiStatus || null })}>
           {saving === 'status' ? t('common.saving') : t('common.save')}
         </button>
+      </div>
+
+      <div className="settings-group glass card">
+        <div className="sw-title premium-section-title"><IconStar size={18} /> {t('premium.nameBadgeTitle')}</div>
+        <p className="premium-hint">{t('premium.nameBadgeHint')}</p>
+        {locked}
+        {api.mode === 'supabase' && <p className="premium-hint" role="status">{t('premium.nameBadgeUnavailable')}</p>}
+        <div className="autumn-badge-preview"><AutumnName name={profile.display_name} /></div>
+        <div className="premium-badge-options" role="group" aria-label={t('premium.nameBadgeTitle')}>
+          <button type="button" className={`btn btn-sm ${nameBadge === '' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === ''} onClick={() => setNameBadge('')}>{t('premium.none')}</button>
+          <button type="button" className={`btn btn-sm ${nameBadge === 'autumn' ? 'btn-primary' : ''}`} disabled={!active || api.mode === 'supabase'} aria-pressed={nameBadge === 'autumn'} onClick={() => setNameBadge('autumn')}>{t('premium.nameBadgeAutumn')}</button>
+        </div>
+        <button className="btn btn-primary btn-block" disabled={!active || api.mode === 'supabase' || saving === 'nameBadge'} onClick={() => void saveDecor('nameBadge', { nameBadge })}>{saving === 'nameBadge' ? t('common.saving') : t('common.save')}</button>
       </div>
 
       <div className="settings-group glass card">

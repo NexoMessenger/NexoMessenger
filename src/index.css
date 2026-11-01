@@ -1490,3 +1490,14 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 
 /* Leave room below the controls for the dangling foot without covering chat content. */
 .astra-panel-wrap:has(.astra-sitting) { padding-bottom: 16px; }
+
+/* Premium autumn name: no box or background, only lightweight leaves. */
+.autumn-name { display: inline-block; position: relative; max-width: 100%; min-width: 0; line-height: 1.35; overflow: visible; isolation: isolate; }
+.autumn-name-text { position: relative; z-index: 1; font-weight: 850; color: #ffad18; text-shadow: -1px -1px 0 #7b260c, 1px -1px 0 #7b260c, -1px 1px 0 #7b260c, 1px 1px 0 #7b260c, 0 2px 3px #692109; overflow-wrap: anywhere; }
+.autumn-leaves { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.autumn-leaf { position: absolute; display: block; line-height: 0; opacity: 0; animation: autumn-leaf-float 7.5s linear infinite; }
+@keyframes autumn-leaf-float { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.7) rotate(-30deg); } 15% { opacity: 1; } 70% { opacity: .9; } 100% { opacity: 0; transform: translate(calc(-50% + var(--leaf-x)), calc(-50% + var(--leaf-y))) scale(1) rotate(110deg); } }
+@media (prefers-reduced-motion: reduce) { .autumn-leaf { animation: none; opacity: .7; } }
+.autumn-badge-preview { padding: 18px 24px; text-align: center; font-size: 22px; min-height: 68px; }
+.premium-badge-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.premium-badge-options button { flex: 1 1 120px; }
