@@ -9,7 +9,49 @@ env:
   VPS: ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
 
 jobs:
+  emergency-recovery:
+    if: ${{ contains(github.event.head_commit.message, '[recovery-only]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Check and restart the existing NEXO service if needed
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" 'bash -s' <<'REMOTE' | while IFS= read -r line; do
+            case "$line" in FACT:*) echo "::notice title=NEXO recovery::${line#FACT:}";; *) echo "$line";; esac
+          done
+          set -u
+          if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+            echo 'FACT:local backend already responds'
+            exit 0
+          fi
+          echo 'FACT:local backend is not responding'
+          if [ "$(id -u)" = 0 ]; then SUDO=''; elif sudo -n true 2>/dev/null; then SUDO='sudo -n'; else echo 'FACT:no permission to restart system service'; exit 1; fi
+          if ! command -v systemctl >/dev/null 2>&1; then echo 'FACT:systemctl unavailable'; exit 1; fi
+          echo "FACT:free disk MB $(df -Pm /var/www | awk 'NR==2 {print $4}')"
+          echo "FACT:available memory MB $(awk '/MemAvailable:/ {print int($2/1024)}' /proc/meminfo)"
+          $SUDO systemctl restart nexo >/dev/null 2>&1 || echo 'FACT:restart command failed'
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+              echo 'FACT:local backend responds after restart'
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "FACT:service state $($SUDO systemctl is-active nexo 2>/dev/null || true)"
+          echo "FACT:service result $($SUDO systemctl show nexo -p Result --value 2>/dev/null || true)"
+          echo "FACT:service exit status $($SUDO systemctl show nexo -p ExecMainStatus --value 2>/dev/null || true)"
+          echo 'FACT:local backend still does not respond'
+          exit 1
+          REMOTE
+        shell: bash
+      - name: Verify public health
+        run: curl -fsS --max-time 15 https://nexomessenger.space/api/health
+
   build-and-deploy:
+    if: ${{ !contains(github.event.head_commit.message, '[recovery-only]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
