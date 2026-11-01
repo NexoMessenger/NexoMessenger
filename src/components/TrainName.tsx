@@ -3,33 +3,41 @@ export function TrainName({ name }: { name: string }) {
   return <span className="train-name">
     <span className="train-name-text">{name}</span>
     <span className="train-name-track" aria-hidden="true">
-      <svg className="train-name-train" viewBox="0 0 440 48" preserveAspectRatio="none" focusable="false">
-        {/* Eight cars in total: two streamlined cabs and six passenger cars. */}
-        <g className="train-car train-cab">
-          <path d="M2 33 L17 19 Q35 5 57 5 H69 V40 H10 Q3 40 2 36 Z" fill="#afc5d0" stroke="#e8f8ff" strokeWidth="1.5" />
-          <path d="M11 29 L21 21 Q37 10 57 10 H65 V25 H19 Z" fill="#304857" />
-          <path d="M23 22 Q37 13 50 12 V23 H22 Z M54 12 H64 V23 H54 Z" fill="#8ad9ec" />
-          <path d="M4 32 H69 V35 H4 Z" fill="#42d9f6" />
-          <path d="M8 37 H69 V40 H12 Z" fill="#334d5c" />
+      <svg className="train-name-train" viewBox="0 0 1000 56" preserveAspectRatio="none" focusable="false">
+        {/* Two streamlined cabs, pointing outwards, and eight separate passenger cars. */}
+        <g className="train-cab" transform="translate(1000 0) scale(-1 1)">
+          <path d="M909 11 H925 Q950 11 971 23 L996 37 Q999 40 995 43 L985 46 H909 Z" fill="#c7d6dc" stroke="#f3fbff" strokeWidth="1.5" />
+          <path d="M916 15 H927 Q947 15 963 24 L975 31 H916 Z" fill="#263c50" />
+          <path d="M922 17 H930 Q946 17 959 24 L965 28 H922 Z" fill="#8bd8f2" />
+          <path d="M910 34 H982 L992 39 H910 Z" fill="#258acb" />
+          <path d="M910 41 H991 L985 45 H910 Z" fill="#455963" />
+          <path d="M984 35 L991 38 H983 Z" fill="#fff9d5" />
         </g>
-        {Array.from({ length: 6 }, (_, i) => <g className="train-car train-passenger" key={i} transform={`translate(${70 + i * 50} 0)`}>
-          <rect x="0" y="5" width="49" height="35" rx="2" fill="#afc5d0" stroke="#e8f8ff" strokeWidth="1.5" />
-          <path d="M2 10 H47 V26 H2 Z" fill="#304857" />
-          <path d="M5 12 H13 V23 H5 Z M16 12 H24 V23 H16 Z M27 12 H35 V23 H27 Z M38 12 H45 V23 H38 Z" fill="#8ad9ec" />
-          <path d="M1 32 H48 V35 H1 Z" fill="#42d9f6" />
-          <path d="M1 37 H48 V40 H1 Z" fill="#334d5c" />
+        {/* Small visible couplers keep the cars connected without merging their bodies. */}
+        {Array.from({ length: 9 }, (_, i) => <path key={`coupler-${i}`} d={`M${90 + i * 102} 39 h6`} stroke="#4f6875" strokeWidth="3" />)}
+        {Array.from({ length: 8 }, (_, i) => <g className="train-car train-passenger" key={i} transform={`translate(${96 + i * 102} 0)`}>
+          <rect x="0" y="11" width="96" height="35" rx="4" fill="#c7d6dc" stroke="#f3fbff" strokeWidth="1.5" />
+          <path d="M3 15 H93 V31 H3 Z" fill="#263c50" />
+          <path d="M7 17 H19 V28 H7 Z M23 17 H35 V28 H23 Z M39 17 H51 V28 H39 Z M55 17 H67 V28 H55 Z M71 17 H83 V28 H71 Z" fill="#8bd8f2" />
+          <path d="M2 34 H94 V39 H2 Z" fill="#258acb" />
+          <path d="M2 41 H94 V45 H2 Z" fill="#455963" />
+          <path d="M88 13 V43" stroke="#8fa7b2" strokeWidth="1.5" />
         </g>)}
-        <g className="train-car train-cab">
-          <path d="M371 5 H383 Q405 5 423 19 L438 33 Q437 40 430 40 H371 Z" fill="#afc5d0" stroke="#e8f8ff" strokeWidth="1.5" />
-          <path d="M375 10 H383 Q403 10 419 21 L429 29 H421 L375 25 Z" fill="#304857" />
-          <path d="M376 12 H386 V23 H376 Z M390 12 Q403 13 417 22 L418 23 H390 Z" fill="#8ad9ec" />
-          <path d="M371 32 H436 L434 35 H371 Z" fill="#42d9f6" />
-          <path d="M371 37 H432 L428 40 H371 Z" fill="#334d5c" />
+        <g className="train-cab">
+          <path d="M909 11 H925 Q950 11 971 23 L996 37 Q999 40 995 43 L985 46 H909 Z" fill="#c7d6dc" stroke="#f3fbff" strokeWidth="1.5" />
+          <path d="M916 15 H927 Q947 15 963 24 L975 31 H916 Z" fill="#263c50" />
+          <path d="M922 17 H930 Q946 17 959 24 L965 28 H922 Z" fill="#8bd8f2" />
+          <path d="M910 34 H982 L992 39 H910 Z" fill="#258acb" />
+          <path d="M910 41 H991 L985 45 H910 Z" fill="#455963" />
+          <path d="M984 35 L991 38 H983 Z" fill="#fff9d5" />
         </g>
-        {/* Wind streaks move with the train and do not intercept clicks. */}
-        <g fill="none" stroke="#fff" strokeLinecap="round" opacity=".85">
-          <path d="M4 2 H38 M54 2 H80 M135 2 H171 M267 2 H304 M355 2 H389" strokeWidth="1.5" />
-          <path d="M5 44 H33 M50 46 H94 M150 44 H180 M227 46 H268 M318 44 H350 M378 46 H410" strokeWidth="1.5" />
+        <g className="train-wind train-wind-one" fill="none" stroke="#fff" strokeLinecap="round" strokeWidth="2">
+          <path d="M25 5 h42 M119 4 h25 M203 7 h53 M304 3 h39 M417 6 h43 M535 4 h30 M633 6 h52 M746 3 h32 M855 6 h55" />
+          <path d="M10 51 h35 M98 53 h55 M218 50 h35 M329 53 h47 M455 51 h30 M573 53 h55 M690 50 h38 M799 53 h47 M919 51 h35" />
+        </g>
+        <g className="train-wind train-wind-two" fill="none" stroke="#fff" strokeLinecap="round" strokeWidth="1.5">
+          <path d="M70 8 h24 M165 2 h38 M267 8 h28 M371 5 h31 M488 8 h27 M593 2 h35 M708 8 h25 M809 5 h32 M945 8 h24" />
+          <path d="M62 49 h25 M173 54 h28 M278 48 h35 M398 54 h31 M517 49 h38 M647 54 h26 M758 49 h29 M875 54 h30 M965 49 h22" />
         </g>
       </svg>
     </span>
