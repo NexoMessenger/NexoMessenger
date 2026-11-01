@@ -1514,3 +1514,11 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 @keyframes clover-pulse { 0%,100% { opacity: .75; transform: translate(-50%, -50%) scale(.85) rotate(-10deg); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05) rotate(8deg); } }
 @keyframes sakura-fall { 0% { opacity: 0; transform: translate(-50%, -.4em) rotate(-20deg); } 15% { opacity: 1; } 70% { opacity: .9; } 100% { opacity: 0; transform: translate(calc(-50% + var(--nature-dx)), 1.8em) rotate(100deg); } }
 @media (prefers-reduced-motion: reduce) { .nature-name-particle { animation: none !important; opacity: .8 !important; transform: translate(-50%, -50%); } }
+
+/* Steel express: the train crosses only the name, never intercepting taps. */
+.train-name { display: inline-block; position: relative; max-width: 100%; min-width: 0; line-height: 1.35; isolation: isolate; }
+.train-name-text { position: relative; font-weight: 850; color: #d6e4eb; text-shadow: 0 1px 0 #576d7b, 0 0 3px #f4ffff, 0 0 8px #54c9ee, 0 0 13px #2686ad; overflow-wrap: anywhere; }
+.train-name-track { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+.train-name-train { position: absolute; left: -4.5em; top: 0; width: 4.5em; height: 100%; animation: train-name-pass 3s linear infinite; }
+@keyframes train-name-pass { 0% { left: -4.5em; } 42%, 100% { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .train-name-train { animation: none; display: none; } }

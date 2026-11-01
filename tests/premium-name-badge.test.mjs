@@ -30,11 +30,11 @@ test('name badge requires Premium, persists, is public and can be removed after 
     const alice = await register('badgealice'), bob = await register('badgebob')
     const put = (token, body) => req('/api/premium/decor', { token, method: 'PUT', body })
     assert.equal((await put(undefined, { nameBadge: 'autumn' })).status, 401)
-    for (const nameBadge of ['autumn', 'clover', 'sakura']) assert.equal((await put(alice.token, { nameBadge })).status, 403)
+    for (const nameBadge of ['autumn', 'clover', 'sakura', 'train']) assert.equal((await put(alice.token, { nameBadge })).status, 403)
     assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { name_badge: 'autumn', premium_until: '2099-01-01' } })).json.profile.name_badge, undefined)
     assert.equal((await req('/api/premium/redeem', { token: alice.token, method: 'POST', body: { code: 'NEXO-PRO-A7K9' } })).status, 200)
     assert.equal((await put(alice.token, { nameBadge: 'bogus' })).status, 400)
-    for (const nameBadge of ['autumn', 'clover', 'sakura']) {
+    for (const nameBadge of ['autumn', 'clover', 'sakura', 'train']) {
       assert.equal((await put(alice.token, { nameBadge })).json.profile.name_badge, nameBadge)
       assert.equal((await req(`/api/users/${alice.profile.id}`, { token: bob.token })).json.profile.name_badge, nameBadge)
       await stop(); await start()
@@ -44,7 +44,7 @@ test('name badge requires Premium, persists, is public and can be removed after 
     const dbFile = path.join(dir, 'db.json'); const db = JSON.parse(await readFile(dbFile, 'utf8'))
     db.profiles.find(p => p.id === alice.profile.id).premium_until = '2000-01-01T00:00:00.000Z'
     await writeFile(dbFile, JSON.stringify(db)); await start()
-    for (const nameBadge of ['autumn', 'clover', 'sakura']) assert.equal((await put(alice.token, { nameBadge })).status, 403)
+    for (const nameBadge of ['autumn', 'clover', 'sakura', 'train']) assert.equal((await put(alice.token, { nameBadge })).status, 403)
     assert.equal((await put(alice.token, { nameBadge: '' })).json.profile.name_badge, '')
   } finally { if (child && child.exitCode === null) await stop(); await rm(dir, { recursive: true, force: true }) }
 })
