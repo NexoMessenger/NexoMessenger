@@ -27,11 +27,26 @@ jobs:
             exit 0
           fi
           echo 'FACT:local backend is not responding'
-          if [ "$(id -u)" = 0 ]; then SUDO=''; elif sudo -n true 2>/dev/null; then SUDO='sudo -n'; else echo 'FACT:no permission to restart system service'; exit 1; fi
-          if ! command -v systemctl >/dev/null 2>&1; then echo 'FACT:systemctl unavailable'; exit 1; fi
-          echo "FACT:free disk MB $(df -Pm /var/www | awk 'NR==2 {print $4}')"
+          if [ -f /var/www/nexo/server/index.mjs ] && [ -d /var/www/nexo/data ]; then DIR=/var/www/nexo
+          elif [ -f "$HOME/nexo/server/index.mjs" ] && [ -d "$HOME/nexo/data" ]; then DIR="$HOME/nexo"
+          else echo 'FACT:existing deploy directory not found'; exit 1; fi
+          echo "FACT:free disk MB $(df -Pm "$DIR" | awk 'NR==2 {print $4}')"
           echo "FACT:available memory MB $(awk '/MemAvailable:/ {print int($2/1024)}' /proc/meminfo)"
-          $SUDO systemctl restart nexo >/dev/null 2>&1 || echo 'FACT:restart command failed'
+          if ! command -v node >/dev/null 2>&1; then echo 'FACT:node is unavailable'; exit 1; fi
+          echo "FACT:node version $(node --version)"
+          if [ -d "$DIR/node_modules/express" ]; then echo 'FACT:express dependency exists'; else echo 'FACT:express dependency missing'; fi
+          if [ "$(id -u)" = 0 ]; then SUDO=''; elif sudo -n true 2>/dev/null; then SUDO='sudo -n'; else SUDO=none; fi
+          if [ "$SUDO" != none ] && command -v systemctl >/dev/null 2>&1; then
+            $SUDO systemctl restart nexo >/dev/null 2>&1 || echo 'FACT:service restart command failed'
+          else
+            echo 'FACT:starting existing server as deploy user'
+            cd "$DIR" || exit 1
+            if [ -f "$DIR/data/gigachat.env" ]; then
+              PORT=8080 HOST=0.0.0.0 NEXO_DATA_DIR="$DIR/data" nohup node --env-file="$DIR/data/gigachat.env" server/index.mjs > "$DIR/server.log" 2>&1 </dev/null &
+            else
+              PORT=8080 HOST=0.0.0.0 NEXO_DATA_DIR="$DIR/data" nohup node server/index.mjs > "$DIR/server.log" 2>&1 </dev/null &
+            fi
+          fi
           for i in 1 2 3 4 5 6; do
             if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
               echo 'FACT:local backend responds after restart'
@@ -39,9 +54,12 @@ jobs:
             fi
             sleep 5
           done
-          echo "FACT:service state $($SUDO systemctl is-active nexo 2>/dev/null || true)"
-          echo "FACT:service result $($SUDO systemctl show nexo -p Result --value 2>/dev/null || true)"
-          echo "FACT:service exit status $($SUDO systemctl show nexo -p ExecMainStatus --value 2>/dev/null || true)"
+          if [ -f "$DIR/server.log" ]; then
+            if grep -q 'ERR_MODULE_NOT_FOUND' "$DIR/server.log"; then echo 'FACT:server log reports missing module'; fi
+            if grep -q 'EADDRINUSE' "$DIR/server.log"; then echo 'FACT:server log reports address already in use'; fi
+            if grep -q 'ENOMEM' "$DIR/server.log"; then echo 'FACT:server log reports insufficient memory'; fi
+            if grep -q 'ENOSPC' "$DIR/server.log"; then echo 'FACT:server log reports insufficient disk space'; fi
+          fi
           echo 'FACT:local backend still does not respond'
           exit 1
           REMOTE
