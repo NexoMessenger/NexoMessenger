@@ -15,7 +15,7 @@ export default function AiPage() {
   const [fishAvailable, setFishAvailable] = useState(false)
   const [fishPlaying, setFishPlaying] = useState(false)
   const [cloudVoice, setCloudVoice] = useState(() => { try { return localStorage.getItem('nexo_astra_cloud_voice') === 'true' } catch { return false } })
-  const [fishError, setFishError] = useState(false)
+  const [fishError, setFishError] = useState<TranslationKey | null>(null)
   const cloudRef = useRef(cloudVoice)
   const voiceEnabledRef = useRef(voice.enabled)
   const fishAvailableRef = useRef(fishAvailable)
@@ -24,26 +24,56 @@ export default function AiPage() {
   const fishRequest = useRef<AbortController | null>(null)
   const fishAudio = useRef<HTMLAudioElement | null>(null)
   const fishUrl = useRef<string | null>(null)
+  const fishPendingId = useRef<string | null>(null)
   const stopFish = () => {
     fishRequest.current?.abort(); fishRequest.current = null
-    fishAudio.current?.pause(); fishAudio.current = null
+    if (fishAudio.current) { fishAudio.current.onended = null; fishAudio.current.onerror = null; fishAudio.current.pause() }
+    fishAudio.current = null; fishPendingId.current = null
     if (fishUrl.current) URL.revokeObjectURL(fishUrl.current)
-    fishUrl.current = null; setFishPlaying(false)
+    fishUrl.current = null; setFishPlaying(false); setFishError(null)
   }
   const playFish = async (id: string, replace = false) => {
     if (!mounted.current) return
     if (fishPlaying && !replace) { stopFish(); return }
-    voice.stop(); stopFish(); setFishError(false); setFishPlaying(true)
+    // When autoplay is blocked retain the audio; retry synchronously in the
+    // user's click handler instead of spending another synthesis attempt.
+    const retained = fishPendingId.current === id ? fishAudio.current : null
+    if (retained) {
+      setFishError(null); setFishPlaying(true)
+      try {
+        await retained.play()
+        if (fishAudio.current === retained) fishPendingId.current = null
+      } catch (error) {
+        if (fishAudio.current !== retained || !mounted.current) return
+        setFishPlaying(false)
+        if (error instanceof Error && error.name === 'NotAllowedError') setFishError('voice.cloudBlocked')
+        else { stopFish(); setFishError('voice.cloudPlayback') }
+      }
+      return
+    }
+    voice.stop(); stopFish(); setFishError(null); setFishPlaying(true)
     const controller = new AbortController(); fishRequest.current = controller
     try {
       const blob = await api.fishVoice(id, locale, controller.signal)
-      if (controller.signal.aborted) return
+      if (controller.signal.aborted || !mounted.current) return
       const url = URL.createObjectURL(blob); fishUrl.current = url
       const audio = new Audio(url); fishAudio.current = audio
-      audio.onended = () => stopFish()
-      audio.onerror = () => { stopFish(); setFishError(true) }
-      await audio.play()
-    } catch { if (!controller.signal.aborted) { stopFish(); setFishError(true) } }
+      audio.onended = () => { if (fishAudio.current === audio) stopFish() }
+      audio.onerror = () => { if (fishAudio.current === audio) { stopFish(); setFishError('voice.cloudPlayback') } }
+      try { await audio.play() }
+      catch (error) {
+        if (controller.signal.aborted || !mounted.current || fishAudio.current !== audio) return
+        if (error instanceof Error && error.name === 'NotAllowedError') {
+          fishPendingId.current = id; setFishPlaying(false); setFishError('voice.cloudBlocked')
+        } else { stopFish(); setFishError('voice.cloudPlayback') }
+      }
+    } catch (error) {
+      if (controller.signal.aborted || !mounted.current) return
+      stopFish()
+      const code = error instanceof Error ? error.message : ''
+      const keys: Record<string, TranslationKey> = { VOICE_LIMIT: 'voice.cloudLimitReached', VOICE_BUSY: 'voice.cloudBusy', VOICE_UNAVAILABLE: 'voice.cloudUnavailable', VOICE_PROVIDER_ERROR: 'voice.cloudUnavailable' }
+      setFishError(keys[code] || 'voice.cloudError')
+    }
   }
   useEffect(() => {
     mounted.current = true
@@ -158,7 +188,7 @@ export default function AiPage() {
       </div>)}
       {sending && <div className="msg-row theirs"><div className="bubble" role="status">{t('ai.thinking')}</div></div>}
     </div>
-    {fishError && <div className="ai-error" role="alert">{t('voice.cloudError')}</div>}
+    {fishError && <div className="ai-error" role="alert">{t(fishError)}{fishError === 'voice.cloudBlocked' && <button type="button" className="btn btn-sm" onClick={() => { if (fishPendingId.current) void playFish(fishPendingId.current) }}>{t('voice.preview')}</button>}</div>}
     {voice.failed && <div className="ai-error" role="alert">{t('voice.failed')}</div>}
     {error && <div className="ai-error" role="alert">{error}</div>}
     <form className="ai-composer" onSubmit={event => { event.preventDefault(); void send() }}>
