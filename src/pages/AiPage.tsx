@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n, type TranslationKey } from '../i18n'
 import * as api from '../lib/api'
-import { IconBack, IconSend, IconEdit, IconChats, IconVolume, NexoMark } from '../components/icons'
+import { IconBack, IconSend, IconEdit, IconChats, IconVolume, IconTrash, NexoMark } from '../components/icons'
 import Astra from '../components/Astra'
 import { useAstraVoice } from '../lib/astraVoice'
 
@@ -101,6 +101,22 @@ export default function AiPage() {
     try { const history = await api.getAiHistory(id); setThreadId(id); setMessages(history); setText(''); setShowHistory(false) }
     catch { setError(t('ai.historyError')) } finally { setLoadingHistory(false) }
   }
+  const deleteChat = async (id: string) => {
+    if (sending || loadingHistory || !window.confirm(t('ai.deleteConfirm'))) return
+    setLoadingHistory(true); setError('')
+    try {
+      await api.deleteAiThread(id)
+      setThreads(previous => previous.filter(thread => thread.id !== id))
+      if (threadId === id) newChat()
+    } catch { setError(t('ai.deleteError')) }
+    finally { setLoadingHistory(false) }
+  }
+  const toggleMute = () => {
+    const enabled = !voice.enabled
+    voiceEnabledRef.current = enabled
+    voice.setEnabled(enabled)
+    if (!enabled) stopFish()
+  }
   const selectAstra = () => {
     setSelected(true)
     if (cloudVoice && fishAvailable && voice.enabled) void playFish('greeting', true)
@@ -116,8 +132,6 @@ export default function AiPage() {
       <span className="ai-avatar"><NexoMark size={25} /></span>
       <span className="row-main"><strong>{t('astra.name')}</strong><span className="row-preview">{status === null ? t('ai.checking') : ready ? t('ai.ready') : t('ai.unavailable')}</span></span>
       <button className="icon-btn" onClick={() => setVoiceSettings(v => !v)} aria-expanded={voiceSettings} aria-label={t('voice.settings')} title={t('voice.settings')}><IconVolume size={19} /></button>
-      <button className="icon-btn" disabled={sending || loadingHistory} onClick={() => void toggleHistory()} aria-label={t('ai.chats')} title={t('ai.chats')}><IconChats size={19} /></button>
-      <button className="icon-btn" disabled={sending || loadingHistory} onClick={newChat} aria-label={t('ai.newChat')} title={t('ai.newChat')}><IconEdit size={19} /></button>
     </div>
     {voiceSettings && <section className="astra-voice-settings glass" aria-label={t('voice.settings')}>
       <div className="astra-voice-top"><strong>{t('voice.settings')}</strong><label className="astra-voice-toggle"><input type="checkbox" checked={voice.enabled} disabled={!voice.supported && !fishAvailable} onChange={e => { voiceEnabledRef.current = e.target.checked; voice.setEnabled(e.target.checked); if (!e.target.checked) stopFish() }} /> {t('voice.auto')}</label></div>
@@ -132,9 +146,9 @@ export default function AiPage() {
       </>}
     </section>}
 
-    {showHistory && <div className="ai-history glass"><strong>{t('ai.chats')}</strong>{loadingHistory ? <p>{t('common.loading')}</p> : threads.length === 0 ? <p>{t('ai.noChats')}</p> : threads.map(thread => <button key={thread.id} className="btn btn-sm" disabled={sending || loadingHistory} onClick={() => void openThread(thread.id)}>{thread.title}</button>)}</div>}
+    {showHistory && <div className="ai-history glass"><strong>{t('ai.chats')}</strong>{loadingHistory ? <p>{t('common.loading')}</p> : threads.length === 0 ? <p>{t('ai.noChats')}</p> : threads.map(thread => <div className="ai-history-row" key={thread.id}><button className="btn btn-sm ai-history-open" disabled={sending || loadingHistory} onClick={() => void openThread(thread.id)}>{thread.title}</button><button className="icon-btn" disabled={sending || loadingHistory} onClick={() => void deleteChat(thread.id)} aria-label={`${t('ai.deleteChat')}: ${thread.title}`} title={t('ai.deleteChat')}><IconTrash size={18} /></button></div>)}</div>}
     <div ref={scroller} className="messages-scroll ai-messages">
-      <div className="astra-intro"><Astra greeting speaking={fishPlaying || voice.speaking} /><div className="astra-greeting glass">{t('astra.hello')}{((voice.supported && !cloudVoice) || (fishAvailable && cloudVoice)) && <button type="button" className="astra-voice-replay" onClick={() => cloudVoice && fishAvailable ? void playFish('greeting') : voice.speaking ? voice.stop() : (stopFish(), voice.speak(t('astra.hello'), true))} aria-label={(voice.speaking || fishPlaying) ? t('voice.stop') : t('voice.playGreeting')} title={(voice.speaking || fishPlaying) ? t('voice.stop') : t('voice.playGreeting')}><IconVolume size={17} /></button>}</div></div>
+      <div className="astra-intro"><div className="astra-panel-wrap"><Astra greeting speaking={fishPlaying || voice.speaking} /><div className="astra-taskbar glass" role="toolbar" aria-label={t('astra.name')}><button className="icon-btn" type="button" onClick={toggleMute} disabled={!voice.supported && !fishAvailable} aria-pressed={!voice.enabled} aria-label={voice.enabled ? t('ai.mute') : t('ai.unmute')} title={voice.enabled ? t('ai.mute') : t('ai.unmute')}><IconVolume size={18} />{!voice.enabled && <span className="astra-muted-mark" aria-hidden="true" />}</button><button className="icon-btn" type="button" disabled={sending || loadingHistory} onClick={newChat} aria-label={t('ai.newChat')} title={t('ai.newChat')}><IconEdit size={18} /></button><button className="icon-btn" type="button" disabled={sending || loadingHistory} onClick={() => void toggleHistory()} aria-label={t('ai.chats')} title={t('ai.chats')} aria-expanded={showHistory}><IconChats size={18} /></button></div></div><div className="astra-greeting glass">{t('astra.hello')}{((voice.supported && !cloudVoice) || (fishAvailable && cloudVoice)) && <button type="button" className="astra-voice-replay" onClick={() => cloudVoice && fishAvailable ? void playFish('greeting') : voice.speaking ? voice.stop() : (stopFish(), voice.speak(t('astra.hello'), true))} aria-label={(voice.speaking || fishPlaying) ? t('voice.stop') : t('voice.playGreeting')} title={(voice.speaking || fishPlaying) ? t('voice.stop') : t('voice.playGreeting')}><IconVolume size={17} /></button>}</div></div>
       <div className="ai-disclaimer glass">{t('ai.disclaimer')}</div>
       {status && !ready && <div className="ai-notice glass" role="status"><p>{t(status.reason === 'missing_key' ? 'ai.setup' : status.reason === 'invalid_cert' ? 'ai.certError' : status.reason === 'model_unavailable' ? 'ai.modelUnavailable' : status.reason === 'unsupported' ? 'ai.unsupported' : 'ai.networkError')}</p><button className="btn btn-sm" onClick={() => void check()}>{t('ai.retry')}</button></div>}
       {messages.length === 0 && <div className="ai-empty">{t('ai.welcome')}</div>}

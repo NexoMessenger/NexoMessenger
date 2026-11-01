@@ -58,6 +58,17 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.equal((await request('/api/ai/history?thread_id=' + first.json.thread_id, bob.token)).json.messages[0].content, 'First topic')
     assert.equal((await request('/api/ai/history?thread_id=' + first.json.thread_id, alice.token)).status, 404)
     assert.equal((await request('/api/ai/message', alice.token, { text: 'intrude', thread_id: first.json.thread_id })).status, 404)
+    const remove = async (id, token) => {
+      const response = await fetch(base + '/api/ai/threads/' + encodeURIComponent(id), { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      return response.status
+    }
+    assert.equal(await remove(second.json.thread_id, null), 401)
+    assert.equal(await remove(second.json.thread_id, alice.token), 404)
+    assert.equal((await request('/api/ai/history?thread_id=' + second.json.thread_id, bob.token)).status, 200)
+    assert.equal(await remove(second.json.thread_id, bob.token), 200)
+    assert.equal(await remove(second.json.thread_id, bob.token), 404)
+    assert.equal((await request('/api/ai/threads', bob.token)).json.threads.length, 1)
+
     assert.deepEqual((await request('/api/ai/rewrite', bob.token, { text: 'hello there', action: 'correct' })).json, { text: 'Mock response' })
     for (const action of ['improve', 'shorten']) assert.deepEqual((await request('/api/ai/rewrite', bob.token, { text: 'draft', action })).json, { text: 'Mock response' })
     assert.equal((await request('/api/ai/rewrite', bob.token, { text: 'x'.repeat(2001), action: 'correct' })).status, 400)
@@ -88,6 +99,7 @@ test('authenticated, private AI conversations and quota failures', async () => {
     assert.ok(migrated?.id)
     assert.equal((await request('/api/ai/history?thread_id=' + migrated.id, bob.token)).json.messages[0].content, 'First topic')
     assert.ok(JSON.parse(await readFile(dbPath, 'utf8')).aiChats.find(c => c.id === migrated.id))
+    assert.ok(!JSON.parse(await readFile(dbPath, 'utf8')).aiChats.find(c => c.id === second.json.thread_id))
     assert.equal((await request('/api/ai/message', bob.token, { text: 'ok' })).json.error, 'AI_SERVER_DAILY_LIMIT')
     // Upgrade legacy attempt-only data without deleting chats or discarding
     // the old abuse counter; failures must no longer look like reply limits.

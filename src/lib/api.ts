@@ -371,6 +371,10 @@ export async function listAiThreads(): Promise<AiThread[]> {
   if (!isSrv()) return []
   return (await srv<{ threads: AiThread[] }>('/api/ai/threads')).threads
 }
+export async function deleteAiThread(threadId: string): Promise<void> {
+  if (!isSrv()) throw new Error('AI is unavailable in this mode.')
+  await srv(`/api/ai/threads/${encodeURIComponent(threadId)}`, { method: 'DELETE' })
+}
 export async function getAiHistory(threadId: string): Promise<AiMessage[]> {
   if (!isSrv()) return []
   return (await srv<{ messages: AiMessage[] }>(`/api/ai/history?thread_id=${encodeURIComponent(threadId)}`)).messages
