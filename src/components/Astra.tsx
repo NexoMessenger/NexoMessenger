@@ -1,7 +1,7 @@
 import { Component, Suspense, lazy, useState, type ReactNode } from 'react'
 import astraImage from '../assets/bot/astra-original.png'
 
-const AstraModel = lazy(() => import('./AstraModel'))
+const AstraModel = lazy(() => import('./AstraSplat'))
 
 class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
   state = { failed: false }
@@ -10,9 +10,10 @@ class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode
 }
 
 /** Keep the original artwork as a fallback when 3D is unavailable. */
-export default function Astra({ greeting = false, speaking = false }: { greeting?: boolean; speaking?: boolean }) {
+export default function Astra({ greeting = false, speaking = false, activity = 0 }: { greeting?: boolean; speaking?: boolean; activity?: number }) {
+  void speaking
   const [failed, setFailed] = useState(false)
   const fallback = <img className="astra-figure astra-fallback" src={astraImage} alt="Astra" />
   if (failed) return fallback
-  return <ModelBoundary fallback={fallback}><Suspense fallback={fallback}><AstraModel greeting={greeting} speaking={speaking} onFailure={() => setFailed(true)} fallback={fallback} /></Suspense></ModelBoundary>
+  return <ModelBoundary fallback={fallback}><Suspense fallback={fallback}><AstraModel greeting={greeting} activity={activity} onFailure={() => setFailed(true)} fallback={fallback} /></Suspense></ModelBoundary>
 }

@@ -1484,3 +1484,6 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .ai-history .ai-history-row .ai-history-open { flex: 1; min-width: 0; }
 .ai-history .ai-history-row .icon-btn { flex: 0 0 40px; width: 40px; text-align: center; }
 .ai-messages .astra-intro { flex: 0 0 auto; }
+/* The splat is visual only; controls remain clickable when her legs overlap the bar. */
+.astra-sitting canvas { transform: translateY(75px); transition: transform 1.5s ease; }
+.astra-taskbar { position: relative; z-index: 1; }

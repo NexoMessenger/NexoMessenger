@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 // base './' keeps the build portable for GitHub Pages (future deployment)
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: { exclude: ['@viggle/splat-engine'] },
   base: './',
   server: {
     host: '0.0.0.0', port: 5173, allowedHosts: true,
