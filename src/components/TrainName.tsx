@@ -3,7 +3,7 @@ export function TrainName({ name }: { name: string }) {
   return <span className="train-name">
     <span className="train-name-text">{name}</span>
     <span className="train-name-track" aria-hidden="true">
-      <svg className="train-name-train" viewBox="0 0 1640 56" preserveAspectRatio="none" focusable="false">
+      <svg className="train-name-train" viewBox="0 0 1640 56" preserveAspectRatio="xMidYMid meet" focusable="false">
         {/* Two streamlined cabs, pointing outwards, and eight separate passenger cars. */}
         <g className="train-cab" transform="translate(1000 0) scale(-1 1)">
           <path d="M909 11 H925 Q950 11 971 23 L996 37 Q999 40 995 43 L985 46 H909 Z" fill="#c7d6dc" stroke="#f3fbff" strokeWidth="1.5" />
@@ -16,7 +16,7 @@ export function TrainName({ name }: { name: string }) {
         {/* Small visible couplers keep the cars connected without merging their bodies. */}
         {Array.from({ length: 9 }, (_, i) => <path key={`coupler-${i}`} d={`M${90 + i * 182} 39 h6`} stroke="#4f6875" strokeWidth="3" />)}
         {Array.from({ length: 8 }, (_, i) => <g className="train-car train-passenger" key={i} transform={`translate(${96 + i * 182} 0)`}>
-          <image href="/assets/express-carriage.png" x="0" y="10" width="176" height="36" preserveAspectRatio="none" />
+          <image href="/assets/express-carriage.png" x="0" y="10" width="176" height="36" preserveAspectRatio="xMidYMid meet" />
         </g>)}
         <g className="train-cab" transform="translate(640 0)">
           <path d="M909 11 H925 Q950 11 971 23 L996 37 Q999 40 995 43 L985 46 H909 Z" fill="#c7d6dc" stroke="#f3fbff" strokeWidth="1.5" />
