@@ -771,6 +771,16 @@ app.get('/api/ai/history', auth, (req, res) => {
   if (id && !chat) return fail(res, 404, 'AI_CHAT_NOT_FOUND')
   res.json({ messages: chat?.messages || [] })
 })
+// Delete only the signed-in user's own AI conversation. Block deletion while a
+// provider request is in flight so a reply cannot recreate a deleted chat.
+app.delete('/api/ai/threads/:id', auth, (req, res) => {
+  const index = db.aiChats.findIndex(c => c.id === req.params.id && c.user_id === req.me.id)
+  if (index < 0) return fail(res, 404, 'AI_CHAT_NOT_FOUND')
+  if (aiBusy) return fail(res, 409, 'AI_BUSY')
+  const [removed] = db.aiChats.splice(index, 1)
+  try { persist() } catch (error) { db.aiChats.splice(index, 0, removed); throw error }
+  res.json({ ok: true })
+})
 // Attempts remain bounded even during provider outages. Only successful replies
 // consume the smaller reply quota shared by chat and draft rewriting.
 function currentAiUsage() {
