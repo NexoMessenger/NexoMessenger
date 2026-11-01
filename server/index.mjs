@@ -548,6 +548,10 @@ app.patch('/api/me', auth, (req, res) => {
     if (db.profiles.some((p) => p.username === uname && p.id !== req.me.id)) return fail(res, 400, 'That @username is already taken.')
     req.me.username = uname
   }
+  if (patch.mood_status !== undefined) {
+    if (typeof patch.mood_status !== 'string' || patch.mood_status.length > 80) return fail(res, 400, 'Invalid mood status.')
+    req.me.mood_status = patch.mood_status.trim()
+  }
   for (const k of ['display_name', 'bio', 'avatar_url']) {
     if (patch[k] !== undefined) req.me[k] = String(patch[k]).slice(0, k === 'bio' ? 300 : 1000)
   }
@@ -934,12 +938,23 @@ app.get('/api/chats', auth, (req, res) => {
     const conv = db.conversations.find((c) => c.id === m.conversation_id)
     if (!conv) return null
     const otherId = db.convMembers.find((x) => x.conversation_id === conv.id && x.user_id !== me)?.user_id
-    const other = otherId ? profileOf(otherId) : null
+    const other = otherId ? profileOf(otherId) : conv.saved_owner_id === me ? profileOf(me) : null
     if (!other) return null
     const msgs = db.messages.filter((x) => x.conversation_id === conv.id).sort((a, b) => a.created_at.localeCompare(b.created_at))
     return { conv, other, lastMessage: msgs[msgs.length - 1] ?? null, unread: msgs.filter((x) => x.sender_id !== me && x.created_at > m.last_read_at).length }
   }).filter(Boolean).sort((a, b) => b.conv.last_message_at.localeCompare(a.conv.last_message_at))
   res.json({ items })
+})
+
+app.post('/api/chats/saved', auth, (req, res) => {
+  let conv = db.conversations.find(c => c.saved_owner_id === req.me.id && isConvMember(c.id, req.me.id))
+  if (!conv) {
+    conv = { id: uid(), created_by: req.me.id, saved_owner_id: req.me.id, created_at: now(), last_message_at: now() }
+    db.conversations.push(conv)
+    db.convMembers.push({ conversation_id: conv.id, user_id: req.me.id, last_read_at: now(), joined_at: now() })
+    persist(); touchGlobal()
+  }
+  res.json({ id: conv.id })
 })
 
 app.post('/api/chats/direct', auth, (req, res) => {
@@ -959,10 +974,25 @@ app.post('/api/chats/direct', auth, (req, res) => {
   res.json({ id: conv.id })
 })
 
+// A chat theme belongs to the member, not to the whole conversation.
+app.get('/api/chats/:id/theme', auth, (req, res) => {
+  const member = db.convMembers.find(m => m.conversation_id === req.params.id && m.user_id === req.me.id)
+  if (!member) return fail(res, 403, 'Access denied.')
+  res.json({ theme: member.chat_theme || 'default' })
+})
+app.put('/api/chats/:id/theme', auth, (req, res) => {
+  const member = db.convMembers.find(m => m.conversation_id === req.params.id && m.user_id === req.me.id)
+  if (!member) return fail(res, 403, 'Access denied.')
+  if (!['default', 'ocean', 'sakura', 'night'].includes(req.body?.theme)) return fail(res, 400, 'Invalid chat theme.')
+  member.chat_theme = req.body.theme; persist()
+  res.json({ theme: member.chat_theme })
+})
+
 app.get('/api/chats/:id/peer', auth, (req, res) => {
   if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Profile not found.')
   const otherId = db.convMembers.find((m) => m.conversation_id === req.params.id && m.user_id !== req.me.id)?.user_id
-  res.json({ profile: otherId ? profileOf(otherId) : null })
+  const conv = db.conversations.find(c => c.id === req.params.id)
+  res.json({ profile: otherId ? profileOf(otherId) : conv?.saved_owner_id === req.me.id ? profileOf(req.me.id) : null })
 })
 
 app.get('/api/chats/:id/peer-read', auth, (req, res) => {

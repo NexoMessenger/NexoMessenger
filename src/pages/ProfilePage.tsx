@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('')
   const [username, setUsername] = useState('')
   const [bio, setBio] = useState('')
+  const [mood, setMood] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
@@ -46,14 +47,14 @@ export default function ProfilePage() {
   if (!profile) return <div className="page"><div className="center-loader"><div className="spinner" />{t('profile.loading')}</div></div>
 
   const startEdit = () => {
-    setDisplayName(profile.display_name); setUsername(profile.username); setBio(profile.bio || '')
+    setDisplayName(profile.display_name); setUsername(profile.username); setBio(profile.bio || ''); setMood(profile.mood_status || '')
     setError(''); setNotice(''); setEditing(true)
   }
 
   const save = async () => {
     setSaving(true); setError('')
     try {
-      await api.updateProfile(profile.id, { display_name: displayName.trim(), username, bio: bio.trim() })
+      await api.updateProfile(profile.id, { display_name: displayName.trim(), username, bio: bio.trim(), ...(api.mode !== 'supabase' ? { mood_status: mood.trim() } : {}) })
       await refresh()
       setEditing(false); setNotice(t('profile.saved'))
     } catch (e) { setError(errText(e, t)) }
@@ -121,6 +122,7 @@ export default function ProfilePage() {
           </div>
         )}
         <div style={{ marginTop: 8 }}><span className="pill"><span style={{ width: 7, height: 7, borderRadius: '50%', background: profile.is_online ? 'var(--ok)' : 'var(--text-3)', display: 'inline-block' }} />{profile.is_online ? t('profile.onlineNow') : t('profile.offlineNow')}</span></div>
+        {profile.mood_status && <p className="profile-mood">{profile.mood_status}</p>}
         {profile.bio && <p style={{ color: 'var(--text-2)', maxWidth: 420, margin: '14px auto 0', fontSize: 14 }}>{profile.bio}</p>}
         <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={(e) => changeAvatar(e.target.files?.[0])} />
         <button className="btn btn-sm" style={{ marginTop: 16 }} disabled={uploading} onClick={() => fileRef.current?.click()}>
@@ -136,6 +138,7 @@ export default function ProfilePage() {
           <div className="field"><label>{t('auth.username')}</label>
             <input className="input" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))} />
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>{t('profile.usernameAvail')}</div></div>
+          {api.mode !== 'supabase' && <div className="field"><label>{t('extras.mood')}</label><input className="input" maxLength={80} value={mood} onChange={e => setMood(e.target.value)} placeholder={t('extras.moodHint')} /></div>}
           <div className="field"><label>{t('profile.bio')}</label>
             <textarea className="textarea" rows={3} maxLength={200} placeholder={t('profile.bioPlaceholder')} value={bio} onChange={(e) => setBio(e.target.value)} /></div>
           <div style={{ display: 'flex', gap: 10, paddingBottom: 14 }}>

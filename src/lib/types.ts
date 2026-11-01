@@ -32,6 +32,7 @@ export interface Profile {
   display_name: string
   avatar_url: string
   bio: string
+  mood_status?: string
   is_online: boolean
   last_seen: string
   created_at: string
@@ -77,6 +78,7 @@ export interface PremiumState {
 }
 
 export interface Conversation {
+  saved_owner_id?: ID
   id: ID
   created_by: ID | null
   created_at: string

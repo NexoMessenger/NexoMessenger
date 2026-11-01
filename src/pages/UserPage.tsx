@@ -110,6 +110,7 @@ export default function UserPage() {
                 {fmtLastSeen(user, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}
               </span>
             </div>
+            {user.mood_status && <p className="profile-mood">{user.mood_status}</p>}
             {user.bio && <p className="user-profile-bio-full">{user.bio}</p>}
 
             <div className="user-profile-meta">

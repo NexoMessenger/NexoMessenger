@@ -308,7 +308,7 @@ export async function updateProfile(id: string, patch: Partial<Profile>): Promis
     if (!/^[a-z0-9_.]{3,24}$/.test(patch.username)) err('Username: 3–24 chars, lowercase letters, digits, _ or .')
   }
   if (isSrv()) {
-    await srv('/api/me', { method: 'PATCH', body: { username: patch.username, display_name: patch.display_name, bio: patch.bio, avatar_url: patch.avatar_url } })
+    await srv('/api/me', { method: 'PATCH', body: { username: patch.username, display_name: patch.display_name, bio: patch.bio, avatar_url: patch.avatar_url, mood_status: patch.mood_status } })
     return
   }
   if (isSb()) {
@@ -428,6 +428,21 @@ export async function listDirectChats(me: string): Promise<DirectListItem[]> {
     const mine = db.convMembers.find((m) => m.conversation_id === cid && m.user_id === me)!
     return { conv, other, lastMessage: msgs[msgs.length - 1] ?? null, unread: msgs.filter((m) => m.sender_id !== me && m.created_at > mine.last_read_at).length }
   }).sort((a, b) => b.conv.last_message_at.localeCompare(a.conv.last_message_at))
+}
+
+export type ChatTheme = 'default' | 'ocean' | 'sakura' | 'night'
+export async function getChatTheme(id: string): Promise<ChatTheme> {
+  if (!isSrv()) throw new Error('Chat themes are available on the NEXO server only.')
+  return (await srv<{ theme: ChatTheme }>(`/api/chats/${id}/theme`)).theme
+}
+export async function setChatTheme(id: string, theme: ChatTheme): Promise<void> {
+  if (!isSrv()) throw new Error('Chat themes are available on the NEXO server only.')
+  await srv(`/api/chats/${id}/theme`, { method: 'PUT', body: { theme } })
+}
+
+export async function getSavedChat(): Promise<string> {
+  if (!isSrv()) throw new Error('Saved messages are available on the NEXO server only.')
+  return (await srv<{ id: string }>('/api/chats/saved', { method: 'POST' })).id
 }
 
 export async function getOrCreateDirect(me: string, otherId: string): Promise<string> {
