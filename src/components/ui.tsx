@@ -8,6 +8,8 @@ import { FoxSticker } from './FoxStickers'
 import { floatingGiftArt, giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { IconGem, IconGift, IconHeart, IconStar } from './icons'
 import { businessStatus, isPremiumActive, nameColorOf, profileFontClass, profileThemeClass } from '../lib/premiumData'
+import { CreativeName } from './CreativeName'
+import { isCreativeBadge } from '../lib/nameBadges'
 import { TrainName } from './TrainName'
 import { NatureName } from './NatureName'
 import { AutumnName } from './AutumnName'
@@ -54,6 +56,8 @@ export function ProfileName({ profile, className = '' }: {
         ? <AutumnName name={profile.display_name} />
         : isPremiumActive(profile) && profile.name_badge === 'train'
           ? <TrainName name={profile.display_name} />
+        : isPremiumActive(profile) && isCreativeBadge(profile.name_badge)
+          ? <CreativeName name={profile.display_name} kind={profile.name_badge} />
         : isPremiumActive(profile) && (profile.name_badge === 'clover' || profile.name_badge === 'sakura')
           ? <NatureName name={profile.display_name} kind={profile.name_badge} />
           : <span className={profileFontClass(profile.profile_font)} style={color ? { color } : undefined}>{profile.display_name}</span>}

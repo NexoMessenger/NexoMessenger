@@ -1525,3 +1525,19 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .train-wind-two { animation-delay: -0.2s; animation-duration: .55s; }
 @keyframes train-wind { 0% { opacity: 0; transform: translateX(8px); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateX(-20px); } }
 @media (prefers-reduced-motion: reduce) { .train-name-train { animation: none; display: none; } .train-wind { animation: none; } }
+
+/* Fifteen Premium name effects. Ornaments stay visual and never block taps. */
+.creative-name { display: inline-block; position: relative; max-width: 100%; min-width: 0; line-height: 1.35; overflow: visible; isolation: isolate; color: var(--creative-color); }
+.creative-name-text { position: relative; z-index: 1; font-weight: 850; color: var(--creative-color); overflow-wrap: anywhere; text-shadow: 0 0 2px var(--creative-color), 0 0 6px var(--creative-glow), 0 1px 2px #151221; }
+.creative-particles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.creative-particle { position: absolute; display: block; line-height: 0; opacity: 0; color: var(--creative-color); filter: drop-shadow(0 0 2px var(--creative-glow)); pointer-events: none; }
+.creative-motion-rise { animation: creative-rise 5.5s linear infinite; }
+.creative-motion-fall { animation: creative-fall 6s linear infinite; }
+.creative-motion-drift { animation: creative-drift 5s ease-in-out infinite; }
+.creative-motion-spark { animation: creative-spark 3.2s ease-in-out infinite; }
+@keyframes creative-rise { 0% { opacity: 0; transform: translate(-50%, .8em) scale(.6); } 20%,65% { opacity: .95; } 100% { opacity: 0; transform: translate(calc(-50% + var(--particle-dx)), -1em) scale(1) rotate(25deg); } }
+@keyframes creative-fall { 0% { opacity: 0; transform: translate(-50%, -.5em) rotate(-20deg); } 20%,65% { opacity: .95; } 100% { opacity: 0; transform: translate(calc(-50% + var(--particle-dx)), 1.5em) rotate(70deg); } }
+@keyframes creative-drift { 0%,100% { opacity: .45; transform: translate(-50%, -50%) rotate(-12deg) scale(.8); } 50% { opacity: 1; transform: translate(calc(-50% + var(--particle-dx)), -75%) rotate(12deg) scale(1); } }
+@keyframes creative-spark { 0%,100% { opacity: .25; transform: translate(-50%, -50%) scale(.55); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); } }
+@media (prefers-reduced-motion: reduce) { .creative-particle { animation: none; opacity: .65; transform: translate(-50%, -50%); } }
+.creative-rainbow .creative-name-text { background: linear-gradient(90deg, #ff9ab4, #ffe69a, #a8ffcd, #9bdfff, #e4b1ff); color: transparent; -webkit-background-clip: text; background-clip: text; text-shadow: none; filter: drop-shadow(0 0 3px #bc86df); }
