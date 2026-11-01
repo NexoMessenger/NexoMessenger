@@ -147,6 +147,7 @@ export interface GroupMessage extends Omit<Message, 'conversation_id'> {
 }
 
 export interface Channel {
+  comments_enabled?: boolean
   id: ID
   name: string
   avatar_url: string
@@ -165,6 +166,7 @@ export interface ChannelMember {
 }
 
 export interface ChannelPost {
+  comment_count?: number
   id: ID
   channel_id: ID
   author_id: ID
@@ -173,6 +175,16 @@ export interface ChannelPost {
   attachment_name: string
   attachment_type: string
   created_at: string
+}
+
+export interface ChannelComment {
+  id: ID
+  channel_id: ID
+  post_id: ID
+  author_id: ID
+  body: string
+  created_at: string
+  author: Profile | null
 }
 
 export interface UserSettings {

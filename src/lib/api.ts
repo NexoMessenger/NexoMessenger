@@ -4,7 +4,7 @@ import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, 
 import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS, GIFT_TRANSFER_FEE, GIFT_SELL_FEE } from './giftData'
 import { EMOJI_STATUSES, NAME_COLORS, PREMIUM_DAYS, PREMIUM_PRICE_RUB, PROFILE_FONTS, PROFILE_THEMES, isPremiumActive, normalizePremiumCode, sanitizeBusiness } from './premiumData'
 import type {
-  AttachmentInfo, Channel, ChannelPost, Conversation, GiftListing, GiftState, Group, GroupMessage,
+  AttachmentInfo, Channel, ChannelPost, ChannelComment, Conversation, GiftListing, GiftState, Group, GroupMessage,
   BgGift, BusinessInfo, MarketEntry, Message, OwnedGift, PremiumState, Profile, ProfileMusic, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
 } from './types'
 
@@ -949,6 +949,23 @@ export async function setChannelPoster(channelId: string, userId: string, canPos
   if (isSrv()) { await srv(`/api/channels/${channelId}/members/${userId}/poster`, { method: 'PATCH', body: { canPost } }); return }
   if (isSb()) { const { error } = await supabase!.from('channel_members').update({ can_post: canPost }).eq('channel_id', channelId).eq('user_id', userId); if (error) err(error.message); return }
   const db = loadDB(); const m = db.channelMembers.find((x) => x.channel_id === channelId && x.user_id === userId); if (m) m.can_post = canPost; saveDB(db)
+}
+
+export async function setChannelComments(channelId: string, enabled: boolean): Promise<void> {
+  if (!isSrv()) err('Channel comments are available on the NEXO server only.')
+  await srv(`/api/channels/${channelId}/comments-setting`, { method: 'PUT', body: { enabled } })
+}
+export async function listChannelComments(channelId: string, postId: string): Promise<ChannelComment[]> {
+  if (!isSrv()) err('Channel comments are available on the NEXO server only.')
+  return (await srv<{ comments: ChannelComment[] }>(`/api/channels/${channelId}/posts/${postId}/comments`)).comments
+}
+export async function sendChannelComment(channelId: string, postId: string, body: string): Promise<void> {
+  if (!isSrv()) err('Channel comments are available on the NEXO server only.')
+  await srv(`/api/channels/${channelId}/posts/${postId}/comments`, { method: 'POST', body: { body } })
+}
+export async function deleteChannelComment(channelId: string, postId: string, commentId: string): Promise<void> {
+  if (!isSrv()) err('Channel comments are available on the NEXO server only.')
+  await srv(`/api/channels/${channelId}/posts/${postId}/comments/${commentId}`, { method: 'DELETE' })
 }
 
 export async function listPosts(channelId: string): Promise<ChannelPost[]> {
