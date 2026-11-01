@@ -1538,10 +1538,12 @@ app.post('/api/premium/redeem', auth, rateLimitAuth, (req, res) => {
 
 app.put('/api/premium/decor', auth, (req, res) => {
   const body = req.body || {}
-  const wantsPremium = Boolean(body.emojiStatus) || Boolean(body.wornItemId) || Boolean(body.nameColor) || Boolean(body.business?.enabled)
+  if (body.nameBadge !== undefined && body.nameBadge !== '' && body.nameBadge !== 'autumn') return fail(res, 400, 'Invalid code.')
+  const wantsPremium = Boolean(body.nameBadge) || Boolean(body.emojiStatus) || Boolean(body.wornItemId) || Boolean(body.nameColor) || Boolean(body.business?.enabled)
     || Boolean(body.bgGiftItemIds?.length) || Boolean(body.music?.url)
     || (body.font !== undefined && body.font !== 'default') || (body.profileTheme !== undefined && body.profileTheme !== 'default')
   if (wantsPremium && !premiumActive(req.me)) return fail(res, 403, 'NEXO Premium required.')
+  if (body.nameBadge !== undefined) req.me.name_badge = body.nameBadge
   if (body.emojiStatus !== undefined) {
     const v = body.emojiStatus ? String(body.emojiStatus) : ''
     if (v && !PREMIUM_EMOJI_STATUSES.includes(v)) return fail(res, 400, 'Invalid code.')

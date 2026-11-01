@@ -41,6 +41,8 @@ export interface Profile {
   worn_gift?: WornGift | null
   /** Key of the name colour palette (see premiumData NAME_COLORS). */
   name_color?: string
+  /** Optional animated Premium display-name decoration. */
+  name_badge?: '' | 'autumn'
   business?: BusinessInfo | null
   /** Collectibles pinned to the profile background (frameless, floating). */
   bg_gifts?: BgGift[]

@@ -8,6 +8,7 @@ import { FoxSticker } from './FoxStickers'
 import { floatingGiftArt, giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { IconGem, IconGift, IconHeart, IconStar } from './icons'
 import { businessStatus, isPremiumActive, nameColorOf, profileFontClass, profileThemeClass } from '../lib/premiumData'
+import { AutumnName } from './AutumnName'
 import noxGhostAvatar from '../assets/bot/nox-ghost.jpg'
 export { profileThemeClass }
 
@@ -40,14 +41,16 @@ export function GroupAvatar({ name, url, size = 46 }: { name: string; url?: stri
  * nickname everywhere this component is used.
  */
 export function ProfileName({ profile, className = '' }: {
-  profile: Pick<Profile, 'display_name' | 'premium_until' | 'emoji_status' | 'worn_gift' | 'name_color' | 'profile_font'>
+  profile: Pick<Profile, 'display_name' | 'premium_until' | 'emoji_status' | 'worn_gift' | 'name_color' | 'profile_font' | 'name_badge'>
   className?: string
 }) {
   const color = nameColorOf(profile.name_color)
   const wornArt = profile.worn_gift ? giftArt(profile.worn_gift.model_key) : undefined
   return (
     <span className={`profile-name ${className}`}>
-      <span className={profileFontClass(profile.profile_font)} style={color ? { color } : undefined}>{profile.display_name}</span>
+      {isPremiumActive(profile) && profile.name_badge === 'autumn'
+        ? <AutumnName name={profile.display_name} />
+        : <span className={profileFontClass(profile.profile_font)} style={color ? { color } : undefined}>{profile.display_name}</span>}
       {isPremiumActive(profile) && (
         <span className="premium-badge" title="NEXO Premium" aria-label="NEXO Premium"><NexoMark size={14} /></span>
       )}
