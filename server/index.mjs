@@ -1538,7 +1538,7 @@ app.post('/api/premium/redeem', auth, rateLimitAuth, (req, res) => {
 
 app.put('/api/premium/decor', auth, (req, res) => {
   const body = req.body || {}
-  if (body.nameBadge !== undefined && body.nameBadge !== '' && body.nameBadge !== 'autumn') return fail(res, 400, 'Invalid code.')
+  if (body.nameBadge !== undefined && !['', 'autumn', 'clover', 'sakura'].includes(body.nameBadge)) return fail(res, 400, 'Invalid code.')
   const wantsPremium = Boolean(body.nameBadge) || Boolean(body.emojiStatus) || Boolean(body.wornItemId) || Boolean(body.nameColor) || Boolean(body.business?.enabled)
     || Boolean(body.bgGiftItemIds?.length) || Boolean(body.music?.url)
     || (body.font !== undefined && body.font !== 'default') || (body.profileTheme !== undefined && body.profileTheme !== 'default')
