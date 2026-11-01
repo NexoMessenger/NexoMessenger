@@ -1339,7 +1339,11 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .astra-intro { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 195px; }
 .astra-intro .astra-figure { height: 190px; flex-shrink: 0; }
 .astra-greeting { padding: 12px 16px; border-radius: 16px; font-weight: 700; }
-.astra-figure { width: auto; overflow: visible; animation: astra-idle 4s ease-in-out infinite; }
+.astra-figure { width: auto; overflow: visible; }
+.astra-3d { position: relative; width: min(145px, 34vw); flex-shrink: 0; }
+.astra-choice .astra-3d { width: min(210px, 80vw); margin: 0 auto; }
+.astra-3d canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
+.astra-3d > .astra-fallback { position: absolute; inset: 0; height: 100%; width: 100%; object-fit: contain; }
 .astra-figure-greeting { transform-origin: 50% 85%; animation: astra-greet 1.3s ease-in-out 2, astra-idle 4s ease-in-out 2.6s infinite; }
 @keyframes astra-idle { 50% { transform: translateY(-5px); } }
 @keyframes astra-greet { 0%, 100% { transform: rotate(0) translateY(0); } 25% { transform: rotate(-3deg) translateY(-3px); } 75% { transform: rotate(3deg) translateY(-3px); } }
