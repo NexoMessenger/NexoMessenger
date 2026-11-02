@@ -1678,3 +1678,6 @@ html[data-theme] .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bub
 .premium-reaction-animated { display: inline-block; animation: premium-reaction-float 2s ease-in-out infinite; }
 @keyframes premium-reaction-float { 0%, 100% { transform: translateY(0) scale(1) rotate(-5deg); } 50% { transform: translateY(-3px) scale(1.14) rotate(7deg); } }
 @media (prefers-reduced-motion: reduce) { .premium-reaction-animated { animation: none; } }
+/* NEXO Night Mask: preserve the recorded mask motion inside a separate dark-gold frame. */
+.gift-detail-art--night-mask { display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, #503926, #1d1217 72%); }
+.gift-detail-art video.gift-video-night-mask { display: block; width: 76%; height: 90%; object-fit: contain; border-radius: 16px; background: transparent; }
