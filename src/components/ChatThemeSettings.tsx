@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useI18n } from '../i18n'
 import { CHAT_THEMES, themeName, themeStyle, type ChatTheme, type ChatThemeConfig } from '../lib/chatThemes'
-import { IconBack } from './icons'
+import { IconBack, IconClock } from './icons'
 
 export function ChatThemeParticles({ theme }: { theme: ChatThemeConfig }) {
   return <div className={`chat-theme-particles effect-${theme.effect}`} aria-hidden="true">
@@ -9,7 +9,7 @@ export function ChatThemeParticles({ theme }: { theme: ChatThemeConfig }) {
   </div>
 }
 
-export default function ChatThemeSettings({ selected, busy, error, onChoose, onClose }: { selected: ChatThemeConfig, busy: boolean, error: string, onChoose: (theme: ChatTheme) => void, onClose: () => void }) {
+export default function ChatThemeSettings({ selected, busy, error, onChoose, onClose, onOpenScheduled }: { selected: ChatThemeConfig, busy: boolean, error: string, onChoose: (theme: ChatTheme) => void, onClose: () => void, onOpenScheduled: () => void }) {
   const { t, locale } = useI18n()
   return <section className="chat-theme-settings" aria-label={t('chatThemes.settings')}>
     <header className="chat-theme-settings-head">
@@ -17,6 +17,7 @@ export default function ChatThemeSettings({ selected, busy, error, onChoose, onC
       <h2>{t('chatThemes.settings')}</h2>
     </header>
     <div className="chat-theme-settings-scroll">
+      <button type="button" className="btn chat-settings-scheduled" onClick={onOpenScheduled}><IconClock size={19} /> {t('scheduled.list')}</button>
       <div className="chat-theme-panel">
         <h3>{t('chatThemes.choose')}</h3>
         <p>{t('chatThemes.private')}</p>
