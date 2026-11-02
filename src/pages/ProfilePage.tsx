@@ -8,6 +8,9 @@ import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, Ico
 import { fmtNex } from '../lib/giftCatalog'
 import { PREMIUM_PRICE_RUB, isPremiumActive } from '../lib/premiumData'
 import ProfileShowcase from '../components/ProfileShowcase'
+import { ProfileBackground } from '../components/ProfileBackground'
+import { PROFILE_BACKGROUNDS, type ProfileBackground as BackgroundId } from '../lib/profileBackgrounds'
+import type { TranslationKey } from '../i18n'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -28,6 +31,7 @@ export default function ProfilePage() {
   const [promoError, setPromoError] = useState('')
   const [promoMsg, setPromoMsg] = useState('')
   const [nexBalance, setNexBalance] = useState<number | null>(null)
+  const [backgroundSaving, setBackgroundSaving] = useState(false)
 
   useEffect(() => {
     api.getGiftState().then((st) => setNexBalance(st.balance)).catch(() => undefined)
@@ -59,6 +63,13 @@ export default function ProfilePage() {
       setEditing(false); setNotice(t('profile.saved'))
     } catch (e) { setError(errText(e, t)) }
     finally { setSaving(false) }
+  }
+
+  const chooseBackground = async (value: BackgroundId) => {
+    if (backgroundSaving) return
+    setBackgroundSaving(true); setError(''); setNotice('')
+    try { await api.updateProfile(profile.id, { profile_background: value }); await refresh(); setNotice(t('profileBackground.saved')) }
+    catch (e) { setError(errText(e, t)) } finally { setBackgroundSaving(false) }
   }
 
   const changeAvatar = async (file: File | undefined) => {
@@ -111,10 +122,11 @@ export default function ProfilePage() {
       </div>
 
       <div className={`profile-hero glass card ${profileThemeClass(profile.profile_theme)}`}>
+        <ProfileBackground value={profile.profile_background} />
         <FloatingGifts profile={profile} />
         <div style={{ display: 'flex', justifyContent: 'center' }}><Avatar profile={profile} size={92} showOnline /></div>
         <h2 style={{ margin: '14px 0 2px', fontSize: 22, letterSpacing: '-0.4px' }}><ProfileName profile={profile} /></h2>
-        <div style={{ color: 'var(--text-2)', fontSize: 14 }}>@{profile.username}</div>
+        <div className="username-line" style={{ color: 'var(--text-2)', fontSize: 14 }}>@{profile.username}</div>
         {profile.business?.enabled && (
           <div style={{ marginTop: 9, display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
             <BusinessBadge profile={profile} />
@@ -129,6 +141,17 @@ export default function ProfilePage() {
           {uploading ? t('profile.uploading') : t('profile.changeAvatar')}
         </button>
         <ProfileMusicCard profile={profile} />
+      </div>
+
+      <div className="settings-group glass card profile-background-settings">
+        <div className="sw-title">{t('profileBackground.title')}</div>
+        <p className="premium-hint">{t('profileBackground.hint')}</p>
+        {api.mode === 'supabase' ? <p role="status">{t('profileBackground.unavailable')}</p> : <div className="profile-background-options" role="group" aria-label={t('profileBackground.title')}>
+          <button type="button" className={`profile-background-option profile-background-none ${!profile.profile_background ? 'active' : ''}`} aria-pressed={!profile.profile_background} disabled={backgroundSaving} onClick={() => void chooseBackground('')}><span>{t('profileBackground.none')}</span></button>
+          {PROFILE_BACKGROUNDS.map(item => <button type="button" key={item.id} className={`profile-background-option ${profile.profile_background === item.id ? 'active' : ''}`} aria-pressed={profile.profile_background === item.id} disabled={backgroundSaving} onClick={() => void chooseBackground(item.id)}>
+            <img src={item.poster} alt="" loading="lazy" /><span>{t(item.label as TranslationKey)}</span>
+          </button>)}
+        </div>}
       </div>
 
       {editing ? (

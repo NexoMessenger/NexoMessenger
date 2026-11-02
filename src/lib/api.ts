@@ -1,3 +1,4 @@
+import { isProfileBackground } from './profileBackgrounds'
 import { isNameBadge, type NameBadge } from './nameBadges'
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
@@ -303,12 +304,14 @@ export async function getProfiles(ids: string[]): Promise<Record<string, Profile
 }
 
 export async function updateProfile(id: string, patch: Partial<Profile>): Promise<void> {
+  if (patch.profile_background !== undefined && !isProfileBackground(patch.profile_background)) err('Invalid profile background.')
+  if (patch.profile_background !== undefined && isSb()) err('Profile backgrounds are not available in Supabase mode.')
   if (patch.username) {
     patch.username = patch.username.toLowerCase().trim().replace(/^@/, '')
     if (!/^[a-z0-9_.]{3,24}$/.test(patch.username)) err('Username: 3–24 chars, lowercase letters, digits, _ or .')
   }
   if (isSrv()) {
-    await srv('/api/me', { method: 'PATCH', body: { username: patch.username, display_name: patch.display_name, bio: patch.bio, avatar_url: patch.avatar_url, mood_status: patch.mood_status } })
+    await srv('/api/me', { method: 'PATCH', body: { username: patch.username, display_name: patch.display_name, bio: patch.bio, avatar_url: patch.avatar_url, mood_status: patch.mood_status, profile_background: patch.profile_background } })
     return
   }
   if (isSb()) {

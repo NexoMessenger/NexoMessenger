@@ -1564,3 +1564,26 @@ html[data-theme="light"] .theme-swatch { border-color: rgba(15,23,42,0.16); }
 .channel-comment-head span { font-size: 12px; }
 .channel-comment-body { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; }
 .channel-comment-form { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+
+/* Profile backdrops sit behind content and gifts; never intercept gestures. */
+.profile-hero > .profile-backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; background: #080a10; }
+.profile-backdrop-still, .profile-backdrop video, .profile-backdrop-shade, .profile-backdrop-particles { position: absolute; inset: 0; width: 100%; height: 100%; }
+.profile-backdrop-still { background-position: center; background-size: cover; }
+.profile-backdrop video { display: block; object-fit: cover; }
+.profile-backdrop-shade { background: linear-gradient(180deg, rgba(3,5,10,.40), rgba(4,5,10,.68)); }
+.profile-backdrop-moon_sakura .profile-backdrop-still, .profile-backdrop-ember_maple .profile-backdrop-still { animation: profile-backdrop-breathe 20s ease-in-out infinite alternate; }
+.profile-backdrop-particles span { position: absolute; top: -12%; display: block; width: 8px; height: 5px; border-radius: 80% 10% 80% 10%; background: #ffc1da; opacity: 0; animation: profile-petal-fall 10s linear infinite; }
+.profile-backdrop-ember_maple .profile-backdrop-particles span { background: #f6814a; border-radius: 40% 0 65% 0; }
+@keyframes profile-backdrop-breathe { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+@keyframes profile-petal-fall { 0% { opacity: 0; transform: translate(0, -10px) rotate(0); } 15%, 75% { opacity: .8; } 100% { opacity: 0; transform: translate(var(--drift), 280px) rotate(280deg); } }
+.profile-hero:has(.profile-backdrop) h2, .profile-hero:has(.profile-backdrop) .username-line, .profile-hero:has(.profile-backdrop) .profile-mood { color: #fff; text-shadow: 0 1px 5px #000; }
+.profile-background-settings { margin-bottom: 14px; }
+.profile-background-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.profile-background-option { position: relative; display: flex; flex-direction: column; text-align: left; gap: 6px; min-width: 0; padding: 6px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text-1); font: inherit; font-size: 12px; cursor: pointer; }
+.profile-background-option img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; }
+.profile-background-option span { padding: 0 3px 3px; }
+.profile-background-option.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.profile-background-option:disabled { opacity: .65; }
+.profile-background-none { justify-content: center; align-items: center; min-height: 72px; }
+@media (prefers-reduced-motion: reduce) { .profile-backdrop video { display: none; } .profile-backdrop-still, .profile-backdrop-particles span { animation: none !important; } .profile-backdrop-particles { display: none; } }
+.profile-hero:has(.profile-backdrop) .username-line, .profile-hero:has(.profile-backdrop) p { color: #f3f3f7 !important; text-shadow: 0 1px 5px #000; }

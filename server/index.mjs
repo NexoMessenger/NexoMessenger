@@ -543,6 +543,7 @@ app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json
 
 app.patch('/api/me', auth, (req, res) => {
   const patch = req.body || {}
+  if (patch.profile_background !== undefined && !['', 'sakura_video', 'autumn_video', 'moon_sakura', 'ember_maple'].includes(patch.profile_background)) return fail(res, 400, 'Invalid profile background.')
   if (patch.username !== undefined) {
     const uname = String(patch.username).toLowerCase().trim().replace(/^@/, '')
     if (!/^[a-z0-9_.]{3,24}$/.test(uname)) return fail(res, 400, 'Username: 3–24 chars, lowercase letters, digits, _ or .')
@@ -553,6 +554,7 @@ app.patch('/api/me', auth, (req, res) => {
     if (typeof patch.mood_status !== 'string' || patch.mood_status.length > 80) return fail(res, 400, 'Invalid mood status.')
     req.me.mood_status = patch.mood_status.trim()
   }
+  if (patch.profile_background !== undefined) req.me.profile_background = patch.profile_background
   for (const k of ['display_name', 'bio', 'avatar_url']) {
     if (patch[k] !== undefined) req.me[k] = String(patch[k]).slice(0, k === 'bio' ? 300 : 1000)
   }
