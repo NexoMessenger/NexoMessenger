@@ -77,6 +77,8 @@ export default function Layout({ children }: { children: ReactNode }) {
             <span>{t('banner.demo')}</span>
           </div>
         )}
+        {profile?.account_status === 'frozen' && <div className="demo-banner" role="status">{t('admin.frozenNotice')}</div>}
+        {profile?.account_status === 'fake_ban' && <div className="demo-banner" role="status">{t('admin.fakeNotice')}</div>}
         {children}
       </div>
       <nav className="bottom-nav">{items('mobile')}</nav>

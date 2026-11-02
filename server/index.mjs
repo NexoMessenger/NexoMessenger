@@ -111,6 +111,10 @@ try {
   persist()
 }
 if (!Array.isArray(db.channelComments)) db.channelComments = []
+if (!db.moderation || typeof db.moderation !== 'object' || Array.isArray(db.moderation)) db.moderation = {}
+if (!Array.isArray(db.adminAudit)) db.adminAudit = []
+const accountStatus = id => db.moderation[id]?.status || 'normal'
+const interactionBlocked = id => ['frozen', 'banned'].includes(accountStatus(id))
 if (!Array.isArray(db.scheduledMessages)) db.scheduledMessages = []
 function persist() {
   const tmp = DB_FILE + '.tmp'
@@ -471,6 +475,9 @@ function sessionUser(req) {
 function auth(req, res, next) {
   const me = sessionUser(req)
   if (!me) return fail(res, 401, 'Session expired. Please sign in again.')
+  const status = accountStatus(me.id)
+  if (status === 'banned' && req.path !== '/api/me' && req.path !== '/api/auth/logout') return fail(res, 403, 'ACCOUNT_BANNED')
+  if (status === 'frozen' && !['GET', 'HEAD'].includes(req.method) && req.path !== '/api/auth/logout') return fail(res, 403, 'ACCOUNT_FROZEN')
   req.me = me
   next()
 }
@@ -541,7 +548,7 @@ app.post('/api/auth/logout', auth, (req, res) => {
 })
 
 /* ---------- me / profiles / settings ---------- */
-app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json({ profile: req.me, email: db.users.find(u => u.id === req.me.id)?.email || null }))
+app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json({ profile: { ...req.me, account_status: accountStatus(req.me.id) }, email: db.users.find(u => u.id === req.me.id)?.email || null }))
 
 app.patch('/api/me', auth, (req, res) => {
   const patch = req.body || {}
@@ -616,7 +623,7 @@ app.post('/api/push/unsubscribe', auth, (req, res) => {
 
 app.get('/api/settings', auth, (req, res) => {
   let s = db.settings.find((x) => x.user_id === req.me.id)
-  if (!s) { s = { user_id: req.me.id, theme: 'nexoglass', notifications_enabled: true, privacy_profile: 'public', updated_at: now() }; db.settings.push(s); persist() }
+  if (!s) { s = { user_id: req.me.id, theme: 'nexoglass', notifications_enabled: true, privacy_profile: 'public', updated_at: now() }; if (!interactionBlocked(req.me.id)) { db.settings.push(s); persist() } }
   res.json({ settings: s })
 })
 
@@ -837,6 +844,7 @@ app.post('/api/ai/message', auth, async (req, res) => {
   try {
     const history = (stored?.messages || []).slice(-6).map(m => ({ role: m.role, content: m.content.slice(0, 2000) }))
     const result = await aiProvider.answer([{ role: 'system', content: ASTRA_INSTRUCTIONS }, ...history, { role: 'user', content: text }])
+    if (interactionBlocked(req.me.id)) return fail(res, 403, 'ACCOUNT_RESTRICTED')
     if (result.error) return aiFailure(res, result)
     console.info('[AI] GigaChat response received')
     const userMessage = { id: uid(), role: 'user', content: text, created_at: now() }
@@ -869,6 +877,48 @@ app.post('/api/ai/rewrite', auth, async (req, res) => {
     persist()
     res.json({ text: result.answer })
   } finally { aiBusy = false }
+})
+
+/* Admin access is tied to the established owner account ID, never username. */
+const isAdmin = id => Boolean(db.zeronOwnerId && id === db.zeronOwnerId)
+app.get('/api/admin/access', auth, (req, res) => res.json({ allowed: isAdmin(req.me.id) }))
+app.get('/api/admin/users', auth, (req, res) => {
+  if (!isAdmin(req.me.id)) return fail(res, 403, 'Access denied.')
+  const q = String(req.query.q || '').trim().replace(/^@/, '').toLowerCase().slice(0, 80)
+  if (q.length < 2) return res.json({ users: [] })
+  const users = db.profiles.filter(p => p.id !== req.me.id && (p.username?.toLowerCase().includes(q) || p.display_name?.toLowerCase().includes(q))).slice(0, 30).map(p => ({ id: p.id, username: p.username, display_name: p.display_name, status: accountStatus(p.id), balance: db.gifts.wallets[p.id]?.balance ?? null }))
+  res.json({ users })
+})
+app.post('/api/admin/users/:id', auth, (req, res) => {
+  if (!isAdmin(req.me.id)) return fail(res, 403, 'Access denied.')
+  const id = req.params.id, target = profileOf(id), action = req.body?.action
+  if (!target || !db.users.some(u => u.id === id) || id === req.me.id) return fail(res, 400, 'Invalid account.')
+  if (!['normal', 'banned', 'frozen', 'fake_ban', 'reset_nex'].includes(action)) return fail(res, 400, 'Invalid action.')
+  const previous = accountStatus(id)
+  const previousRecord = db.moderation[id] ? structuredClone(db.moderation[id]) : null
+  const previousWallet = db.gifts.wallets[id] ? structuredClone(db.gifts.wallets[id]) : null
+  const txnCount = db.gifts.txns.length, auditCount = db.adminAudit.length
+  let oldBalance = null
+  if (action === 'reset_nex') {
+    // A never-opened wallet must not receive a welcome bonus after reset.
+    const w = db.gifts.wallets[id] || { balance: 0, last_bonus_at: '' }
+    oldBalance = w.balance; w.balance = 0; db.gifts.wallets[id] = w
+    giftTxn(id, 'admin_reset', -oldBalance, 'Admin balance reset')
+  } else {
+    db.moderation[id] = { status: action, changed_at: now(), changed_by: req.me.id }
+  }
+  db.adminAudit.push({ id: uid(), admin_id: req.me.id, target_id: id, action, previous_status: previous, previous_balance: oldBalance, created_at: now() })
+  try { persist() } catch (error) {
+    if (previousRecord) db.moderation[id] = previousRecord; else delete db.moderation[id]
+    if (previousWallet) db.gifts.wallets[id] = previousWallet; else delete db.gifts.wallets[id]
+    db.gifts.txns.length = txnCount; db.adminAudit.length = auditCount
+    throw error
+  }
+  touchGlobal()
+  if (action === 'frozen' || action === 'banned') {
+    for (const c of clients) if (c.userId === id) c.ws.close(4403, 'account restricted')
+  }
+  res.json({ ok: true, status: accountStatus(id), balance: db.gifts.wallets[id]?.balance ?? null })
 })
 
 /* ---------- Zeron test-code bot ---------- */
@@ -1411,8 +1461,8 @@ app.get('/api/users/:id/collectibles', auth, (req, res) => {
 
 app.get('/api/gifts/state', auth, (req, res) => {
   const me = req.me.id
-  const w = giftWallet(me)
-  persist()
+  const w = interactionBlocked(me) && !db.gifts.wallets[me] ? { balance: 0, last_bonus_at: '' } : giftWallet(me)
+  if (!interactionBlocked(me)) persist()
   const myItems = db.gifts.items.filter((i) => i.owner_id === me)
     .map((item) => ({ item, model: giftModelPublic(item.model_key), listing: activeListing(item.id) }))
   const myRegular = Object.entries(db.gifts.regular[me] || {})
@@ -1434,7 +1484,7 @@ app.get('/api/gifts/market', auth, (req, res) => {
     const model = giftModelPublic(item.model_key)
     if (!model) continue
     const listing = activeListing(item.id)
-    if (listing) entries.push({ item, model, listing, seller: profileOf(listing.seller_id), price: listing.price })
+    if (listing && !interactionBlocked(listing.seller_id)) entries.push({ item, model, listing, seller: profileOf(listing.seller_id), price: listing.price })
     else if (item.owner_id === null) entries.push({ item, model, listing: null, seller: null, price: model.floor_price })
   }
   res.json({ entries })
@@ -1446,6 +1496,7 @@ app.post('/api/gifts/buy', auth, (req, res) => {
   if (!item) return fail(res, 404, 'Gift not found.')
   const model = giftModelOf(item.model_key)
   const listing = activeListing(item.id)
+  if (listing && interactionBlocked(listing.seller_id)) return fail(res, 409, 'This gift is not for sale.')
   if (item.owner_id === me) return fail(res, 400, 'This gift is already yours.')
   if (!listing && item.owner_id !== null) return fail(res, 409, 'This gift is not for sale.')
   const price = listing ? listing.price : model.floor_price
@@ -1806,6 +1857,7 @@ function handleCall(client, m) {
     if (members.length !== 1 || !['audio', 'video'].includes(m.kind)) return
     if ([...activeCalls.values()].some(c => c.users.includes(client.userId))) return callSend(client, { action: 'busy', callId: id })
     const targetId = members[0].user_id
+    if (interactionBlocked(targetId)) return callSend(client, { action: 'unavailable', callId: id })
     if ([...activeCalls.values()].some(c => c.users.includes(targetId))) return callSend(client, { action: 'busy', callId: id })
     const targets = [...clients].filter(c => c.userId === targetId && c.ws.readyState === 1)
     if (!targets.length) return callSend(client, { action: 'unavailable', callId: id })
@@ -1842,6 +1894,7 @@ wss.on('connection', (ws, req) => {
   const token = url.searchParams.get('token') || ''
   const s = db.sessions.find((x) => x.token === token && x.expires_at > Date.now())
   if (!s) { ws.close(4401, 'unauthorized'); return }
+  if (accountStatus(s.user_id) === 'banned') { ws.close(4403, 'account restricted'); return }
   const client = { ws, userId: s.user_id, rooms: new Set(['global']) }
   clients.add(client)
   const p = profileOf(s.user_id)
@@ -1850,6 +1903,7 @@ wss.on('connection', (ws, req) => {
     try {
       if (raw.length > 40000) return
       const m = JSON.parse(String(raw))
+      if (interactionBlocked(client.userId) && m.t !== 'sub') return
       if (m.t === 'call') handleCall(client, m)
       if (m.t === 'sub' && m.kind && m.id) client.rooms.add(`${m.kind}:${m.id}`)
       if (m.t === 'typing' && m.scope) {
@@ -1871,7 +1925,7 @@ wss.on('connection', (ws, req) => {
 })
 
 function deliverScheduledMessages() {
-  const due = db.scheduledMessages.filter(m => Date.parse(m.send_at) <= Date.now())
+  const due = db.scheduledMessages.filter(m => Date.parse(m.send_at) <= Date.now() && !interactionBlocked(m.sender_id))
   if (!due.length) return
   const delivered = []
   for (const item of due) {

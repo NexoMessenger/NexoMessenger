@@ -46,9 +46,11 @@ function Gate() {
 }
 
 function Protected({ children }: { children: ReactNode }) {
-  const { profile, loading } = useAuth()
+  const { profile, loading, signOut } = useAuth()
+  const { t } = useI18n()
   if (loading) return <SessionSplash />
   if (!profile) return <Navigate to="/" replace />
+  if (profile.account_status === 'banned') return <div className="account-restricted-screen"><div className="glass card"><h2>{t('admin.bannedTitle')}</h2><p>{t('admin.bannedInfo')}</p><button className="btn" onClick={() => void signOut()}>{t('admin.signOut')}</button></div></div>
   return <Layout>{children}</Layout>
 }
 

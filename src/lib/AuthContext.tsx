@@ -49,6 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Restrictions can be changed while the user is already signed in.
+  useEffect(() => {
+    if (!profile || api.mode !== 'server') return
+    const timer = window.setInterval(() => { void refresh() }, 10000)
+    return () => window.clearInterval(timer)
+  }, [profile?.id])
+
   // Presence heartbeat + honest offline marking when the tab closes.
   useEffect(() => {
     if (!profile) return

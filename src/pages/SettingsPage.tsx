@@ -7,6 +7,7 @@ import { ErrorBox, errText } from '../components/ui'
 import { PROFILE_FONTS, PROFILE_THEMES, isPremiumActive, profileFontClass } from '../lib/premiumData'
 import { useI18n, type TranslationKey } from '../i18n'
 import { LOCALES } from '../i18n/translations'
+import AdminPanel from '../components/AdminPanel'
 
 const THEMES: { id: UserSettings['theme']; labelKey: TranslationKey; hintKey: TranslationKey; swatches: [string, string, string] }[] = [
   { id: 'nexoglass', labelKey: 'settings.themeDark', hintKey: 'settings.themeDarkHint', swatches: ['#050507', '#8b5cf6', '#f0abfc'] },
@@ -100,6 +101,7 @@ export default function SettingsPage() {
         <div className="center-loader"><div className="spinner" />{t('settings.loading')}</div>
       ) : (
         <>
+          <AdminPanel />
           <div className="section-label">{t('settings.account')}</div>
           <div className="settings-group glass card">
             <div className="switch-row">
