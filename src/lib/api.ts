@@ -434,7 +434,8 @@ export async function listDirectChats(me: string): Promise<DirectListItem[]> {
   }).sort((a, b) => b.conv.last_message_at.localeCompare(a.conv.last_message_at))
 }
 
-export type ChatTheme = 'default' | 'ocean' | 'sakura' | 'night'
+export type { ChatTheme } from './chatThemes'
+import type { ChatTheme } from './chatThemes'
 export async function getChatTheme(id: string): Promise<ChatTheme> {
   if (!isSrv()) throw new Error('Chat themes are available on the NEXO server only.')
   return (await srv<{ theme: ChatTheme }>(`/api/chats/${id}/theme`)).theme
