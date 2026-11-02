@@ -362,6 +362,12 @@ export async function getAiStatus(): Promise<AiStatus> {
   if (!isSrv()) return { ready: false, reason: 'unsupported' }
   return srv<AiStatus>('/api/ai/status')
 }
+export type AdminUser = { id: string; username: string; display_name: string; status: 'normal' | 'frozen' | 'banned' | 'fake_ban'; balance: number | null }
+export type AdminAction = AdminUser['status'] | 'reset_nex'
+export async function adminAccess(): Promise<boolean> { return isSrv() && (await srv<{ allowed: boolean }>('/api/admin/access')).allowed }
+export async function adminSearch(q: string): Promise<AdminUser[]> { return (await srv<{ users: AdminUser[] }>(`/api/admin/users?q=${encodeURIComponent(q)}`)).users }
+export async function adminAction(id: string, action: AdminAction): Promise<void> { await srv(`/api/admin/users/${encodeURIComponent(id)}`, { method: 'POST', body: { action } }) }
+
 export type ZeronProduct = 'nex_100' | 'nex_500' | 'nex_1000' | 'nex_5000' | 'nex_10000' | 'nex_100000' | 'premium_30'
 export type ZeronAction = 'start' | 'back' | 'nex' | 'premium' | 'sbp' | 'continue' | ZeronProduct
 export interface ZeronMessage { id: string; role: 'bot' | 'user'; kind: string; product: ZeronProduct | null; code: string | null; created_at: string }

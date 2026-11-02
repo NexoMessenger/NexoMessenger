@@ -29,6 +29,7 @@ export interface WornGift {
 
 export interface Profile {
   id: ID
+  account_status?: 'normal' | 'frozen' | 'banned' | 'fake_ban'
   username: string
   display_name: string
   avatar_url: string

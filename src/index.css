@@ -1681,3 +1681,10 @@ html[data-theme] .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bub
 /* NEXO Night Mask: preserve the recorded mask motion inside a separate dark-gold frame. */
 .gift-detail-art--night-mask { display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, #503926, #1d1217 72%); }
 .gift-detail-art video.gift-video-night-mask { display: block; width: 76%; height: 90%; object-fit: contain; border-radius: 16px; background: transparent; }
+.admin-content { padding: 10px 0 18px; }
+.admin-search { display: flex; gap: 8px; }
+.admin-search .input { min-width: 0; flex: 1; }
+.admin-user { padding: 14px 0; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.account-restricted-screen { min-height: 100dvh; padding: 20px; display: grid; place-items: center; }
+.account-restricted-screen .card { max-width: 440px; padding: 24px; }
