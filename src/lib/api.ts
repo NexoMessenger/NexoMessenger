@@ -362,7 +362,7 @@ export async function getAiStatus(): Promise<AiStatus> {
   if (!isSrv()) return { ready: false, reason: 'unsupported' }
   return srv<AiStatus>('/api/ai/status')
 }
-export type ZeronProduct = 'nex_100' | 'nex_500' | 'nex_1000' | 'nex_5000' | 'premium_30'
+export type ZeronProduct = 'nex_100' | 'nex_500' | 'nex_1000' | 'nex_5000' | 'nex_10000' | 'nex_100000' | 'premium_30'
 export type ZeronAction = 'start' | 'back' | 'nex' | 'premium' | 'sbp' | 'continue' | ZeronProduct
 export interface ZeronMessage { id: string; role: 'bot' | 'user'; kind: string; product: ZeronProduct | null; code: string | null; created_at: string }
 export interface ZeronChat { stage: 'home' | 'nex' | 'premium' | 'payment' | 'confirm'; selected: ZeronProduct | null; messages: ZeronMessage[]; canIssue: boolean }
