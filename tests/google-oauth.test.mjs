@@ -51,3 +51,11 @@ test('ID token verification checks signature, issuer, audience, expiry and nonce
  const badIssuer=await new SignJWT({nonce:'expected'}).setProtectedHeader({alg:'RS256'}).setIssuer('https://evil.example').setAudience('client').setIssuedAt().setExpirationTime('5m').sign(privateKey)
  await assert.rejects(verifyGoogle(badIssuer,'client','expected',publicKey))
 })
+
+test('Google refuses banned accounts before issuing a session but allows test bans',async t=>{
+ let status='normal'; const f=await fixture(t,{accountStatus:()=>status})
+ const complete=async()=>{const a=await f.start(), cb=await f.callback(a); const cookie=cb.headers.get('set-cookie').split(', ').find(s=>s.startsWith('nexo_google_ticket='))?.split(';')[0]; return f.request('/api/auth/google/complete',{method:'POST',headers:{cookie}})}
+ assert.equal((await complete()).status,200); assert.equal(f.db.sessions.length,1)
+ status='banned'; let res=await complete(); assert.equal(res.status,403); assert.equal((await res.json()).error,'ACCOUNT_BANNED'); assert.equal(f.db.sessions.length,1)
+ status='fake_ban'; res=await complete(); assert.equal(res.status,200); assert.equal(f.db.sessions.length,2)
+})

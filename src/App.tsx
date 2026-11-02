@@ -1,4 +1,5 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { LanguageProvider, useI18n } from './i18n'
 import Layout from './components/Layout'
@@ -47,10 +48,17 @@ function Gate() {
 
 function Protected({ children }: { children: ReactNode }) {
   const { profile, loading, signOut } = useAuth()
-  const { t } = useI18n()
-  if (loading) return <SessionSplash />
+  const navigate = useNavigate()
+  const leaving = useRef(false)
+  const blocked = profile?.account_status === 'banned' || profile?.account_status === 'fake_ban'
+  useEffect(() => {
+    if (!blocked || leaving.current) return
+    leaving.current = true
+    try { sessionStorage.setItem('nexo_restriction_notice', profile?.account_status || 'banned') } catch { /* optional */ }
+    void signOut().finally(() => navigate('/register', { replace: true }))
+  }, [blocked])
+  if (loading || blocked) return <SessionSplash />
   if (!profile) return <Navigate to="/" replace />
-  if (profile.account_status === 'banned') return <div className="account-restricted-screen"><div className="glass card"><h2>{t('admin.bannedTitle')}</h2><p>{t('admin.bannedInfo')}</p><button className="btn" onClick={() => void signOut()}>{t('admin.signOut')}</button></div></div>
   return <Layout>{children}</Layout>
 }
 

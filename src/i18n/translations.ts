@@ -8,6 +8,19 @@ export const LOCALES: { code: Locale; native: string; english: string; flag: str
 ]
 
 export const en = {
+  'restriction.frozenTitle': 'Your account is frozen',
+  'restriction.bannedTitle': 'Your account is banned',
+  'restriction.simulation': 'This is a test ban. You can sign in again.',
+  'restriction.frozenReason': 'Account restriction',
+  'restriction.bannedReason': 'Access restricted',
+  'restriction.frozenDescription': 'An administrator has frozen your account.',
+  'restriction.fakeDescription': 'Your session has ended. Sign in again to continue.',
+  'restriction.bannedDescription': 'This session has ended. A banned account cannot sign in again.',
+  'restriction.readOnly': 'Read-only mode',
+  'restriction.readOnlyDescription': 'You can view your account, but cannot send messages or take actions.',
+  'restriction.contact': 'Need help?',
+  'restriction.contactDescription': 'Contact the NEXO administrator if you have questions.',
+  'restriction.understood': 'Understood',
   'admin.title': 'Admin panel',
   'admin.description': 'Manage account restrictions and NEX balances.',
   'admin.open': 'Open',
@@ -850,6 +863,19 @@ export const en = {
 export type TranslationKey = keyof typeof en
 
 export const ru: Record<TranslationKey, string> = {
+  'restriction.frozenTitle': 'Ваш аккаунт заморожен',
+  'restriction.bannedTitle': 'Ваш аккаунт заблокирован',
+  'restriction.simulation': 'Это тестовый бан. Вы можете войти снова.',
+  'restriction.frozenReason': 'Ограничение аккаунта',
+  'restriction.bannedReason': 'Доступ ограничен',
+  'restriction.frozenDescription': 'Администратор заморозил ваш аккаунт.',
+  'restriction.fakeDescription': 'Сеанс завершён. Войдите снова, чтобы продолжить.',
+  'restriction.bannedDescription': 'Сеанс завершён. Заблокированный аккаунт не сможет войти снова.',
+  'restriction.readOnly': 'Режим просмотра',
+  'restriction.readOnlyDescription': 'Вы можете смотреть свой аккаунт, но не можете отправлять сообщения и совершать действия.',
+  'restriction.contact': 'Нужна помощь?',
+  'restriction.contactDescription': 'Если у вас есть вопросы, обратитесь к администратору NEXO.',
+  'restriction.understood': 'Понятно',
   'admin.title': 'Админ-панель',
   'admin.description': 'Управление ограничениями аккаунтов и балансом NEX.',
   'admin.open': 'Открыть',
@@ -1690,6 +1716,19 @@ export const ru: Record<TranslationKey, string> = {
 }
 
 export const uk: Record<TranslationKey, string> = {
+  'restriction.frozenTitle': 'Ваш обліковий запис заморожено',
+  'restriction.bannedTitle': 'Ваш обліковий запис заблоковано',
+  'restriction.simulation': 'Це тестовий бан. Ви можете увійти знову.',
+  'restriction.frozenReason': 'Обмеження облікового запису',
+  'restriction.bannedReason': 'Доступ обмежено',
+  'restriction.frozenDescription': 'Адміністратор заморозив ваш обліковий запис.',
+  'restriction.fakeDescription': 'Сеанс завершено. Увійдіть знову, щоб продовжити.',
+  'restriction.bannedDescription': 'Сеанс завершено. Заблокований обліковий запис не зможе увійти знову.',
+  'restriction.readOnly': 'Режим перегляду',
+  'restriction.readOnlyDescription': 'Ви можете переглядати обліковий запис, але не можете надсилати повідомлення чи виконувати дії.',
+  'restriction.contact': 'Потрібна допомога?',
+  'restriction.contactDescription': 'Якщо у вас є запитання, зверніться до адміністратора NEXO.',
+  'restriction.understood': 'Зрозуміло',
   'admin.title': 'Адмінпанель',
   'admin.description': 'Керування обмеженнями облікових записів і балансом NEX.',
   'admin.open': 'Відкрити',
@@ -2530,6 +2569,19 @@ export const uk: Record<TranslationKey, string> = {
 }
 
 export const zh: Record<TranslationKey, string> = {
+  'restriction.frozenTitle': '你的账号已被冻结',
+  'restriction.bannedTitle': '你的账号已被封禁',
+  'restriction.simulation': '这是测试封禁，你可以重新登录。',
+  'restriction.frozenReason': '账号限制',
+  'restriction.bannedReason': '访问受限',
+  'restriction.frozenDescription': '管理员已冻结你的账号。',
+  'restriction.fakeDescription': '会话已结束。请重新登录以继续。',
+  'restriction.bannedDescription': '会话已结束。被封禁的账号无法再次登录。',
+  'restriction.readOnly': '只读模式',
+  'restriction.readOnlyDescription': '你可以查看账号，但不能发送消息或执行操作。',
+  'restriction.contact': '需要帮助？',
+  'restriction.contactDescription': '如有疑问，请联系 NEXO 管理员。',
+  'restriction.understood': '知道了',
   'admin.title': '管理面板',
   'admin.description': '管理账号限制和 NEX 余额。',
   'admin.open': '打开',
