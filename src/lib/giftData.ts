@@ -85,6 +85,7 @@ export const GIFT_MODELS: GiftModel[] = [
   { key: 'nexo-amber-peach', kind: 'collectible', collection: 'NEXO Kaleidoscope', name: 'NEXO Amber Peach', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 1500 },
   { key: 'nexo-rainbow-cap', kind: 'collectible', collection: 'NEXO Kaleidoscope', name: 'NEXO Rainbow Cap', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 1500 },
   { key: 'nexo-spectrum-peach', kind: 'collectible', collection: 'NEXO Kaleidoscope', name: 'NEXO Spectrum Peach', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 1500 },
+  { key: 'nexo-night-mask', kind: 'collectible', collection: 'NEXO Midnight Masquerade', name: 'NEXO Night Mask', pattern: '', background: 'Midnight Gold', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 1500 },
   // ---- Regular gifts (non-unique, sendable in chats) ----
   { key: 'ruby-rose', kind: 'regular', collection: 'Regular', name: 'Ruby Rose', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 25 },
   { key: 'heart-charm', kind: 'regular', collection: 'Regular', name: 'Heart Charm', pattern: '', background: '', rarity_model: 0, rarity_pattern: 0, rarity_background: 0, total_supply: 0, floor_price: 30 },

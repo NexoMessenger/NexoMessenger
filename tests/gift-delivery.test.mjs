@@ -45,6 +45,12 @@ test('ordinary gifts preserve distinct comments and anonymity, NFT transfer noti
     showcase = (await req(`/api/users/${bob.profile.id}/collectibles`, eve.token)).data.regular
     assert.equal(showcase.length,1); assert.equal(showcase[0].gift.comment,'Secret')
     const market = (await req('/api/gifts/market', alice.token)).data.entries
+    const masks = market.filter(x => x.model.key === 'nexo-night-mask')
+    assert.equal(masks.length, 4); assert.equal(masks[0].model.collection, 'NEXO Midnight Masquerade'); assert.equal(masks[0].price, 1500)
+    assert.equal((await req('/api/gifts/redeem', alice.token, { code: 'NEXO-MEGA-K7Q2' })).status, 200)
+    assert.equal((await req('/api/gifts/buy', alice.token, { itemId: masks[0].item.id })).status, 200)
+    await stop(); await start()
+    assert.equal((await req('/api/gifts/market', alice.token)).data.entries.filter(x => x.model.key === 'nexo-night-mask').length, 3)
     const nft = market.find(x => x.model.key === 'honey-bear')
     assert.equal((await req('/api/gifts/buy',alice.token,{itemId:nft.item.id})).status,200)
     const balance = (await req('/api/gifts/state',alice.token)).data.balance

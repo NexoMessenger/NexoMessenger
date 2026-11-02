@@ -20,6 +20,8 @@ import vampireKissVideo from '../assets/gifts/15783.webm'
 import sailorCover from '../assets/gifts/nexo-sailor-cover.jpg'
 import sailorFloating from '../assets/gifts/nexo-sailor-floating.png'
 import sailorVideo from '../assets/gifts/Screen_Recording_20261029_221839.mp4'
+import nightMaskCover from '../assets/gifts/nexo-night-mask.png'
+import nightMaskVideo from '../assets/gifts/nexo-night-mask.mp4'
 
 import art0 from '../assets/gifts/constellation/tnt-pop.jpg'
 import art1 from '../assets/gifts/constellation/mint-mug.jpg'
@@ -89,6 +91,7 @@ export const GIFT_ART: Record<string, string> = {
   'lucky-star': luckyStar,
   'nex-gem': nexGem,
   'nexo-riders': nexoRidersCover,
+  'nexo-night-mask': nightMaskCover,
   'nexo-vampire-kiss': vampireKissCover,
   'nexo-sailor': sailorCover,
   'nexo-moon-witch': extraArt0,
@@ -146,6 +149,7 @@ export const GIFT_ART: Record<string, string> = {
 /** Reveal animation per gift model key (played once when the NFT is opened). */
 export const GIFT_VIDEO: Record<string, string> = {
   'nexo-riders': nexoRidersVideo,
+  'nexo-night-mask': nightMaskVideo,
   'nexo-vampire-kiss': vampireKissVideo,
   'nexo-sailor': sailorVideo,
 }
