@@ -1,3 +1,4 @@
+import type { ProfileBackground } from './profileBackgrounds'
 import type { NameBadge } from './nameBadges'
 
 export type ID = string
@@ -33,6 +34,7 @@ export interface Profile {
   avatar_url: string
   bio: string
   mood_status?: string
+  profile_background?: ProfileBackground
   is_online: boolean
   last_seen: string
   created_at: string
