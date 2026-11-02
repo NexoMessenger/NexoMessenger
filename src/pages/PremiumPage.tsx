@@ -9,6 +9,7 @@ import { AutumnName } from '../components/AutumnName'
 import { CreativeName } from '../components/CreativeName'
 import { CREATIVE_BADGES, isCreativeBadge, isNameBadge, type NameBadge } from '../lib/nameBadges'
 import type { TranslationKey } from '../i18n'
+import { ProfileBackgroundSettings } from '../components/ProfileBackgroundSettings'
 import { TrainName } from '../components/TrainName'
 import { NatureName } from '../components/NatureName'
 import { IconBack, IconClock, IconGem, IconGift, IconPalette, IconShield, IconStar, NexoMark } from '../components/icons'
@@ -192,6 +193,8 @@ export default function PremiumPage() {
           {saving === 'status' ? t('common.saving') : t('common.save')}
         </button>
       </div>
+
+      <ProfileBackgroundSettings preview />
 
       <div className="settings-group glass card">
         <div className="sw-title premium-section-title"><IconStar size={18} /> {t('premium.nameBadgeTitle')}</div>

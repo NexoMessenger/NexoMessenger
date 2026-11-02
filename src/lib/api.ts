@@ -1,4 +1,4 @@
-import { isProfileBackground } from './profileBackgrounds'
+import { isProfileBackground, isPremiumBackground } from './profileBackgrounds'
 import { isNameBadge, type NameBadge } from './nameBadges'
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
@@ -306,6 +306,7 @@ export async function getProfiles(ids: string[]): Promise<Record<string, Profile
 export async function updateProfile(id: string, patch: Partial<Profile>): Promise<void> {
   if (patch.profile_background !== undefined && !isProfileBackground(patch.profile_background)) err('Invalid profile background.')
   if (patch.profile_background !== undefined && isSb()) err('Profile backgrounds are not available in Supabase mode.')
+  if (!isSrv() && !isSb() && isPremiumBackground(patch.profile_background) && !isPremiumActive(loadDB().profiles.find(p => p.id === id))) err('NEXO Premium required.')
   if (patch.username) {
     patch.username = patch.username.toLowerCase().trim().replace(/^@/, '')
     if (!/^[a-z0-9_.]{3,24}$/.test(patch.username)) err('Username: 3–24 chars, lowercase letters, digits, _ or .')

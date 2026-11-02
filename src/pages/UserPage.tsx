@@ -4,6 +4,7 @@ import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { useI18n } from '../i18n'
+import { isPremiumActive } from '../lib/premiumData'
 import { ProfileBackground } from '../components/ProfileBackground'
 import { Avatar, BusinessBadge, ErrorBox, FloatingGifts, ProfileMusicCard, ProfileName, errText, fmtLastSeen, profileThemeClass } from '../components/ui'
 import { IconBack, IconChats } from '../components/icons'
@@ -90,7 +91,7 @@ export default function UserPage() {
       {user && (
         <>
           <div className={`profile-hero glass card user-profile-hero ${profileThemeClass(user.profile_theme)}`}>
-            <ProfileBackground value={user.profile_background} />
+            <ProfileBackground value={user.profile_background} premiumActive={isPremiumActive(user)} />
             {isNox ? (
               <div className="nox-avatar-stage">
                 <FloatingGifts profile={{ bg_gifts: (user.bg_gifts || []).filter((gift) => gift.model_key !== 'nexo-riders') }} />

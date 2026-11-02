@@ -543,7 +543,9 @@ app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json
 
 app.patch('/api/me', auth, (req, res) => {
   const patch = req.body || {}
-  if (patch.profile_background !== undefined && !['', 'sakura_video', 'autumn_video', 'moon_sakura', 'ember_maple'].includes(patch.profile_background)) return fail(res, 400, 'Invalid profile background.')
+  const premiumBackgrounds = ['storm_field', 'aurora_sky', 'nebula', 'ocean_night', 'fireflies', 'rain_city', 'volcano', 'snow_forest', 'lantern_lake', 'desert_night', 'underwater']
+  if (patch.profile_background !== undefined && !['', 'sakura_video', 'autumn_video', 'moon_sakura', 'ember_maple', ...premiumBackgrounds].includes(patch.profile_background)) return fail(res, 400, 'Invalid profile background.')
+  if (premiumBackgrounds.includes(patch.profile_background) && !premiumActive(req.me)) return fail(res, 403, 'NEXO Premium required.')
   if (patch.username !== undefined) {
     const uname = String(patch.username).toLowerCase().trim().replace(/^@/, '')
     if (!/^[a-z0-9_.]{3,24}$/.test(uname)) return fail(res, 400, 'Username: 3–24 chars, lowercase letters, digits, _ or .')

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import net from 'node:net'
@@ -33,11 +33,24 @@ test('profile background choice is authenticated, validated, public and persists
       assert.equal(result.status, 200); assert.equal(result.json.profile.profile_background, background)
       assert.equal((await req(`/api/users/${alice.profile.id}`, { token: bob.token })).json.profile.profile_background, background)
     }
+    const premiumIds = ['storm_field', 'aurora_sky', 'nebula', 'ocean_night', 'fireflies', 'rain_city', 'volcano', 'snow_forest', 'lantern_lake', 'desert_night', 'underwater']
+    for (const background of premiumIds) assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: background } })).status, 403)
+    assert.equal((await req('/api/premium/redeem', { token: alice.token, method: 'POST', body: { code: 'NEXO-PRO-A7K9' } })).status, 200)
+    for (const background of premiumIds) {
+      assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: background } })).json.profile.profile_background, background)
+      assert.equal((await req(`/api/users/${alice.profile.id}`, { token: bob.token })).json.profile.profile_background, background)
+    }
     assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: 'https://example.test/video' } })).status, 400)
     assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: null } })).status, 400)
     await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: 'moon_sakura' } })
     await stop(); await start()
     assert.equal((await req('/api/me', { token: alice.token })).json.profile.profile_background, 'moon_sakura')
     assert.equal((await req('/api/me', { token: bob.token })).json.profile.profile_background, undefined)
+    await stop()
+    const dbFile = path.join(dir, 'db.json'); const db = JSON.parse(await readFile(dbFile, 'utf8'))
+    db.profiles.find(p => p.id === alice.profile.id).premium_until = '2000-01-01T00:00:00.000Z'
+    await writeFile(dbFile, JSON.stringify(db)); await start()
+    assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: 'storm_field' } })).status, 403)
+    assert.equal((await req('/api/me', { token: alice.token, method: 'PATCH', body: { profile_background: '' } })).status, 200)
   } finally { if (child && child.exitCode === null) await stop(); await rm(dir, { recursive: true, force: true }) }
 })
