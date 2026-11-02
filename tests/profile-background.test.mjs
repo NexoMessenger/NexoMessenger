@@ -11,16 +11,19 @@ test('backgrounds have selectable assets, silent video and accessible decorative
     const { PROFILE_BACKGROUNDS, isProfileBackground } = await vite.ssrLoadModule('/src/lib/profileBackgrounds.ts')
     const { ProfileBackground } = await vite.ssrLoadModule('/src/components/ProfileBackground.tsx')
     const { dictionaries } = await vite.ssrLoadModule('/src/i18n/translations.ts')
-    assert.equal(PROFILE_BACKGROUNDS.length, 4)
+    assert.equal(PROFILE_BACKGROUNDS.length, 15)
+    assert.equal(PROFILE_BACKGROUNDS.filter(item => item.premium).length, 11)
     for (const item of PROFILE_BACKGROUNDS) {
       assert.equal(isProfileBackground(item.id), true)
       assert.ok((await stat(`public${item.poster}`)).size > 0)
       if (item.video) assert.ok((await stat(`public${item.video}`)).size > 0)
       for (const lang of ['en', 'ru', 'uk', 'zh-CN']) assert.ok(dictionaries[lang][item.label])
-      const html = renderToStaticMarkup(React.createElement(ProfileBackground, { value: item.id }))
+      const html = renderToStaticMarkup(React.createElement(ProfileBackground, { value: item.id, premiumActive: true }))
       assert.match(html, /aria-hidden="true"/)
       if (item.video) { assert.match(html, /muted=""/); assert.match(html, /playsinline=""/); assert.match(html, /loop=""/) }
+      else if (item.id === 'storm_field') assert.match(html, /profile-lightning-bolt/)
       else assert.equal((html.match(/<span/g) || []).length, 12)
+      if (item.premium) assert.equal(renderToStaticMarkup(React.createElement(ProfileBackground, { value: item.id, premiumActive: false })), '')
     }
     assert.equal(renderToStaticMarkup(React.createElement(ProfileBackground, { value: '' })), '')
     assert.equal(isProfileBackground('http://invalid.example'), false)
