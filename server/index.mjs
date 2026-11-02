@@ -1592,7 +1592,7 @@ app.post('/api/gifts/redeem', auth, rateLimitAuth, (req, res) => {
   if (!norm) return fail(res, 400, 'Invalid code.')
   const entry = db.gifts.promo.find((x) => normalizePromoCode(x.code) === norm)
   if (!entry) return fail(res, 404, 'Invalid code.')
-  if (entry.test_owner_id && entry.test_owner_id !== req.me.id) return fail(res, 403, 'This test code belongs to another account.')
+  // Zeron NEX codes are bearer codes: whoever receives one may redeem it once.
   if (entry.redeemed_by) return fail(res, 409, 'This code has already been used.')
   const w = giftWallet(req.me.id)
   w.balance += entry.amount
