@@ -1670,3 +1670,11 @@ html[data-theme] .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bub
   .direct-chat-room .room-head { gap: 6px; padding-left: 8px; padding-right: 8px; }
   .direct-chat-room .room-head-profile { gap: 6px; }
 }
+.pinned-message { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 13px; }
+.pinned-message strong { color: var(--violet); }
+.pinned-message span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-menu-emojis { flex-wrap: wrap; justify-content: flex-start; }
+.reaction-picker { max-width: min(300px, calc(100vw - 40px)); max-height: 160px; flex-wrap: wrap; overflow-y: auto; touch-action: pan-y; border-radius: 18px; }
+.premium-reaction-animated { display: inline-block; animation: premium-reaction-float 2s ease-in-out infinite; }
+@keyframes premium-reaction-float { 0%, 100% { transform: translateY(0) scale(1) rotate(-5deg); } 50% { transform: translateY(-3px) scale(1.14) rotate(7deg); } }
+@media (prefers-reduced-motion: reduce) { .premium-reaction-animated { animation: none; } }

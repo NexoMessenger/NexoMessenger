@@ -1698,6 +1698,27 @@ app.put('/api/premium/decor', auth, (req, res) => {
   res.json({ profile: req.me })
 })
 
+/* One shared pinned message per direct chat or group. */
+app.get('/api/pin/:scope/:room', auth, (req, res) => {
+  const { scope, room } = req.params
+  const container = scope === 'direct' ? db.conversations.find(c => c.id === room) : scope === 'group' ? db.groups.find(g => g.id === room) : null
+  const allowed = scope === 'direct' ? isConvMember(room, req.me.id) : scope === 'group' && !!groupMember(room, req.me.id)
+  if (!container || !allowed) return fail(res, 403, 'Access denied.')
+  const message = (scope === 'direct' ? db.messages : db.groupMessages).find(m => m.id === container.pinned_message_id && (scope === 'direct' ? m.conversation_id === room : m.group_id === room)) || null
+  res.json({ message })
+})
+app.put('/api/pin/:scope/:room', auth, (req, res) => {
+  const { scope, room } = req.params
+  const container = scope === 'direct' ? db.conversations.find(c => c.id === room) : scope === 'group' ? db.groups.find(g => g.id === room) : null
+  const role = groupMember(room, req.me.id)?.role
+  const allowed = scope === 'direct' ? isConvMember(room, req.me.id) : scope === 'group' && (role === 'owner' || role === 'admin')
+  if (!container || !allowed) return fail(res, 403, 'Access denied.')
+  const messageId = req.body?.messageId
+  if (messageId !== null && (typeof messageId !== 'string' || !(scope === 'direct' ? db.messages : db.groupMessages).some(m => m.id === messageId && (scope === 'direct' ? m.conversation_id === room : m.group_id === room)))) return fail(res, 400, 'Message not found.')
+  container.pinned_message_id = messageId || ''; persist(); touch(scope, room)
+  res.json({ ok: true })
+})
+
 /* ---------- reactions ---------- */
 app.get('/api/reactions', auth, (req, res) => {
   const scope = String(req.query.scope || '')
@@ -1711,7 +1732,11 @@ app.post('/api/reactions/toggle', auth, (req, res) => {
   const { scope, conversationId, messageId, emoji } = req.body || {}
   const allowed = scope === 'direct' ? isConvMember(String(conversationId), req.me.id) : scope === 'group' ? Boolean(groupMember(String(conversationId), req.me.id)) : false
   if (!allowed || !messageId || !emoji) return fail(res, 403, 'Access denied.')
-  const idx = db.reactions.findIndex((r) => r.message_id === messageId && r.user_id === req.me.id)
+  const msg = (scope === 'direct' ? db.messages : db.groupMessages).find(m => m.id === messageId && (scope === 'direct' ? m.conversation_id === conversationId : m.group_id === conversationId))
+  if (!msg || typeof emoji !== 'string' || emoji.length > 16) return fail(res, 400, 'Invalid reaction.')
+  const idx = db.reactions.findIndex((r) => r.scope === scope && r.conversation_id === conversationId && r.message_id === messageId && r.user_id === req.me.id)
+  const premium = ['💎','🚀','🥳','💯','🙏','👑','🦄','🌈','💫','🪄','🪐','💖','✨','🦋','🐉','🌟','⚡','🍀','🌸','🎇']
+  if (premium.includes(emoji) && !premiumActive(req.me) && !(idx >= 0 && db.reactions[idx].emoji === emoji)) return fail(res, 403, 'Premium required.')
   if (idx >= 0 && db.reactions[idx].emoji === emoji) db.reactions.splice(idx, 1)
   else if (idx >= 0) db.reactions[idx].emoji = String(emoji)
   else db.reactions.push({ id: uid(), scope, conversation_id: String(conversationId), message_id: String(messageId), user_id: req.me.id, emoji: String(emoji), created_at: now() })

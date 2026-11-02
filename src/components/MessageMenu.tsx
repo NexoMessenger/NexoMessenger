@@ -89,19 +89,21 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export type MessageAction = 'reply' | 'forward' | 'edit' | 'delete'
+export type MessageAction = 'reply' | 'forward' | 'edit' | 'delete' | 'pin' | 'unpin'
 
 /**
  * Compact floating glass menu shown next to a message: quick emoji row on
  * top, then only the actions that are actually available for this message.
  * Delete is two-step (tap again to confirm) — destructive but no modal.
  */
-export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoji, premiumReactions = false, onReact, onAction, onCopy, onClose }: {
+export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoji, premiumReactions = false, canPin = false, pinned = false, onReact, onAction, onCopy, onClose }: {
   target: MenuTarget<M>
   mine: boolean
   myEmoji: string | null
   /** NEXO Premium adds a second reaction row. */
   premiumReactions?: boolean
+  canPin?: boolean
+  pinned?: boolean
   onReact: (emoji: string, at: { x: number; y: number }) => void
   onAction: (action: MessageAction) => void
   onCopy: () => void
@@ -142,6 +144,7 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
   }, [onClose])
 
   const items: { action: MessageAction; icon: React.ReactNode; label: string; danger?: boolean }[] = []
+  if (canPin) items.push({ action: pinned ? 'unpin' : 'pin', icon: <span aria-hidden="true">📌</span>, label: t(pinned ? 'pins.unpin' : 'pins.pin') })
   items.push({ action: 'reply', icon: <IconReply size={17} />, label: t('msg.reply') })
   items.push({ action: 'forward', icon: <IconForward size={17} />, label: t('msg.forward') })
   if (canEdit) items.push({ action: 'edit', icon: <IconEdit size={17} />, label: t('msg.edit') })
@@ -171,7 +174,7 @@ export function MessageContextMenu<M extends MenuMessage>({ target, mine, myEmoj
                 onClick={(ev) => {
                   const r = (ev.currentTarget as HTMLButtonElement).getBoundingClientRect()
                   onReact(e, { x: r.left + r.width / 2, y: r.top + r.height / 2 })
-                }} aria-label={e}>{e}</button>
+                }} aria-label={e}><span className="premium-reaction-animated">{e}</span></button>
             ))}
           </div>
         )}

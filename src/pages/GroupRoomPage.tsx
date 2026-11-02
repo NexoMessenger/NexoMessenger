@@ -21,6 +21,7 @@ export default function GroupRoomPage() {
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<{ profile: Profile; role: string }[]>([])
   const [messages, setMessages] = useState<GroupMessage[]>([])
+  const [pinnedMessage, setPinnedMessage] = useState<GroupMessage | null>(null)
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [profiles, setProfiles] = useState<Record<string, Profile>>({})
@@ -61,7 +62,9 @@ export default function GroupRoomPage() {
         api.getGroupMembers(id).catch(() => { if (my === reqRef.current) setMemberError(true); return [] as { profile: Profile; role: string }[] }),
       ])
       const reacts = await api.listReactions('group', id).catch(() => [] as Reaction[])
+      const pin = api.mode === 'server' ? await api.getPinnedMessage('group', id).catch(() => null) : null
       if (my !== reqRef.current) return
+      setPinnedMessage(pin as GroupMessage | null)
       setGroup(g); setMessages(ms); setMembers(mems); setReactions(reacts)
       if (mems.length) setMemberError(false)
       setProfiles(Object.fromEntries(mems.map((m) => [m.profile.id, m.profile])))
@@ -177,7 +180,10 @@ export default function GroupRoomPage() {
     const m = menuTarget?.msg
     setMenuTarget(null)
     if (!m) return
-    if (action === 'reply') setReplyTo(m)
+    if (action === 'pin' || action === 'unpin') {
+      void api.setPinnedMessage('group', id, action === 'pin' ? m.id : null).then(() => load()).catch(e => setError(errText(e, t)))
+    }
+    else if (action === 'reply') setReplyTo(m)
     else if (action === 'edit') setEditing(m)
     else if (action === 'forward') setForwardMsg(m)
     else if (action === 'delete') void doDelete(m)
@@ -198,6 +204,8 @@ export default function GroupRoomPage() {
         </div>
         <button className="btn btn-sm" onClick={() => setShowInfo(true)}>{t('groups.details')}</button>
       </div>
+
+      {pinnedMessage && <div className="pinned-message" role="status"><strong>📌 {t('pins.title')}</strong><span>{pinnedMessage.body || pinnedMessage.attachment_name || t('common.attachment')}</span></div>}
 
       {error && (
         <div style={{ padding: '10px 16px 0' }}>
@@ -252,8 +260,8 @@ export default function GroupRoomPage() {
                 <ReactionBar reactions={reactions.filter((r) => r.message_id === m.id)} meId={profile?.id || ''} onToggle={(e, ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} />
                 {pickerFor === m.id && (
                   <div className="reaction-picker glass" role="menu" aria-label={t('reactions.add')}>
-                    {[...REACTION_SET, ...(isPremiumActive(profile) ? PREMIUM_REACTIONS : [])].map((e) => (
-                      <button key={e} className="reaction-pick" onClick={(ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} aria-label={e}>{e}</button>
+                    {[...REACTION_SET, ...(isPremiumActive(profile) && api.mode !== 'supabase' ? PREMIUM_REACTIONS : [])].map((e) => (
+                      <button key={e} className="reaction-pick" onClick={(ev) => react(m, e, { x: ev.clientX, y: ev.clientY })} aria-label={e}><span className={PREMIUM_REACTIONS.includes(e) ? 'premium-reaction-animated' : undefined}>{e}</span></button>
                     ))}
                   </div>
                 )}
@@ -285,7 +293,8 @@ export default function GroupRoomPage() {
 
       {menuTarget && profile && (
         <MessageContextMenu target={menuTarget} mine={menuTarget.msg.sender_id === profile.id}
-          premiumReactions={isPremiumActive(profile)}
+          canPin={api.mode === 'server' && canManage} pinned={pinnedMessage?.id === menuTarget.msg.id}
+          premiumReactions={isPremiumActive(profile) && api.mode !== 'supabase'}
           myEmoji={reactions.find((r) => r.message_id === menuTarget.msg.id && r.user_id === profile.id)?.emoji ?? null}
           onReact={(emoji, at) => { const m = menuTarget.msg; setMenuTarget(null); void react(m, emoji, at) }}
           onCopy={() => { const m = menuTarget.msg; setMenuTarget(null); void copyText(m.body).then((ok) => { if (ok) showToast(t('msg.copied')) }) }}

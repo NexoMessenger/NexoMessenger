@@ -1,9 +1,10 @@
+import { PREMIUM_REACTIONS } from '../lib/premiumData'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Reaction } from '../lib/types'
 import { IconPlay, IconPause } from './icons'
 import { useI18n } from '../i18n'
 
-export const REACTION_SET = ['❤️', '😂', '🔥', '😮', '😢', '👍', '👎', '🎉']
+export const REACTION_SET = ['❤️', '😂', '🔥', '😮', '😢', '👍', '👎', '🎉', '😍', '😁', '🤔', '👏', '😎', '🤝', '😴', '😡', '🤯', '🥰', '😱', '🤗', '🤣', '😇']
 
 const ANIMATED_EMOJI_ANIM: Record<string, string> = {
   '🔥': 'pulse', '💎': 'float', '⭐': 'spin', '🚀': 'float', '🎉': 'bounce',
@@ -127,7 +128,7 @@ export function ReactionBar({ reactions, meId, onToggle }: {
       {grouped.map(([emoji, g]) => (
         <button key={emoji} className={`reaction-chip ${g.mine ? 'mine' : ''}`} onClick={(ev) => onToggle(emoji, ev)}
           aria-pressed={g.mine} aria-label={`${emoji} ${g.count}`}>
-          <span>{emoji}</span><span className="reaction-count">{g.count}</span>
+          <span className={PREMIUM_REACTIONS.includes(emoji) ? 'premium-reaction-animated' : undefined}>{emoji}</span><span className="reaction-count">{g.count}</span>
         </button>
       ))}
     </div>
