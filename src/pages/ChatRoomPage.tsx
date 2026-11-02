@@ -7,9 +7,12 @@ import Composer from '../components/Composer'
 import { GiftMessage } from '../components/GiftMessage'
 import { useCalls } from '../components/Calls'
 import { useI18n } from '../i18n'
-import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply, IconPalette } from '../components/icons'
+import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply, IconSettings } from '../components/icons'
 import { AttachmentView, Avatar, ProfileName, fmtClock, fmtLastSeen, errText } from '../components/ui'
 import { AnimatedEmojiBody, ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
+import { CHAT_THEMES, themeStyle } from '../lib/chatThemes'
+import { ChatThemeParticles } from '../components/ChatThemeSettings'
+import ChatThemeSettings from '../components/ChatThemeSettings'
 import { PREMIUM_REACTIONS, isPremiumActive } from '../lib/premiumData'
 import { ForwardPicker, MessageContextMenu, copyText, useMessageMenu, type MenuTarget, type MessageAction } from '../components/MessageMenu'
 
@@ -110,8 +113,8 @@ export default function ChatRoomPage() {
   }, [id])
 
   const chooseTheme = async (value: api.ChatTheme) => {
-    setThemeBusy(true)
-    try { await api.setChatTheme(id, value); setTheme(value); setThemeOpen(false) }
+    setThemeBusy(true); setError('')
+    try { await api.setChatTheme(id, value); setTheme(value) }
     catch { setError(t('extras.themeError')) }
     finally { setThemeBusy(false) }
   }
@@ -198,9 +201,10 @@ export default function ChatRoomPage() {
   const myLastRead = Boolean(myLastOwn && peerReadAt && peerReadAt >= myLastOwn.created_at)
 
   const isSaved = !!peer && peer.id === profile?.id
+  const selectedTheme = CHAT_THEMES.find(item => item.id === theme) || CHAT_THEMES[0]
   let lastDay = ''
   return (
-    <div className={`room-wrap chat-theme-${theme}`}>
+    <div className={`room-wrap direct-chat-room chat-theme-${theme}`} style={theme === 'default' ? undefined : themeStyle(selectedTheme)}>
       <div className="room-head">
         <button className="icon-btn back-btn-mobile" onClick={() => navigate('/chats')} aria-label={t('common.back')}><IconBack size={18} /></button>
         <button className="room-head-profile" onClick={() => peer && !isSaved && navigate(`/user/${peer.id}`)} disabled={isSaved} aria-label={t('profile.view')}>
@@ -210,14 +214,12 @@ export default function ChatRoomPage() {
             <span className="row-preview">{isSaved ? t('extras.savedHint') : peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
           </span>
         </button>
-        {api.mode === 'server' && <button className="icon-btn" type="button" aria-label={t('extras.chatTheme')} title={t('extras.chatTheme')} aria-expanded={themeOpen} onClick={() => setThemeOpen(value => !value)}><IconPalette size={19} /></button>}
+        {api.mode === 'server' && <button className="icon-btn" type="button" aria-label={t('chatThemes.settings')} title={t('chatThemes.settings')} aria-expanded={themeOpen} onClick={() => setThemeOpen(value => !value)}><IconSettings size={19} /></button>}
         <button className="icon-btn" aria-label={t('call.audio')} title={t('call.audio')} disabled={!peer || isSaved} onClick={() => peer && startCall(id, peer.display_name, 'audio')}><IconPhone size={20} /></button>
         <button className="icon-btn" aria-label={t('call.video')} title={t('call.video')} disabled={!peer || isSaved} onClick={() => peer && startCall(id, peer.display_name, 'video')}><IconVideoCall size={21} /></button>
       </div>
 
-      {themeOpen && <div className="chat-theme-picker glass" role="group" aria-label={t('extras.chatTheme')}>
-        {(['default', 'ocean', 'sakura', 'night'] as const).map(value => <button type="button" key={value} className={`btn btn-sm ${theme === value ? 'btn-primary' : ''}`} disabled={themeBusy} aria-pressed={theme === value} onClick={() => void chooseTheme(value)}>{t(({ default: 'extras.themeDefault', ocean: 'extras.themeOcean', sakura: 'extras.themeSakura', night: 'extras.themeNight' } as const)[value])}</button>)}
-      </div>}
+      {themeOpen && <ChatThemeSettings selected={selectedTheme} busy={themeBusy} error={error} onChoose={chooseTheme} onClose={() => setThemeOpen(false)} />}
 
       {error && (
         <div style={{ padding: '10px 16px 0' }}>
@@ -228,6 +230,8 @@ export default function ChatRoomPage() {
         </div>
       )}
 
+      <div className="chat-messages-area">
+        {theme !== 'default' && <ChatThemeParticles theme={selectedTheme} />}
       <div className="messages-scroll" ref={scrollRef} onScroll={() => { if (menuTarget) setMenuTarget(null) }}>
         {hasMore && !loading && (
           <button className="load-earlier-btn" onClick={loadEarlier} disabled={loadingEarlier}>
@@ -293,6 +297,8 @@ export default function ChatRoomPage() {
             </div>
           )
         })}
+      </div>
+
       </div>
 
       <div className="typing-indicator">

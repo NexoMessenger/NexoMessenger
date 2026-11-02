@@ -988,7 +988,7 @@ app.get('/api/chats/:id/theme', auth, (req, res) => {
 app.put('/api/chats/:id/theme', auth, (req, res) => {
   const member = db.convMembers.find(m => m.conversation_id === req.params.id && m.user_id === req.me.id)
   if (!member) return fail(res, 403, 'Access denied.')
-  if (!['default', 'ocean', 'sakura', 'night'].includes(req.body?.theme)) return fail(res, 400, 'Invalid chat theme.')
+  if (!['default', 'ocean', 'sakura', 'night', 'stardust', 'snowfall', 'embers', 'aurora', 'moonlight', 'rose', 'forest', 'lavender', 'rain', 'cosmos', 'ice', 'sunset', 'neon', 'deepsea', 'gold'].includes(req.body?.theme)) return fail(res, 400, 'Invalid chat theme.')
   member.chat_theme = req.body.theme; persist()
   res.json({ theme: member.chat_theme })
 })

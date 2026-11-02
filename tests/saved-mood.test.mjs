@@ -38,7 +38,10 @@ test('saved chat is private, persistent and supports attachments; mood is public
     assert.equal((await req('/api/me', { token: a.token, method: 'PATCH', body: { mood_status: 'x'.repeat(81) } })).status, 400)
     const direct = (await req('/api/chats/direct', { token: a.token, method: 'POST', body: { userId: b.profile.id } })).json.id
     assert.equal((await req(`/api/chats/${direct}/theme`, { token: a.token, method: 'PUT', body: { theme: 'ocean' } })).status, 200)
+    const themes = ['stardust', 'snowfall', 'embers', 'aurora', 'moonlight', 'rose', 'forest', 'lavender', 'rain', 'cosmos', 'ice', 'sunset', 'neon', 'deepsea', 'gold']
+    for (const theme of themes) assert.equal((await req(`/api/chats/${direct}/theme`, { token: a.token, method: 'PUT', body: { theme } })).json.theme, theme)
     assert.equal((await req(`/api/chats/${direct}/theme`, { token: b.token })).json.theme, 'default')
+    assert.equal((await req(`/api/chats/${direct}/theme`, { token: a.token })).json.theme, 'gold')
     assert.equal((await req(`/api/chats/${id}/theme`, { token: b.token })).status, 403)
     assert.equal((await req(`/api/chats/${direct}/theme`, { token: a.token, method: 'PUT', body: { theme: 'bad' } })).status, 400)
     await stop(); await start()
@@ -46,6 +49,6 @@ test('saved chat is private, persistent and supports attachments; mood is public
     const msgs = (await req(`/api/chats/${id}/messages`, { token: a.token })).json.messages
     assert.equal(msgs[0].body, 'Private note'); assert.equal(msgs[0].attachment_name, 'example.png')
     assert.equal((await req('/api/me', { token: a.token })).json.profile.mood_status, 'Учусь')
-    assert.equal((await req(`/api/chats/${direct}/theme`, { token: a.token })).json.theme, 'ocean')
+    assert.equal((await req(`/api/chats/${direct}/theme`, { token: a.token })).json.theme, 'gold')
   } finally { if (child && child.exitCode === null) await stop(); await rm(dir, { recursive: true, force: true }) }
 })
