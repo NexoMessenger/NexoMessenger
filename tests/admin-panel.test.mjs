@@ -19,7 +19,7 @@ test('owner ID alone manages restrictions and NEX; read-only, ban, simulation an
   const reg = async name => (await req('/api/auth/register',null,'POST',{email:`${name}@test.example`,username:name,password:'secret1'})).data
   const owner=await reg('wallet'), user=await reg('person'), other=await reg('other')
   await stop(); const file=path.join(dir,'db.json'); const db=JSON.parse(await readFile(file,'utf8')); db.zeronOwnerId=owner.profile.id; db.zeronOwnerInitialized=true; await writeFile(file,JSON.stringify(db)); await start()
-  const admin=owner.token, u=user.token, x=other.token, id=user.profile.id
+  const admin=owner.token, x=other.token, id=user.profile.id; let u=user.token
   assert.equal((await req('/api/admin/access',admin)).data.allowed,true)
   assert.equal((await req('/api/admin/access',u)).data.allowed,false)
   assert.equal((await req('/api/admin/users?q=pe',u)).status,403)
@@ -42,9 +42,18 @@ test('owner ID alone manages restrictions and NEX; read-only, ban, simulation an
   assert.equal((await req('/api/me',u)).data.profile.account_status,'frozen')
   assert.equal((await req(`/api/admin/users/${id}`,admin,'POST',{action:'fake_ban'})).status,200)
   assert.equal((await req('/api/me',u)).data.profile.account_status,'fake_ban')
-  assert.equal((await req(`/api/chats/${chat}/messages`,u,'POST',{body:'simulation'})).status,200)
+  assert.equal((await req(`/api/chats/${chat}/messages`,u,'POST',{body:'simulation'})).status,403)
+  const login = () => req('/api/auth/login',null,'POST',{email:'person@test.example',password:'secret1'})
+  const relog = await login(); assert.equal(relog.status,200)
+  const fresh = relog.data.token
+  assert.equal((await req('/api/me',fresh)).data.profile.account_status,'normal')
+  assert.equal((await req(`/api/chats/${chat}/messages`,fresh)).status,200)
+  assert.equal((await req('/api/auth/logout',u,'POST')).status,200)
   assert.equal((await req(`/api/admin/users/${id}`,admin,'POST',{action:'banned'})).status,200)
-  assert.equal((await req('/api/me',u)).data.profile.account_status,'banned')
+  u = fresh
+  assert.equal((await req('/api/me',fresh)).data.profile.account_status,'banned')
+  assert.equal((await login()).data.error,'ACCOUNT_BANNED')
+  assert.notEqual((await req('/api/auth/login',null,'POST',{email:'person@test.example',password:'wrong'})).data.error,'ACCOUNT_BANNED')
   assert.equal((await req(`/api/chats/${chat}/messages`,u)).data.error,'ACCOUNT_BANNED')
   assert.equal((await req(`/api/chats/${chat}/messages`,u,'POST',{body:'blocked'})).status,403)
   assert.equal((await req(`/api/admin/users/${id}`,admin,'POST',{action:'normal'})).status,200)

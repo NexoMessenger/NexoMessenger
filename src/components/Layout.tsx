@@ -5,6 +5,7 @@ import * as api from '../lib/api'
 import { Avatar } from './ui'
 import MessagePopups from './MessagePopups'
 import AiLauncher from './AiLauncher'
+import { FrozenNotice } from './AccountRestrictionNotice'
 import { IconChats, IconGroups, IconChannel, IconGift, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
 import type { ComponentType } from 'react'
 import { useI18n } from '../i18n'
@@ -58,6 +59,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className={`app-shell ${inRoom ? 'in-room' : ''}`}>
+      {profile && <FrozenNotice profile={profile} />}
       <MessagePopups />
       {!inRoom && <AiLauncher />}
       <aside className="sidebar">
@@ -78,7 +80,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         )}
         {profile?.account_status === 'frozen' && <div className="demo-banner" role="status">{t('admin.frozenNotice')}</div>}
-        {profile?.account_status === 'fake_ban' && <div className="demo-banner" role="status">{t('admin.fakeNotice')}</div>}
         {children}
       </div>
       <nav className="bottom-nav">{items('mobile')}</nav>

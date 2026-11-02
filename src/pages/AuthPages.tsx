@@ -4,6 +4,7 @@ import * as api from '../lib/api'
 import { useAuth } from '../lib/AuthContext'
 import { useI18n } from '../i18n'
 import { ErrorBox, errText } from '../components/ui'
+import { AccountRestrictionNotice } from '../components/AccountRestrictionNotice'
 import { NexoMark, IconGoogle, IconEye, IconEyeOff, IconBack } from '../components/icons'
 
 const DRAFT_KEY = 'nexo_auth_draft'
@@ -53,7 +54,7 @@ function GoogleButton() {
   const { t } = useI18n()
   const [error, setError] = useState(() => {
     const status = new URL(window.location.href).searchParams.get('google_auth')
-    return status === 'conflict' ? t('google.conflict') : status === 'cancel' ? t('google.cancel') : status === 'error' ? t('google.failed') : ''
+    return status === 'banned' ? t('admin.bannedInfo') : status === 'conflict' ? t('google.conflict') : status === 'cancel' ? t('google.cancel') : status === 'error' ? t('google.failed') : ''
   })
   const [busy, setBusy] = useState(false)
   const click = async () => {
@@ -90,7 +91,7 @@ export function LoginPage() {
       await refresh()
       navigate('/chats')
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('error.generic'))
+      setError(errText(err, t))
     } finally { setBusy(false) }
   }
 
@@ -130,6 +131,9 @@ export function RegisterPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [restriction, setRestriction] = useState<'banned' | 'fake_ban' | null>(() => {
+    try { const value = sessionStorage.getItem('nexo_restriction_notice'); return value === 'banned' || value === 'fake_ban' ? value : null } catch { return null }
+  })
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError(''); setNotice('')
@@ -140,12 +144,13 @@ export function RegisterPage() {
       if (p) navigate('/chats')
       else setNotice(t('auth.createdNotice'))
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('error.generic'))
+      setError(errText(err, t))
     } finally { setBusy(false) }
   }
 
   return (
     <Shell>
+      {restriction && <AccountRestrictionNotice kind={restriction} onClose={() => { try { sessionStorage.removeItem('nexo_restriction_notice') } catch { /* optional */ }; setRestriction(null) }} />}
       <h1 className="auth-title">{t('auth.createTitle')}</h1>
       <p className="auth-sub">{t('auth.createSub')}</p>
       <ErrorBox error={error} />
@@ -181,7 +186,7 @@ export function ForgotPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError('')
     try { await api.resetPassword(email.trim()); setSent(true) } catch (err) {
-      setError(err instanceof Error ? err.message : t('error.generic'))
+      setError(errText(err, t))
     } finally { setBusy(false) }
   }
   return (

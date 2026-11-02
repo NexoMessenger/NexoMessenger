@@ -11,7 +11,7 @@ const readCookie = (req, name) => String(req.headers.cookie || '').split(';').ma
 
 /** Google tokens never leave the server. State + nonce + PKCE bind the flow to
  * the initiating browser; a short-lived HttpOnly ticket delivers a NEXO session. */
-export function registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL, touchGlobal, env = process.env, exchange = exchangeGoogle, verify = verifyGoogle }) {
+export function registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL, touchGlobal, accountStatus = () => 'normal', env = process.env, exchange = exchangeGoogle, verify = verifyGoogle }) {
   const flows = new Map(), tickets = new Map()
   const config = () => {
     try {
@@ -78,6 +78,7 @@ export function registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL, t
       db.users.push(user)
       db.profiles.push({id:userId,username,display_name:(identity.name.trim()||username).slice(0,60),avatar_url:'',bio:'',is_online:true,last_seen:time,created_at:time})
     }
+    if (accountStatus(user.id) === 'banned') return res.status(403).json({error:'ACCOUNT_BANNED'})
     const profile=db.profiles.find(p=>p.id===user.id)
     if (!profile) return res.status(500).json({error:'GOOGLE_ACCOUNT_ERROR'})
     const token=random(); db.sessions.push({token,user_id:user.id,expires_at:Date.now()+sessionTTL})

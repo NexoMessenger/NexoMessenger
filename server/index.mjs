@@ -475,7 +475,10 @@ function sessionUser(req) {
 function auth(req, res, next) {
   const me = sessionUser(req)
   if (!me) return fail(res, 401, 'Session expired. Please sign in again.')
-  const status = accountStatus(me.id)
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+  req.session = db.sessions.find(x => x.token === token)
+  const status = accountStatus(me.id) === 'fake_ban' ? (req.session?.fake_ban_pending ? 'fake_ban' : 'normal') : accountStatus(me.id)
+  if (status === 'fake_ban' && req.path !== '/api/me' && req.path !== '/api/auth/logout') return fail(res, 403, 'ACCOUNT_BANNED')
   if (status === 'banned' && req.path !== '/api/me' && req.path !== '/api/auth/logout') return fail(res, 403, 'ACCOUNT_BANNED')
   if (status === 'frozen' && !['GET', 'HEAD'].includes(req.method) && req.path !== '/api/auth/logout') return fail(res, 403, 'ACCOUNT_FROZEN')
   req.me = me
@@ -507,7 +510,7 @@ app.use('/api/files', express.static(UPLOAD_DIR, { fallthrough: false, maxAge: '
 app.get('/api/health', (req, res) => res.json({ ok: true, mode: 'server', users: db.profiles.length }))
 
 /* ---------- auth ---------- */
-registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL: SESSION_TTL, touchGlobal })
+registerGoogleRoutes(app, { db, persist, uid, now, sessionTTL: SESSION_TTL, touchGlobal, accountStatus })
 app.post('/api/auth/register', rateLimitAuth, (req, res) => {
   const { email, password, username, displayName } = req.body || {}
   const uname = String(username || '').toLowerCase().trim().replace(/^@/, '')
@@ -531,6 +534,7 @@ app.post('/api/auth/login', rateLimitAuth, (req, res) => {
   const { email, password } = req.body || {}
   const user = db.users.find((u) => u.email.toLowerCase() === String(email || '').toLowerCase())
   if (!user || !user.passwordHash || !user.salt || !verifyPassword(password || '', user)) return fail(res, 401, 'Invalid email or password.')
+  if (accountStatus(user.id) === 'banned') return fail(res, 403, 'ACCOUNT_BANNED')
   const profile = profileOf(user.id)
   if (profile) { profile.is_online = true; profile.last_seen = now() }
   const token = tokenGen()
@@ -548,7 +552,7 @@ app.post('/api/auth/logout', auth, (req, res) => {
 })
 
 /* ---------- me / profiles / settings ---------- */
-app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json({ profile: { ...req.me, account_status: accountStatus(req.me.id) }, email: db.users.find(u => u.id === req.me.id)?.email || null }))
+app.get('/api/me', auth, (req, res) => res.set('Cache-Control', 'no-store').json({ profile: { ...req.me, account_status: accountStatus(req.me.id) === 'fake_ban' && !req.session?.fake_ban_pending ? 'normal' : accountStatus(req.me.id), account_status_changed_at: db.moderation[req.me.id]?.changed_at || '' }, email: db.users.find(u => u.id === req.me.id)?.email || null }))
 
 app.patch('/api/me', auth, (req, res) => {
   const patch = req.body || {}
@@ -897,6 +901,7 @@ app.post('/api/admin/users/:id', auth, (req, res) => {
   const previous = accountStatus(id)
   const previousRecord = db.moderation[id] ? structuredClone(db.moderation[id]) : null
   const previousWallet = db.gifts.wallets[id] ? structuredClone(db.gifts.wallets[id]) : null
+  const priorSessions = db.sessions.filter(s => s.user_id === id).map(s => [s, s.fake_ban_pending])
   const txnCount = db.gifts.txns.length, auditCount = db.adminAudit.length
   let oldBalance = null
   if (action === 'reset_nex') {
@@ -906,16 +911,18 @@ app.post('/api/admin/users/:id', auth, (req, res) => {
     giftTxn(id, 'admin_reset', -oldBalance, 'Admin balance reset')
   } else {
     db.moderation[id] = { status: action, changed_at: now(), changed_by: req.me.id }
+    for (const session of db.sessions) if (session.user_id === id) session.fake_ban_pending = action === 'fake_ban'
   }
   db.adminAudit.push({ id: uid(), admin_id: req.me.id, target_id: id, action, previous_status: previous, previous_balance: oldBalance, created_at: now() })
   try { persist() } catch (error) {
     if (previousRecord) db.moderation[id] = previousRecord; else delete db.moderation[id]
     if (previousWallet) db.gifts.wallets[id] = previousWallet; else delete db.gifts.wallets[id]
+    for (const [session, prior] of priorSessions) { if (prior === undefined) delete session.fake_ban_pending; else session.fake_ban_pending = prior }
     db.gifts.txns.length = txnCount; db.adminAudit.length = auditCount
     throw error
   }
   touchGlobal()
-  if (action === 'frozen' || action === 'banned') {
+  if (action === 'frozen' || action === 'banned' || action === 'fake_ban') {
     for (const c of clients) if (c.userId === id) c.ws.close(4403, 'account restricted')
   }
   res.json({ ok: true, status: accountStatus(id), balance: db.gifts.wallets[id]?.balance ?? null })
@@ -1894,7 +1901,7 @@ wss.on('connection', (ws, req) => {
   const token = url.searchParams.get('token') || ''
   const s = db.sessions.find((x) => x.token === token && x.expires_at > Date.now())
   if (!s) { ws.close(4401, 'unauthorized'); return }
-  if (accountStatus(s.user_id) === 'banned') { ws.close(4403, 'account restricted'); return }
+  if (accountStatus(s.user_id) === 'banned' || (accountStatus(s.user_id) === 'fake_ban' && s.fake_ban_pending)) { ws.close(4403, 'account restricted'); return }
   const client = { ws, userId: s.user_id, rooms: new Set(['global']) }
   clients.add(client)
   const p = profileOf(s.user_id)

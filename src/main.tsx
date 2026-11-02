@@ -44,6 +44,7 @@ async function finishGoogleSignIn() {
       localStorage.setItem('nexo_server_token', data.token)
       result = 'success'
     } else if (data.error === 'GOOGLE_EMAIL_EXISTS') result = 'conflict'
+    else if (data.error === 'ACCOUNT_BANNED') result = 'banned'
   } catch { /* Show an honest error and retain any existing session. */ }
   url.searchParams.delete('google_auth')
   if (result !== 'success') url.searchParams.set('google_auth', result)
