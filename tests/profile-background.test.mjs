@@ -31,3 +31,12 @@ test('backgrounds have selectable assets, silent video and accessible decorative
     assert.match(css, /prefers-reduced-motion: reduce\) \{ \.profile-backdrop video/)
   } finally { await vite.close() }
 })
+
+
+test('background settings are in Premium only while the profile still displays its background', async () => {
+  const profile = await readFile('src/pages/ProfilePage.tsx', 'utf8')
+  const premium = await readFile('src/pages/PremiumPage.tsx', 'utf8')
+  assert.doesNotMatch(profile, /ProfileBackgroundSettings/)
+  assert.match(profile, /<ProfileBackground value=\{profile\.profile_background\}/)
+  assert.match(premium, /<ProfileBackgroundSettings preview\s*\/>/)
+})

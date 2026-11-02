@@ -9,7 +9,6 @@ import { fmtNex } from '../lib/giftCatalog'
 import { PREMIUM_PRICE_RUB, isPremiumActive } from '../lib/premiumData'
 import ProfileShowcase from '../components/ProfileShowcase'
 import { ProfileBackground } from '../components/ProfileBackground'
-import { ProfileBackgroundSettings } from '../components/ProfileBackgroundSettings'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -133,8 +132,6 @@ export default function ProfilePage() {
         </button>
         <ProfileMusicCard profile={profile} />
       </div>
-
-      <ProfileBackgroundSettings />
 
       {editing ? (
         <div className="settings-group glass card">
