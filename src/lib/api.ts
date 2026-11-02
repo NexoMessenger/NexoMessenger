@@ -3,7 +3,7 @@ import { isNameBadge, type NameBadge } from './nameBadges'
 import { supabase, backendMode, apiBase } from './supabase'
 import { loadDB, saveDB, uid, hashPassword, onLocalChange, maybeAssistantReply, type LocalDB } from './localBackend'
 import { giftModel, normalizePromoCode, GIFT_WELCOME_BONUS, GIFT_DAILY_BONUS, GIFT_BONUS_INTERVAL_MS, GIFT_TRANSFER_FEE, GIFT_SELL_FEE } from './giftData'
-import { EMOJI_STATUSES, NAME_COLORS, PREMIUM_DAYS, PREMIUM_PRICE_RUB, PROFILE_FONTS, PROFILE_THEMES, isPremiumActive, normalizePremiumCode, sanitizeBusiness } from './premiumData'
+import { EMOJI_STATUSES, NAME_COLORS, PREMIUM_DAYS, PREMIUM_PRICE_RUB, PROFILE_FONTS, PROFILE_THEMES, PREMIUM_REACTIONS, isPremiumActive, normalizePremiumCode, sanitizeBusiness } from './premiumData'
 import type {
   AttachmentInfo, Channel, ChannelPost, ChannelComment, Conversation, GiftListing, GiftState, Group, GroupMessage,
   BgGift, BusinessInfo, MarketEntry, Message, OwnedGift, PremiumState, Profile, ProfileMusic, ProfilePost, Reaction, ReactionScope, UserGifts, UserSettings,
@@ -835,6 +835,15 @@ export async function deleteMessage(scope: ReactionScope, roomId: string, messag
   saveDB(db)
 }
 
+export async function getPinnedMessage(scope: 'direct' | 'group', room: string): Promise<Message | GroupMessage | null> {
+  if (!isSrv()) throw new Error('Pinned messages are available on the NEXO server only.')
+  return (await srv<{ message: Message | GroupMessage | null }>(`/api/pin/${scope}/${room}`)).message
+}
+export async function setPinnedMessage(scope: 'direct' | 'group', room: string, messageId: string | null): Promise<void> {
+  if (!isSrv()) throw new Error('Pinned messages are available on the NEXO server only.')
+  await srv(`/api/pin/${scope}/${room}`, { method: 'PUT', body: { messageId } })
+}
+
 /* ============================== REACTIONS ============================== */
 
 export async function listReactions(scope: ReactionScope, conversationId: string): Promise<Reaction[]> {
@@ -853,6 +862,7 @@ export async function toggleReaction(scope: ReactionScope, conversationId: strin
   if (isSb()) {
     const { data: existing } = await supabase!.from('message_reactions').select('*')
       .eq('message_id', messageId).eq('user_id', userId).maybeSingle()
+    if (PREMIUM_REACTIONS.includes(emoji) && existing?.emoji !== emoji) err('Premium reactions are unavailable on this backend.')
     if (existing && existing.emoji === emoji) {
       const { error } = await supabase!.from('message_reactions').delete().eq('id', existing.id)
       if (error) err(error.message)
@@ -867,6 +877,7 @@ export async function toggleReaction(scope: ReactionScope, conversationId: strin
   }
   const db = loadDB()
   const idx = db.reactions.findIndex((r) => r.message_id === messageId && r.user_id === userId)
+  if (PREMIUM_REACTIONS.includes(emoji) && !isPremiumActive(db.profiles.find(p => p.id === userId)) && !(idx >= 0 && db.reactions[idx].emoji === emoji)) err('Premium required.')
   if (idx >= 0 && db.reactions[idx].emoji === emoji) db.reactions.splice(idx, 1)
   else if (idx >= 0) db.reactions[idx].emoji = emoji
   else db.reactions.push({ id: uid(), scope, conversation_id: conversationId, message_id: messageId, user_id: userId, emoji, created_at: now() })

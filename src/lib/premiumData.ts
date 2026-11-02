@@ -60,7 +60,7 @@ export const NEXO_ANIMATED_EMOJI: { emoji: string; anim: 'bounce' | 'pulse' | 's
 ]
 
 /** Extra reactions unlocked by Premium (base set stays free for everyone). */
-export const PREMIUM_REACTIONS = ['💎', '🚀', '🥳', '💯', '🙏', '👑']
+export const PREMIUM_REACTIONS = ['💎', '🚀', '🥳', '💯', '🙏', '👑', '🦄', '🌈', '💫', '🪄', '🪐', '💖', '✨', '🦋', '🐉', '🌟', '⚡', '🍀', '🌸', '🎇']
 
 /** Name colour palette keys -> CSS colour for the display name. */
 export const NAME_COLORS: { key: string; color: string }[] = [
