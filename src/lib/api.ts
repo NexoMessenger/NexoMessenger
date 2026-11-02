@@ -497,6 +497,17 @@ export async function listMessages(conversationId: string, opts: PageOpts = {}):
   return all.sort((a, b) => a.created_at.localeCompare(b.created_at)).slice(-limit)
 }
 
+export type ScheduledMessage = { id: string; conversation_id: string; sender_id: string; body: string; send_at: string }
+export async function listScheduledMessages(id: string): Promise<ScheduledMessage[]> {
+  return (await srv<{ messages: ScheduledMessage[] }>(`/api/chats/${id}/scheduled`)).messages
+}
+export async function scheduleMessage(id: string, body: string, sendAt: string): Promise<void> {
+  await srv(`/api/chats/${id}/scheduled`, { method: 'POST', body: { body, sendAt } })
+}
+export async function cancelScheduledMessage(id: string, messageId: string): Promise<void> {
+  await srv(`/api/chats/${id}/scheduled/${messageId}`, { method: 'DELETE' })
+}
+
 export async function sendMessage(conversationId: string, senderId: string, body: string, att?: AttachmentInfo, replyTo?: string): Promise<void> {
   body = body.trim()
   if (!body && !att) err('Message is empty.')

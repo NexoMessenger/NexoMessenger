@@ -111,6 +111,7 @@ try {
   persist()
 }
 if (!Array.isArray(db.channelComments)) db.channelComments = []
+if (!Array.isArray(db.scheduledMessages)) db.scheduledMessages = []
 function persist() {
   const tmp = DB_FILE + '.tmp'
   fs.writeFileSync(tmp, JSON.stringify(db))
@@ -1005,6 +1006,28 @@ app.get('/api/chats/:id/peer-read', auth, (req, res) => {
   res.json({ last_read_at: m?.last_read_at || '' })
 })
 
+// Scheduled messages are private to their author until the server delivers them.
+app.get('/api/chats/:id/scheduled', auth, (req, res) => {
+  if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  res.json({ messages: db.scheduledMessages.filter(m => m.conversation_id === req.params.id && m.sender_id === req.me.id).sort((a, b) => a.send_at.localeCompare(b.send_at)) })
+})
+app.post('/api/chats/:id/scheduled', auth, (req, res) => {
+  if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  if (typeof req.body?.body !== 'string' || !req.body.body.trim() || req.body.body.length > 4000) return fail(res, 400, 'Invalid message.')
+  const time = Date.parse(req.body?.sendAt)
+  if (!Number.isFinite(time) || time < Date.now() + 5000 || time > Date.now() + 365 * 86400000) return fail(res, 400, 'Invalid scheduled time.')
+  if (db.scheduledMessages.filter(m => m.sender_id === req.me.id).length >= 100) return fail(res, 400, 'Too many scheduled messages.')
+  const item = { id: uid(), conversation_id: req.params.id, sender_id: req.me.id, body: req.body.body.trim(), send_at: new Date(time).toISOString() }
+  db.scheduledMessages.push(item); persist()
+  res.json({ message: item })
+})
+app.delete('/api/chats/:id/scheduled/:mid', auth, (req, res) => {
+  if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
+  const i = db.scheduledMessages.findIndex(m => m.id === req.params.mid && m.conversation_id === req.params.id && m.sender_id === req.me.id)
+  if (i < 0) return fail(res, 404, 'Scheduled message not found.')
+  db.scheduledMessages.splice(i, 1); persist(); res.json({ ok: true })
+})
+
 app.get('/api/chats/:id/messages', auth, (req, res) => {
   if (!isConvMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
   const limit = Math.min(200, Number(req.query.limit || 60))
@@ -1820,6 +1843,29 @@ wss.on('connection', (ws, req) => {
     if (!stillOnline && prof && prof.is_online) { prof.is_online = false; prof.last_seen = now(); persist(); touchGlobal() }
   })
 })
+
+function deliverScheduledMessages() {
+  const due = db.scheduledMessages.filter(m => Date.parse(m.send_at) <= Date.now())
+  if (!due.length) return
+  const delivered = []
+  for (const item of due) {
+    if (!isConvMember(item.conversation_id, item.sender_id) || !profileOf(item.sender_id)) continue
+    const msg = { id: item.id, conversation_id: item.conversation_id, sender_id: item.sender_id, body: item.body, attachment_url: '', attachment_name: '', attachment_type: '', attachment_duration: 0, reply_to: '', edited_at: '', created_at: now() }
+    db.messages.push(msg)
+    const conv = db.conversations.find(c => c.id === item.conversation_id)
+    if (conv) conv.last_message_at = msg.created_at
+    delivered.push(item)
+  }
+  const dueIds = new Set(due.map(m => m.id))
+  db.scheduledMessages = db.scheduledMessages.filter(m => !dueIds.has(m.id))
+  persist() // Remove from the queue and insert messages in the same atomic database write.
+  for (const item of delivered) {
+    touch('direct', item.conversation_id); touchGlobal()
+    notifyUsers(db.convMembers.filter(m => m.conversation_id === item.conversation_id).map(m => m.user_id), profileOf(item.sender_id), 'direct', item.conversation_id)
+  }
+}
+deliverScheduledMessages()
+setInterval(deliverScheduledMessages, 5000).unref()
 
 setInterval(() => {
   const t = Date.now()
