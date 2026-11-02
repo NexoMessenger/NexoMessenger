@@ -69,6 +69,25 @@ test('Zeron bot: bound account, private single-use codes, daily limits, restart 
     assert.equal(new Set(codes).size, 5)
     assert.equal((await req('/api/gifts/state', w)).data.balance, balanceBefore + 6600)
     assert.ok((await req('/api/premium/me', w)).data.active)
+    // New large-NEX test products can be issued repeatedly, but each code
+    // remains private to the bound owner and can be redeemed only once.
+    const largeCodes = []
+    for (const [product, amount] of [['nex_10000', 10000], ['nex_100000', 100000]]) {
+      for (let i = 0; i < 2; i++) {
+        await setup(w, product)
+        const result = await action(w, 'continue'); assert.equal(result.status, 200)
+        const code = result.data.messages.at(-1).code; largeCodes.push(code)
+        assert.equal((await req('/api/gifts/redeem', o, { code })).status, 403)
+        const redeemed = await req('/api/gifts/redeem', w, { code })
+        assert.equal(redeemed.status, 200); assert.equal(redeemed.data.amount, amount)
+        assert.equal((await req('/api/gifts/redeem', w, { code })).status, 409)
+      }
+    }
+    assert.equal(new Set(largeCodes).size, 4)
+    assert.equal((await req('/api/gifts/state', w)).data.balance, balanceBefore + 226600)
+    // Restore the pending Premium flow so its daily limit and the kill switch
+    // are still checked across a restart.
+    await setup(w, 'premium_30')
     // Reassigning the username cannot move the privileges to another account.
     assert.equal((await req('/api/me', w, { username: 'oldwallet' }, 'PATCH')).status, 200)
     assert.equal((await req('/api/me', o, { username: 'wallet' }, 'PATCH')).status, 200)
@@ -77,8 +96,10 @@ test('Zeron bot: bound account, private single-use codes, daily limits, restart 
     assert.equal((await req('/api/zeron/chat', o)).data.canIssue, false)
     assert.equal((await req('/api/channels/c_zeron_official/posts', o)).data.posts.length, 4)
     assert.equal((await action(w, 'continue')).data.error, 'ZERON_DAILY_LIMIT')
-    assert.equal((await req('/api/zeron/chat', w)).data.messages.some(m => m.code === codes[0]), true)
+    assert.equal((await req('/api/zeron/chat', w)).data.messages.some(m => m.code === largeCodes[0]), true)
     assert.equal((await req('/api/zeron/chat', o)).data.messages.some(m => m.code), false)
+    await setup(w, 'nex_100000'); assert.equal((await action(w, 'continue')).status, 200)
+    await setup(w, 'premium_30')
     await stop(); await start({ ZERON_TEST_CODES_ENABLED: 'false' })
     assert.equal((await req('/api/zeron/chat', w)).data.canIssue, false)
     assert.equal((await action(w, 'continue')).status, 403)

@@ -872,7 +872,7 @@ app.post('/api/ai/rewrite', auth, async (req, res) => {
 })
 
 /* ---------- Zeron test-code bot ---------- */
-const ZERON_PRODUCTS = Object.freeze({ nex_100: { amount: 100 }, nex_500: { amount: 500 }, nex_1000: { amount: 1000 }, nex_5000: { amount: 5000 }, premium_30: { days: 30 } })
+const ZERON_PRODUCTS = Object.freeze({ nex_100: { amount: 100 }, nex_500: { amount: 500 }, nex_1000: { amount: 1000 }, nex_5000: { amount: 5000 }, nex_10000: { amount: 10000, unlimitedTest: true }, nex_100000: { amount: 100000, unlimitedTest: true }, premium_30: { days: 30 } })
 const zeronEnabled = () => process.env.ZERON_TEST_CODES_ENABLED !== 'false'
 const zeronCanIssue = userId => Boolean(zeronEnabled() && db.zeronOwnerId && userId === db.zeronOwnerId)
 function zeronChat(userId) {
@@ -889,7 +889,7 @@ const zeronHits = new Map()
 function rateLimitZeron(req, res, next) {
   const time = Date.now(), key = req.me.id
   const hits = (zeronHits.get(key) || []).filter(t => time - t < 5 * 60 * 1000)
-  if (hits.length >= 120) return fail(res, 429, 'Too many requests. Try again later.')
+  if (hits.length >= 120) return fail(res, 429, 'ZERON_RATE_LIMIT')
   hits.push(time); zeronHits.set(key, hits); next()
 }
 app.post('/api/zeron/action', auth, rateLimitZeron, (req, res) => {
@@ -914,7 +914,7 @@ app.post('/api/zeron/action', auth, rateLimitZeron, (req, res) => {
     if (chat.stage !== 'confirm' || !Object.hasOwn(ZERON_PRODUCTS, chat.selected || '')) return fail(res, 400, 'ZERON_BAD_STATE')
     if (!zeronCanIssue(req.me.id)) return fail(res, 403, 'ZERON_TEST_RESTRICTED')
     const day = new Date().toISOString().slice(0, 10), product = chat.selected
-    if (db.zeronOrders.some(x => x.user_id === req.me.id && x.product === product && x.day === day)) return fail(res, 429, 'ZERON_DAILY_LIMIT')
+    if (!ZERON_PRODUCTS[product].unlimitedTest && db.zeronOrders.some(x => x.user_id === req.me.id && x.product === product && x.day === day)) return fail(res, 429, 'ZERON_DAILY_LIMIT')
     let code
     do { code = `NEXO-TEST-${crypto.randomBytes(12).toString('hex').toUpperCase()}` }
     while (db.gifts.promo.some(x => normalizePromoCode(x.code) === normalizePromoCode(code)) || db.premiumCodes.some(x => normalizePromoCode(x.code) === normalizePromoCode(code)))

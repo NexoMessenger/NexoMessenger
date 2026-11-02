@@ -5,7 +5,7 @@ import * as api from '../lib/api'
 import { IconBack, NexoMark } from '../components/icons'
 import banner from '../assets/bot/zeron-store.png'
 
-const nexProducts: api.ZeronProduct[] = ['nex_100', 'nex_500', 'nex_1000', 'nex_5000']
+const nexProducts: api.ZeronProduct[] = ['nex_100', 'nex_500', 'nex_1000', 'nex_5000', 'nex_10000', 'nex_100000']
 
 export default function ZeronBotPage() {
   const { t, locale } = useI18n()
@@ -35,7 +35,7 @@ export default function ZeronBotPage() {
     } catch (e) {
       if (!mounted.current) return
       const code = e instanceof Error ? e.message : ''
-      setError(t(code === 'ZERON_TEST_RESTRICTED' ? 'zeron.restricted' : code === 'ZERON_DAILY_LIMIT' ? 'zeron.limit' : 'zeron.error'))
+      setError(t(code === 'ZERON_TEST_RESTRICTED' ? 'zeron.restricted' : code === 'ZERON_DAILY_LIMIT' ? 'zeron.limit' : code === 'ZERON_RATE_LIMIT' ? 'zeron.rateLimit' : 'zeron.error'))
       // Refresh restores the generated code if the response was interrupted.
       void api.getZeronChat().then(data => { if (mounted.current) setChat(data) }).catch(() => undefined)
     } finally { if (mounted.current) setBusy(null) }
