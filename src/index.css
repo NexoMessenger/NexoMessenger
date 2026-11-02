@@ -1655,3 +1655,6 @@ html[data-theme] .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bub
 .direct-chat-room:not(.chat-theme-default) .msg-row.mine .bubble { background: var(--chat-accent); border-color: color-mix(in srgb, var(--chat-accent) 70%, white); color: #fff; }
 .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bubble { background: var(--chat-bubble); color: #fff; }
 .direct-chat-room:not(.chat-theme-default) .bubble-meta { color: #e2dce9; }
+.scheduled-item { display: flex; align-items: start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.scheduled-item > div { flex: 1; min-width: 0; }
+.scheduled-item p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 5px 0 0; }

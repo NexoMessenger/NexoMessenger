@@ -5,7 +5,7 @@ import * as api from '../lib/api'
 import { useI18n } from '../i18n'
 import {
   IconAttach, IconSend, IconImage, IconFile, IconMic, IconVideoCircle,
-  IconSticker, IconStop, IconTrash, IconPlay, IconPause, IconWand,
+  IconSticker, IconStop, IconTrash, IconPlay, IconPause, IconWand, IconClock,
 } from './icons'
 import { StickerPicker } from './FoxStickers'
 import { NEXO_ANIMATED_EMOJI } from '../lib/premiumData'
@@ -19,6 +19,7 @@ interface Props {
   placeholder: string
   sending: boolean
   onSend: (text: string, att?: AttachmentInfo) => Promise<void>
+  onSchedule?: (text: string, when: string) => Promise<void>
   onTyping: () => void
   upload: (file: File) => Promise<AttachmentInfo>
   /** Edit mode: when initialTextKey changes to a message id, the input is
@@ -30,8 +31,12 @@ interface Props {
   onPremiumEmojiLocked?: () => void
 }
 
-export default function Composer({ placeholder, sending, onSend, onTyping, upload, initialText, initialTextKey, premiumEmojiEnabled = false, onPremiumEmojiLocked }: Props) {
+export default function Composer({ placeholder, sending, onSend, onSchedule, onTyping, upload, initialText, initialTextKey, premiumEmojiEnabled = false, onPremiumEmojiLocked }: Props) {
   const [text, setText] = useState('')
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [scheduleTime, setScheduleTime] = useState('')
+  const [scheduleBusy, setScheduleBusy] = useState(false)
+  const [scheduleError, setScheduleError] = useState('')
   const [pending, setPending] = useState<AttachmentInfo | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -329,6 +334,20 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
         </div>
       )}
 
+      {scheduleOpen && onSchedule && <Modal title={t('scheduled.title')} onClose={() => { if (!scheduleBusy) setScheduleOpen(false) }}>
+        <p className="premium-hint">{t('scheduled.hint')}</p>
+        <label className="field"><span>{t('scheduled.when')}</span><input className="input" type="datetime-local" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} /></label>
+        {scheduleError && <div className="error-box" role="alert">{scheduleError}</div>}
+        <button className="btn btn-primary btn-block" type="button" disabled={scheduleBusy || !scheduleTime} onClick={async () => {
+          const time = new Date(scheduleTime)
+          if (!Number.isFinite(time.getTime()) || time.getTime() < Date.now() + 5000) { setScheduleError(t('scheduled.invalid')); return }
+          setScheduleBusy(true); setScheduleError('')
+          try { await onSchedule(text, time.toISOString()); setText(''); setScheduleOpen(false); setScheduleTime(''); requestAnimationFrame(grow) }
+          catch { setScheduleError(t('scheduled.error')) }
+          finally { setScheduleBusy(false) }
+        }}>{scheduleBusy ? t('common.saving') : t('scheduled.confirm')}</button>
+      </Modal>}
+
       {recPhase === 'recording' ? (
         <div className="composer recorder-bar">
           <span className="rec-dot" aria-hidden="true" />
@@ -360,6 +379,7 @@ export default function Composer({ placeholder, sending, onSend, onTyping, uploa
           <textarea ref={taRef} className="composer-input" rows={1} placeholder={placeholder} value={text}
             onChange={(e) => { setText(e.target.value); grow(); handleTyping() }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }} />
+          {onSchedule && text.trim() && !pending && !initialTextKey && <button className="icon-btn composer-btn" type="button" disabled={busy} onClick={() => { setScheduleOpen(true); setScheduleError('') }} aria-label={t('scheduled.title')} title={t('scheduled.title')}><IconClock size={19} /></button>}
           {text.trim() && <button className="icon-btn composer-btn composer-ai-btn" type="button" disabled={busy} onClick={() => { setAiOpen(true); setAiResult(''); setAiError('') }} aria-label={t('nexo.draftTools')} title={t('nexo.draftTools')}><IconWand size={19} /></button>}
           {text.trim() || pending ? (
             <button className="send-btn" onClick={submit} disabled={busy} aria-label={t('composer.send')}>
