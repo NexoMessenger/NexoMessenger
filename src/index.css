@@ -1658,3 +1658,15 @@ html[data-theme] .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bub
 .scheduled-item { display: flex; align-items: start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .scheduled-item > div { flex: 1; min-width: 0; }
 .scheduled-item p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 5px 0 0; }
+
+/* Keep decorated names on a single line in a narrow direct-chat header. */
+.direct-chat-room .room-head-profile .row-main { flex: 1; overflow: hidden; }
+.direct-chat-room .room-head-profile .row-title { display: flex; flex-wrap: nowrap; min-width: 0; white-space: nowrap; overflow: hidden; }
+.direct-chat-room .room-head-profile .profile-name { max-width: 100%; overflow: hidden; white-space: nowrap; }
+.direct-chat-room .room-head-profile .profile-name > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.direct-chat-room .room-head-profile .row-preview { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-settings-scheduled { display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 14px; justify-content: flex-start; }
+@media (max-width: 480px) {
+  .direct-chat-room .room-head { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .direct-chat-room .room-head-profile { gap: 6px; }
+}

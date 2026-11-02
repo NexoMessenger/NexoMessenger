@@ -7,7 +7,7 @@ import Composer from '../components/Composer'
 import { GiftMessage } from '../components/GiftMessage'
 import { useCalls } from '../components/Calls'
 import { useI18n } from '../i18n'
-import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply, IconSettings, IconClock } from '../components/icons'
+import { IconPhone, IconVideoCall, IconBack, IconChats, IconChecks, IconClose, IconEdit, IconHeart, IconReply, IconSettings } from '../components/icons'
 import { AttachmentView, Avatar, ProfileName, Modal, fmtClock, fmtLastSeen, errText } from '../components/ui'
 import { AnimatedEmojiBody, ReactionBar, ReactionBursts, REACTION_SET, toggleReactionLocal, type BurstSpec } from '../components/MessageExtras'
 import { CHAT_THEMES, themeStyle } from '../lib/chatThemes'
@@ -230,7 +230,6 @@ export default function ChatRoomPage() {
             <span className="row-preview">{isSaved ? t('extras.savedHint') : peer ? (typingName ? t('room.typingShort') : `@${peer.username} · ${fmtLastSeen(peer, { online: t('common.online'), lastSeen: t('room.lastSeen') }, locale)}`) : ''}</span>
           </span>
         </button>
-        {api.mode === 'server' && <button className="icon-btn" type="button" aria-label={t('scheduled.list')} title={t('scheduled.list')} onClick={() => setScheduledOpen(true)}><IconClock size={19} /></button>}
         {api.mode === 'server' && <button className="icon-btn" type="button" aria-label={t('chatThemes.settings')} title={t('chatThemes.settings')} aria-expanded={themeOpen} onClick={() => setThemeOpen(value => !value)}><IconSettings size={19} /></button>}
         <button className="icon-btn" aria-label={t('call.audio')} title={t('call.audio')} disabled={!peer || isSaved} onClick={() => peer && startCall(id, peer.display_name, 'audio')}><IconPhone size={20} /></button>
         <button className="icon-btn" aria-label={t('call.video')} title={t('call.video')} disabled={!peer || isSaved} onClick={() => peer && startCall(id, peer.display_name, 'video')}><IconVideoCall size={21} /></button>
@@ -244,7 +243,7 @@ export default function ChatRoomPage() {
           <button className="btn btn-sm" onClick={async () => { try { await api.cancelScheduledMessage(id, item.id); await loadScheduled() } catch { setScheduledError(t('scheduled.error')) } }}>{t('scheduled.cancel')}</button>
         </div>)}
       </Modal>}
-      {themeOpen && <ChatThemeSettings selected={selectedTheme} busy={themeBusy} error={error} onChoose={chooseTheme} onClose={() => setThemeOpen(false)} />}
+      {themeOpen && <ChatThemeSettings selected={selectedTheme} busy={themeBusy} error={error} onChoose={chooseTheme} onClose={() => setThemeOpen(false)} onOpenScheduled={() => { setThemeOpen(false); setScheduledOpen(true) }} />}
 
       {error && (
         <div style={{ padding: '10px 16px 0' }}>
