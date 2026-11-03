@@ -350,7 +350,7 @@ export default function ChatRoomPage() {
 
       <Composer key={id} placeholder={isSaved ? t('composer.message') : `${t('composer.message')} ${peer?.display_name || ''}…`} sending={sending}
         onSend={send} onSchedule={api.mode === 'server' && !replyTo && !editing ? async (text, when) => { await api.scheduleMessage(id, text, when); showToast(t('scheduled.saved')) } : undefined} onTyping={() => profile && api.sendTyping(`direct-${id}`, profile)}
-        upload={(f) => api.uploadFile(f, profile!.id)}
+        upload={(f, options) => api.uploadFile(f, profile!.id, options)}
         premiumEmojiEnabled={isPremiumActive(profile)}
         onPremiumEmojiLocked={() => navigate('/premium')}
         initialTextKey={editing?.id || ''} initialText={editing?.body || ''} />

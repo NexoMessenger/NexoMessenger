@@ -5,7 +5,7 @@ import * as api from '../lib/api'
 import { useI18n } from '../i18n'
 import {
   IconAttach, IconSend, IconImage, IconFile, IconMic, IconVideoCircle,
-  IconSticker, IconStop, IconTrash, IconPlay, IconPause, IconWand, IconClock,
+  IconSticker, IconStop, IconTrash, IconPlay, IconPause, IconWand, IconClock, IconClose,
 } from './icons'
 import { StickerPicker } from './FoxStickers'
 import { NEXO_ANIMATED_EMOJI } from '../lib/premiumData'
@@ -21,7 +21,7 @@ interface Props {
   onSend: (text: string, att?: AttachmentInfo) => Promise<void>
   onSchedule?: (text: string, when: string) => Promise<void>
   onTyping: () => void
-  upload: (file: File) => Promise<AttachmentInfo>
+  upload: (file: File, options?: { onProgress?: (loaded: number, total: number) => void; signal?: AbortSignal }) => Promise<AttachmentInfo>
   /** Edit mode: when initialTextKey changes to a message id, the input is
    *  prefilled with initialText (and focused) instead of keeping the draft. */
   initialText?: string
@@ -39,6 +39,11 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
   const [scheduleError, setScheduleError] = useState('')
   const [pending, setPending] = useState<AttachmentInfo | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [attachmentOpen, setAttachmentOpen] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [uploadName, setUploadName] = useState('')
+  const uploadAbort = useRef<AbortController | null>(null)
+  const imageRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
   const [stickerOpen, setStickerOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -113,6 +118,7 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
   // Stop mic/camera + timers if the composer unmounts (leaving the chat).
   useEffect(() => () => {
     aiRequest.current++
+    uploadAbort.current?.abort()
     stopStream()
     window.clearInterval(timerRef.current)
     if (recUrl) URL.revokeObjectURL(recUrl)
@@ -144,12 +150,15 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
 
   const pickFile = async (file: File | undefined) => {
     if (!file) return
-    setUploading(true); setError('')
-    try { setPending(await upload(file)) } catch (e) {
-      setError(errText(e, t))
+    setAttachmentOpen(false)
+    const controller = new AbortController(); uploadAbort.current = controller
+    setUploadName(file.name); setUploadProgress(null); setUploading(true); setError('')
+    try { setPending(await upload(file, { signal: controller.signal, onProgress: (loaded, total) => setUploadProgress(Math.min(100, Math.round(loaded / total * 100))) })) } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'AbortError')) setError(errText(e, t))
     } finally {
-      setUploading(false)
+      uploadAbort.current = null; setUploading(false); setUploadProgress(null)
       if (fileRef.current) fileRef.current.value = ''
+      if (imageRef.current) imageRef.current.value = ''
     }
   }
 
@@ -231,7 +240,7 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
 
   /** Upload a recorded blob, then hand it to the normal message pipeline. */
   const sendMedia = async (blob: Blob, durationSec: number, name: string) => {
-    setUploading(true); setError('')
+    setUploadName(name); setUploadProgress(null); setUploading(true); setError('')
     try {
       const file = new File([blob], name, { type: blob.type || 'application/octet-stream' })
       const att = await upload(file)
@@ -284,12 +293,12 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
       )}
       {pending && (
         <div className="pending-attachment glass">
-          <span style={{ display: 'inline-flex', flexShrink: 0 }}>{pending.type.startsWith('image/') ? <IconImage size={17} /> : <IconFile size={17} />}</span>
+          <span style={{ display: 'inline-flex', flexShrink: 0 }}>{pending.type.startsWith('image/') && pending.type !== 'image/svg+xml' ? <img className="pending-thumbnail" src={pending.url} alt="" /> : <IconFile size={17} />}</span>
           <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pending.name}</span>
           <button className="link-btn" onClick={() => setPending(null)}>{t('composer.remove')}</button>
         </div>
       )}
-      {uploading && <div style={{ padding: '0 16px 8px', fontSize: 12.5, color: 'var(--text-2)' }}>{t('composer.uploading')}</div>}
+      {uploading && <div className="upload-status" role="status"><div className="upload-spinner" /><div className="upload-info"><strong>{uploadName || t('composer.uploading')}</strong><span>{t('composer.uploading')}{uploadProgress !== null ? ` ${uploadProgress}%` : ''}</span><div className="upload-track"><div className={uploadProgress === null ? 'upload-indeterminate' : ''} style={uploadProgress === null ? undefined : { width: `${uploadProgress}%` }} /></div></div>{uploadAbort.current && <button type="button" className="icon-btn" onClick={() => uploadAbort.current?.abort()} aria-label={t('common.cancel')}><IconClose size={18} /></button>}</div>}
 
       {stickerOpen && recPhase === 'idle' && (
         <div style={{ padding: '0 12px 8px' }}>
@@ -370,9 +379,9 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
         </div>
       ) : (
         <div className={`composer${text.trim() ? ' composer-with-ai' : ''}`}>
-          <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,.pdf,.txt,.zip,.doc,.docx"
-            onChange={(e) => pickFile(e.target.files?.[0])} />
-          <button className="icon-btn composer-btn" onClick={() => fileRef.current?.click()}
+          <input ref={fileRef} type="file" hidden onChange={(e) => void pickFile(e.target.files?.[0])} />
+          <input ref={imageRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={(e) => void pickFile(e.target.files?.[0])} />
+          <button className="icon-btn composer-btn" onClick={() => setAttachmentOpen(true)}
             aria-label={t('composer.attach')} disabled={busy}><IconAttach size={19} /></button>
           <button className={`icon-btn composer-btn ${stickerOpen ? 'active' : ''}`} onClick={() => setStickerOpen(!stickerOpen)}
             aria-label={t('composer.sticker')} aria-pressed={stickerOpen}><IconSticker size={19} /></button>
@@ -398,6 +407,13 @@ export default function Composer({ placeholder, sending, onSend, onSchedule, onT
         </div>
       )}
 
+      {attachmentOpen && <div className="attach-backdrop" onClick={() => setAttachmentOpen(false)}><section className="attach-sheet" role="dialog" aria-modal="true" aria-label={t('attach.title')} onClick={e => e.stopPropagation()}>
+        <div className="attach-grip" /><header><strong>{t('attach.title')}</strong><button type="button" className="icon-btn" onClick={() => setAttachmentOpen(false)} aria-label={t('media.close')}><IconClose size={18} /></button></header>
+        <p>{t('attach.galleryHint')}</p><div className="attach-choices">
+          <button type="button" onClick={() => imageRef.current?.click()}><span><IconImage size={26} /></span><strong>{t('attach.gallery')}</strong><small>{t('attach.choosePhoto')}</small></button>
+          <button type="button" onClick={() => fileRef.current?.click()}><span><IconFile size={26} /></span><strong>{t('attach.file')}</strong><small>{t('attach.fileLimit')}</small></button>
+        </div>
+      </section></div>}
       {aiOpen && <Modal title={t('nexo.draftTools')} onClose={closeAi}>
         <div className="composer-ai-panel">
           <p>{t('nexo.draftPrivacy')}</p>

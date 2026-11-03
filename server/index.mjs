@@ -504,8 +504,13 @@ function touchGlobal() {
 
 const app = express()
 app.disable('x-powered-by')
-app.use(express.json({ limit: '32mb' }))
-app.use('/api/files', express.static(UPLOAD_DIR, { fallthrough: false, maxAge: '7d' }))
+app.use(express.json({ limit: '36mb' }))
+app.use('/api/files', express.static(UPLOAD_DIR, { fallthrough: false, maxAge: '7d', setHeaders(res, filePath) {
+  // Attachments may now include arbitrary files; never execute uploaded HTML or SVG on our origin.
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'")
+  if (/\.(html?|xhtml|svg|xml|js|mjs)$/i.test(filePath)) res.setHeader('Content-Disposition', 'attachment')
+} }))
 
 app.get('/api/health', (req, res) => res.json({ ok: true, mode: 'server', users: db.profiles.length }))
 

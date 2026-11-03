@@ -1041,11 +1041,32 @@ export function validateFile(file: File, localMode: boolean) {
   return isImage
 }
 
-export async function uploadFile(file: File, userId: string): Promise<AttachmentInfo> {
+export async function uploadFile(file: File, userId: string, options?: { onProgress?: (loaded: number, total: number) => void; signal?: AbortSignal }): Promise<AttachmentInfo> {
   if (isSrv()) {
     validateFile(file, false)
     const data = await fileToBase64(file)
-    const up = await srv<{ url: string }>('/api/upload', { method: 'POST', body: { name: file.name, type: file.type, data } })
+    if (options?.signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+    const up = await new Promise<{ url: string }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      const abort = () => xhr.abort()
+      xhr.open('POST', `${apiBase}/api/upload`)
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      const token = getServerToken()
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.upload.onprogress = e => { if (e.lengthComputable) options?.onProgress?.(e.loaded, e.total) }
+      const cleanup = () => options?.signal?.removeEventListener('abort', abort)
+      xhr.onload = () => {
+        cleanup()
+        let result: { url?: string; error?: string } = {}
+        try { result = JSON.parse(xhr.responseText) } catch { /* invalid response */ }
+        if (xhr.status >= 200 && xhr.status < 300 && result.url) resolve({ url: result.url })
+        else reject(new Error(result.error || `Request failed (${xhr.status})`))
+      }
+      xhr.onerror = () => { cleanup(); reject(new Error('Network error')) }
+      xhr.onabort = () => { cleanup(); reject(new DOMException('Cancelled', 'AbortError')) }
+      options?.signal?.addEventListener('abort', abort, { once: true })
+      xhr.send(JSON.stringify({ name: file.name, type: file.type, data }))
+    })
     return { url: up.url, name: file.name, type: file.type }
   }
   const isImage = validateFile(file, !isSb())

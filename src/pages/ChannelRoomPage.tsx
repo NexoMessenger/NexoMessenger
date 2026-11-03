@@ -130,7 +130,7 @@ export default function ChannelRoomPage() {
 
       {canPost ? (
         <Composer key={id} placeholder={t('channels.broadcastPlaceholder', { name: channel?.name || '' })} sending={sending}
-          onSend={send} onTyping={() => undefined} upload={(f) => api.uploadFile(f, profile!.id)}
+          onSend={send} onTyping={() => undefined} upload={(f, options) => api.uploadFile(f, profile!.id, options)}
           premiumEmojiEnabled={isPremiumActive(profile)}
           onPremiumEmojiLocked={() => navigate('/premium')} />
       ) : (
