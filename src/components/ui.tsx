@@ -4,6 +4,7 @@ import * as api from '../lib/api'
 import { useI18n, type TranslationKey } from '../i18n'
 import { IconClose, IconSearch, IconFile, NexoMark } from './icons'
 import { AudioBubble, VideoCircle } from './MessageExtras'
+import { ImageAttachment, FileAttachment } from './AttachmentMedia'
 import { FoxSticker } from './FoxStickers'
 import { floatingGiftArt, giftArt, REGULAR_GRADIENT } from '../lib/giftCatalog'
 import { IconGem, IconGift, IconHeart, IconStar } from './icons'
@@ -300,7 +301,7 @@ export function UserPicker({ meId, selected, onToggle, exclude = [] }: {
   )
 }
 
-export function isImageType(t: string) { return t.startsWith('image/') }
+export function isImageType(t: string) { return t.startsWith('image/') && t !== 'image/svg+xml' }
 
 export function AttachmentView({ url, name, type, duration }: { url: string; name: string; type: string; duration?: number }) {
   if (!url) return null
@@ -328,11 +329,7 @@ export function AttachmentView({ url, name, type, duration }: { url: string; nam
     return <VideoCircle url={url} duration={duration} label={name || 'video message'} />
   }
   if (isImageType(type)) {
-    return <a href={url} target="_blank" rel="noreferrer"><img className="attachment-img" src={url} alt={name || 'attachment'} /></a>
+    return <ImageAttachment url={url} name={name} />
   }
-  return (
-    <a className="attachment-file" href={url} target="_blank" rel="noreferrer" download={name}>
-      <span style={{ display: 'inline-flex', flexShrink: 0 }}><IconFile size={16} /></span><span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name || 'File'}</span>
-    </a>
-  )
+  return <FileAttachment url={url} name={name} />
 }
