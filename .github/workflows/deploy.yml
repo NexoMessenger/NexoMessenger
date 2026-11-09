@@ -189,8 +189,24 @@ jobs:
             sleep 10
           done
 
-      - name: Transfer prepared production dependencies
+      - name: Check existing production dependencies
         run: |
+          # If the deployed tree already exactly satisfies this lockfile, avoid
+          # copying another full dependency tree onto the small VPS.
+          expected=$(sha256sum node_modules/.package-lock.json | cut -d' ' -f1)
+          if ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" "cd '$DEPLOY_DIR' && test -f node_modules/.package-lock.json && test \"\$(sha256sum node_modules/.package-lock.json | cut -d' ' -f1)\" = '$expected' && npm ls --omit=dev --all >/dev/null 2>&1"; then
+            echo 'NEXO_DEPS_READY=1' >> "$GITHUB_ENV"
+            echo '::notice title=NEXO deployment::Existing production dependencies are valid; transfer skipped.'
+          else
+            echo 'NEXO_DEPS_READY=0' >> "$GITHUB_ENV"
+            echo '::notice title=NEXO deployment::Existing dependencies require replacement.'
+          fi
+
+      - name: Transfer prepared production dependencies
+        if: env.NEXO_DEPS_READY != '1'
+        run: |
+          # Never touch data or the working dependencies on a failed extraction.
+          set +e
           tar czf - node_modules | ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" "DEPLOY_DIR='$DEPLOY_DIR' bash -c '
             set -eu
             stage=\"\$DEPLOY_DIR/.deps-stage-\$\$\"
@@ -205,6 +221,12 @@ jobs:
             fi
             rmdir \"\$stage\"
           '"
+          result=$?
+          if [ "$result" -ne 0 ]; then
+            free=$(ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" "df -Pm '$DEPLOY_DIR' | awk 'NR==2 {print \$4}'" || echo unknown)
+            echo "::error title=NEXO dependency transfer::Transfer failed (exit $result); free disk MB: $free. Existing data was not removed."
+            exit "$result"
+          fi
 
       - name: Install deps and (re)start NEXO server on VPS
         run: |
