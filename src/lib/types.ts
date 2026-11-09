@@ -151,6 +151,7 @@ export interface GroupMessage extends Omit<Message, 'conversation_id'> {
 }
 
 export interface Channel {
+  business?: { enabled: boolean; website: string; address: string; hours: string }
   comments_enabled?: boolean
   id: ID
   name: string

@@ -19,6 +19,8 @@ export default function ChannelsPage() {
   const [isPublic, setIsPublic] = useState(true)
   const [creating, setCreating] = useState(false)
   const [busyId, setBusyId] = useState('')
+  const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState<'all' | 'mine' | 'business'>('all')
 
   const load = async () => {
     if (!profile) return
@@ -55,8 +57,12 @@ export default function ChannelsPage() {
     finally { setBusyId('') }
   }
 
-  const subscribed = items.filter((i) => i.myRole)
-  const discover = items.filter((i) => !i.myRole)
+  const filtered = items.filter(i => {
+    const match = `${i.channel.name} ${i.channel.description}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
+    return match && (filter === 'all' || (filter === 'mine' ? Boolean(i.myRole) : Boolean(i.channel.business?.enabled)))
+  })
+  const subscribed = filtered.filter((i) => i.myRole)
+  const discover = filtered.filter((i) => !i.myRole)
 
   const renderItem = (item: api.ChannelListItem) => (
     <div key={item.channel.id} className="row-card glass">
@@ -66,6 +72,7 @@ export default function ChannelsPage() {
         <span className="row-main">
           <span className="row-title">{item.channel.name}
             <span className="pill">{item.channel.is_public ? t('common.public') : t('common.private')}</span>
+            {item.channel.business?.enabled && <span className="pill pill-accent">{t('channelBusiness.badge')}</span>}
             {item.canPost && <span className="pill pill-accent">{t('channels.canPost')}</span>}
           </span>
           <span className="row-preview">{item.subscribers} {t('common.subscribers')}{item.channel.description ? ` · ${item.channel.description}` : ''}</span>
@@ -88,6 +95,11 @@ export default function ChannelsPage() {
         </div>
         <button className="btn btn-primary" onClick={() => setShowCreate(true)}><IconPlus size={16} /> {t('channels.create')}</button>
       </div>
+      <div className="channel-discovery glass"><div className="channel-search"><IconSearch size={18} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('channelBusiness.search')} aria-label={t('channelBusiness.search')} /></div>
+        <div className="channel-filters" role="group" aria-label={t('channelBusiness.filters')}>
+          {(['all', 'mine', 'business'] as const).map(value => <button key={value} type="button" className={filter === value ? 'active' : ''} aria-pressed={filter === value} onClick={() => setFilter(value)}>{t(value === 'all' ? 'channelBusiness.all' : value === 'mine' ? 'channelBusiness.mine' : 'channelBusiness.badge')}</button>)}
+        </div>
+      </div>
       <ErrorBox error={error} />
       {loading ? <div className="center-loader"><div className="spinner" />{t('channels.loading')}</div>
       : items.length === 0 ? (
@@ -96,6 +108,7 @@ export default function ChannelsPage() {
         </EmptyState>
       ) : (
         <>
+          {filtered.length === 0 && <p className="channel-no-results">{t('channelBusiness.noResults')}</p>}
           {subscribed.length > 0 && <><div className="section-label">{t('channels.yours')}</div><div className="list">{subscribed.map(renderItem)}</div></>}
           {discover.length > 0 && <><div className="section-label">{t('channels.discover')}</div><div className="list">{discover.map(renderItem)}</div></>}
         </>

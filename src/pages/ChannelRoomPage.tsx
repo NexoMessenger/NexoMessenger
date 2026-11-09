@@ -30,6 +30,8 @@ export default function ChannelRoomPage() {
   const [commentError, setCommentError] = useState('')
   const [settingBusy, setSettingBusy] = useState(false)
   const [settingError, setSettingError] = useState('')
+  const [businessEdit, setBusinessEdit] = useState(false)
+  const [businessForm, setBusinessForm] = useState({ enabled: false, website: '', address: '', hours: '' })
   const { t } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -86,12 +88,12 @@ export default function ChannelRoomPage() {
   const authorOf = (pid: string) => members.find((m) => m.profile.id === pid)?.profile || (owner?.id === pid ? owner : null)
 
   return (
-    <div className="room-wrap">
-      <div className="room-head">
+    <div className="room-wrap channel-room">
+      <div className="room-head channel-room-head">
         <button className="icon-btn back-btn-mobile" onClick={() => navigate('/channels')} aria-label={t('common.back')}><IconBack size={18} /></button>
         {channel && <GroupAvatar name={channel.name} url={channel.avatar_url} size={42} />}
         <div className="row-main">
-          <div className="row-title">{channel?.name || 'Channel'}</div>
+          <div className="row-title">{channel?.name || 'Channel'} {channel?.business?.enabled && <span className="pill pill-accent">{t('channelBusiness.badge')}</span>}</div>
           <div className="row-preview">{subscribed && <>{members.length} {t('common.subscribers')} · </>}{channel?.is_public ? t('common.public') : t('common.private')}</div>
         </div>
         {!isOwner && (
@@ -105,6 +107,14 @@ export default function ChannelRoomPage() {
       <div style={{ padding: '10px 16px 0' }}><ErrorBox error={error} /></div>
 
       <div className="messages-scroll" ref={scrollRef}>
+        {channel && <div className="channel-welcome"><div><span className="channel-welcome-kicker">{channel.business?.enabled ? t('channelBusiness.badge') : t('channels.title')}</span><h2>{channel.name}</h2>{channel.description && <p>{channel.description}</p>}</div><button type="button" className="btn btn-sm" onClick={() => setShowInfo(true)}>{t('channels.info')}</button></div>}
+        {channel?.business?.enabled && <div className="channel-business-card">
+          <strong>{t('channelBusiness.details')}</strong>
+          {channel.business.hours && <div><span>{t('channelBusiness.hours')}</span><span>{channel.business.hours}</span></div>}
+          {channel.business.address && <div><span>{t('channelBusiness.address')}</span><span>{channel.business.address}</span></div>}
+          {channel.business.website && /^https?:\/\//i.test(channel.business.website) && <a href={channel.business.website} target="_blank" rel="noopener noreferrer">{t('channelBusiness.visit')} ↗</a>}
+          {!channel.business.hours && !channel.business.address && !channel.business.website && <p>{t('channelBusiness.empty')}</p>}
+        </div>}
         {loading ? <div className="center-loader"><div className="spinner" />{t('room.loading')}</div>
         : posts.length === 0 ? (
           <div className="empty-state" style={{ margin: 'auto', width: '100%' }}>
@@ -114,7 +124,7 @@ export default function ChannelRoomPage() {
         ) : posts.map((post) => {
           const author = authorOf(post.author_id)
           return (
-            <div key={post.id} className="msg-row theirs" style={{ maxWidth: '88%' }}>
+            <div key={post.id} className="msg-row theirs channel-post">
               {author && <Avatar profile={author} size={30} />}
               <div className="bubble">
                 {author && <div className="bubble-sender"><ProfileName profile={author} /> <span style={{ fontWeight: 500, color: 'var(--text-3)' }}>@{author.username}</span></div>}
@@ -177,6 +187,17 @@ export default function ChannelRoomPage() {
             {channel.description && <p style={{ color: 'var(--text-2)', fontSize: 13.5 }}>{channel.description}</p>}
             {owner && <p style={{ color: 'var(--text-3)', fontSize: 13 }}>{t('common.owner')}: {owner.display_name} (@{owner.username})</p>}
           </div>
+          {isOwner && api.mode === 'server' && <div className="channel-business-settings">
+            <div className="channel-business-settings-head"><div><strong>{t('channelBusiness.settings')}</strong><p>{t('channelBusiness.settingsHint')}</p></div><button type="button" className="btn btn-sm" onClick={() => { setBusinessForm(channel.business || { enabled: false, website: '', address: '', hours: '' }); setBusinessEdit(v => !v); setSettingError('') }}>{businessEdit ? t('common.cancel') : t('channelBusiness.edit')}</button></div>
+            {businessEdit && <form onSubmit={async e => { e.preventDefault(); setSettingBusy(true); setSettingError('');
+              try { if (businessForm.website && !/^https?:\/\//i.test(businessForm.website.trim())) throw new Error('CHANNEL_BUSINESS_URL'); const result = await api.setChannelBusiness(id, businessForm); setChannel(result); setBusinessEdit(false) }
+              catch { setSettingError(t('channelBusiness.saveError')) } finally { setSettingBusy(false) }
+            }}>
+              <label className="check-row"><input type="checkbox" checked={businessForm.enabled} onChange={e => setBusinessForm(v => ({...v, enabled: e.target.checked}))} />{t('channelBusiness.enable')}</label>
+              {businessForm.enabled && <><label className="field"><span>{t('channelBusiness.website')}</span><input className="input" type="url" maxLength={500} placeholder="https://example.com" value={businessForm.website} onChange={e => setBusinessForm(v => ({...v, website:e.target.value}))} /></label><label className="field"><span>{t('channelBusiness.address')}</span><input className="input" maxLength={180} value={businessForm.address} onChange={e => setBusinessForm(v => ({...v, address:e.target.value}))} /></label><label className="field"><span>{t('channelBusiness.hours')}</span><input className="input" maxLength={180} value={businessForm.hours} onChange={e => setBusinessForm(v => ({...v, hours:e.target.value}))} /></label></>}
+              <ErrorBox error={settingError} /><button type="submit" className="btn btn-primary" disabled={settingBusy}>{t('channelBusiness.save')}</button>
+            </form>}
+          </div>}
           {isOwner && api.mode === 'server' && <div className="channel-comments-setting">
             <div><strong>{t('channelComments.setting')}</strong><p>{t('channelComments.settingHint')}</p></div>
             <label className="check-row"><input type="checkbox" checked={Boolean(channel.comments_enabled)} disabled={settingBusy} onChange={async e => {

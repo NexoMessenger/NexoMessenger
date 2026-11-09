@@ -1319,6 +1319,26 @@ app.get('/api/channels/:id', auth, (req, res) => {
   res.json({ channel: c })
 })
 
+// Business details are optional and editable only by the channel owner.
+app.put('/api/channels/:id/business', auth, (req, res) => {
+  const c = db.channels.find(x => x.id === req.params.id)
+  if (!c) return fail(res, 404, 'Channel not found.')
+  if (c.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  const { enabled, website, address, hours } = req.body || {}
+  if (typeof enabled !== 'boolean' || [website, address, hours].some(v => typeof v !== 'string')) return fail(res, 400, 'Invalid business details.')
+  const link = website.trim(), place = address.trim(), schedule = hours.trim()
+  if (link.length > 500 || place.length > 180 || schedule.length > 180) return fail(res, 400, 'Business details are too long.')
+  if (link) {
+    try { const parsed = new URL(link); if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error() }
+    catch { return fail(res, 400, 'Website must be a valid http or https URL.') }
+  }
+  const previous = c.business
+  c.business = enabled ? { enabled, website: link, address: place, hours: schedule } : { enabled: false, website: '', address: '', hours: '' }
+  try { persist() } catch (error) { if (previous === undefined) delete c.business; else c.business = previous; throw error }
+  touch('channel', c.id); touchGlobal()
+  res.json({ channel: c })
+})
+
 app.get('/api/channels/:id/members', auth, (req, res) => {
   if (!channelMember(req.params.id, req.me.id)) return fail(res, 403, 'Access denied.')
   const members = db.channelMembers.filter((m) => m.channel_id === req.params.id)
