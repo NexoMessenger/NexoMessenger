@@ -94,8 +94,34 @@ jobs:
       - name: Verify public health
         run: curl -fsS --max-time 15 https://nexomessenger.space/api/health
 
+  safe-diagnostics:
+    if: ${{ contains(github.event.head_commit.message, '[diagnostic-only]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Inspect disk and deployed files without changing them
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" 'bash -s' > /tmp/nexo-diagnostic <<'REMOTE'
+          set -u
+          if [ -d /var/www/nexo/data ]; then DIR=/var/www/nexo
+          elif [ -d "$HOME/nexo/data" ]; then DIR="$HOME/nexo"
+          else echo 'FACT:site data directory not found'; exit 1; fi
+          echo "FACT:free disk MB $(df -Pm "$DIR" | awk 'NR==2 {print $4}')"
+          echo "FACT:free inodes $(df -Pi "$DIR" | awk 'NR==2 {print $4}')"
+          for item in dist server node_modules data; do
+            if [ -d "$DIR/$item" ]; then echo "FACT:$item size MB $(du -sm "$DIR/$item" 2>/dev/null | cut -f1)"; else echo "FACT:$item missing"; fi
+          done
+          [ -f "$DIR/dist/index.html" ] && echo 'FACT:frontend entry exists' || echo 'FACT:frontend entry missing'
+          [ -f "$DIR/node_modules/express/package.json" ] && echo 'FACT:express exists' || echo 'FACT:express missing'
+          find "$DIR" -maxdepth 1 -type d -name '.deps-stage-*' -exec du -sm {} + 2>/dev/null | awk '{n++;s+=$1} END {print "FACT:staged dependency copies=" n+0 ", size MB=" s+0}'
+          find "$DIR" -maxdepth 1 -type d -name 'node_modules-before-*' -exec du -sm {} + 2>/dev/null | awk '{n++;s+=$1} END {print "FACT:dependency backups=" n+0 ", size MB=" s+0}'
+          REMOTE
+          while IFS= read -r line; do case "$line" in FACT:*) echo "::notice title=NEXO diagnosis::${line#FACT:}";; esac; done < /tmp/nexo-diagnostic
+
   build-and-deploy:
-    if: ${{ !contains(github.event.head_commit.message, '[recovery-only]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[recovery-only]') && !contains(github.event.head_commit.message, '[diagnostic-only]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
