@@ -27,7 +27,7 @@ jobs:
         run: |
           tar czf - node_modules | ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" '
             set -eu
-            if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then cat >/dev/null; exit 0; fi
+            if curl -fsS --max-time 5 -H "X-Forwarded-Proto: https" http://127.0.0.1:8080/api/health >/dev/null 2>&1; then cat >/dev/null; exit 0; fi
             if [ -f /var/www/nexo/server/index.mjs ] && [ -d /var/www/nexo/data ]; then DIR=/var/www/nexo
             elif [ -f "$HOME/nexo/server/index.mjs" ] && [ -d "$HOME/nexo/data" ]; then DIR="$HOME/nexo"
             else exit 1; fi
@@ -44,7 +44,7 @@ jobs:
           set +e
           ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "$VPS" 'bash -s' > /tmp/nexo-recovery-result <<'REMOTE'
           set -u
-          if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+          if curl -fsS --max-time 5 -H "X-Forwarded-Proto: https" http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
             echo 'FACT:local backend already responds'
             exit 0
           fi
@@ -64,13 +64,13 @@ jobs:
             echo 'FACT:starting existing server as deploy user'
             cd "$DIR" || exit 1
             if [ -f "$DIR/data/gigachat.env" ]; then
-              PORT=8080 HOST=0.0.0.0 NEXO_DATA_DIR="$DIR/data" nohup node --env-file="$DIR/data/gigachat.env" server/index.mjs > "$DIR/server.log" 2>&1 </dev/null &
+              PORT=8080 HOST=127.0.0.1 NEXO_REQUIRE_HTTPS=1 NEXO_DATA_DIR="$DIR/data" nohup node --env-file="$DIR/data/gigachat.env" server/index.mjs > "$DIR/server.log" 2>&1 </dev/null &
             else
-              PORT=8080 HOST=0.0.0.0 NEXO_DATA_DIR="$DIR/data" nohup node server/index.mjs > "$DIR/server.log" 2>&1 </dev/null &
+              PORT=8080 HOST=127.0.0.1 NEXO_REQUIRE_HTTPS=1 NEXO_DATA_DIR="$DIR/data" nohup node server/index.mjs > "$DIR/server.log" 2>&1 </dev/null &
             fi
           fi
           for i in 1 2 3 4 5 6; do
-            if curl -fsS --max-time 5 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+            if curl -fsS --max-time 5 -H "X-Forwarded-Proto: https" http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
               echo 'FACT:local backend responds after restart'
               exit 0
             fi
@@ -160,6 +160,16 @@ jobs:
           echo "DEPLOY_DIR=$DIR" >> "$GITHUB_ENV"
           echo "Using deploy dir: $DIR"
 
+      - name: Check HTTPS proxy before deployment
+        run: |
+          curl -fsS --max-time 15 https://nexomessenger.space/api/health | grep -q '"mode":"server"'
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" 'bash -s' <<'REMOTE'
+          set -eu
+          command -v nginx >/dev/null
+          # Trust forwarded scheme only if nginx replaces client-supplied values.
+          grep -R -E -q 'proxy_set_header[[:space:]]+X-Forwarded-Proto[[:space:]]+[$]scheme[[:space:]]*;' /etc/nginx/sites-enabled /etc/nginx/conf.d
+          REMOTE
+
       - name: Upload website + server to VPS (tar over SSH, with retries)
         run: |
           echo "Uploading to $VPS:$DEPLOY_DIR"
@@ -217,46 +227,12 @@ jobs:
           # 2) Production dependencies were prepared on the runner and staged above.
           test -f node_modules/express/package.json
 
-          # 3) Ports: nginx (if present) stays on :80 and proxies to Node
-          #    on :8080; without nginx Node serves :80 (root) or :8080.
-          NGINX_OK=0
-          if command -v nginx >/dev/null 2>&1; then
-            NEXO_PORT=8080
-            cat > /tmp/nexo-nginx.conf <<'NGINX'
-          server {
-            listen 80 default_server;
-            server_name nexomessenger.space www.nexomessenger.space _;
-            client_max_body_size 25m;
-            location / {
-              proxy_pass http://127.0.0.1:8080;
-              proxy_http_version 1.1;
-              proxy_set_header Upgrade $http_upgrade;
-              proxy_set_header Connection "upgrade";
-              proxy_set_header Host $host;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $scheme;
-            }
-          }
-          NGINX
-            $SUDO mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
-            if $SUDO cp /tmp/nexo-nginx.conf /etc/nginx/sites-available/nexo; then
-              $SUDO ln -sf /etc/nginx/sites-available/nexo /etc/nginx/sites-enabled/nexo
-              if [ -e /etc/nginx/sites-enabled/default ]; then
-                $SUDO mv /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.bak || true
-              fi
-              if $SUDO nginx -t; then
-                $SUDO systemctl reload nginx 2>/dev/null || $SUDO service nginx reload 2>/dev/null || $SUDO nginx -s reload 2>/dev/null || true
-                NGINX_OK=1
-              fi
-            fi
-            echo "NGINX_OK=$NGINX_OK (if 0, site will answer on :8080 directly)"
-          elif [ "$(id -u)" = "0" ]; then
-            NEXO_PORT=80
-          else
-            NEXO_PORT=8080
+          # HTTPS terminates at the existing reverse proxy. Never overwrite its TLS configuration.
+          if ! command -v nginx >/dev/null 2>&1; then
+            echo 'HTTPS reverse proxy is required; refusing insecure deployment.'; exit 1
           fi
-          echo "NEXO_PORT=$NEXO_PORT"
+          NEXO_PORT=8080
+          NGINX_OK=1
 
           # 4) Run the server: systemd if we can, else nohup.
           pkill -f "node .*server/index.mjs" 2>/dev/null || true
@@ -273,7 +249,8 @@ jobs:
           WorkingDirectory=$DEPLOY_DIR
           ExecStart=$NODE_BIN $DEPLOY_DIR/server/index.mjs
           Environment=NODE_ENV=production
-          Environment=HOST=0.0.0.0
+          Environment=HOST=127.0.0.1
+          Environment=NEXO_REQUIRE_HTTPS=1
           Environment=PORT=$NEXO_PORT
           Environment=NEXO_DATA_DIR=$DEPLOY_DIR/data
           EnvironmentFile=-$DEPLOY_DIR/data/gigachat.env
@@ -292,15 +269,15 @@ jobs:
             $SUDO systemctl is-active nexo || true
           else
             if [ -f "$DEPLOY_DIR/data/gigachat.env" ]; then
-              PORT=$NEXO_PORT HOST=0.0.0.0 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node --env-file="$DEPLOY_DIR/data/gigachat.env" server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
+              PORT=$NEXO_PORT HOST=127.0.0.1 NEXO_REQUIRE_HTTPS=1 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node --env-file="$DEPLOY_DIR/data/gigachat.env" server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
             else
-              PORT=$NEXO_PORT HOST=0.0.0.0 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
+              PORT=$NEXO_PORT HOST=127.0.0.1 NEXO_REQUIRE_HTTPS=1 NEXO_DATA_DIR="$DEPLOY_DIR/data" nohup node server/index.mjs > "$DEPLOY_DIR/server.log" 2>&1 &
             fi
             sleep 3
           fi
 
           # 5) Local health check — fails the step if server is down.
-          curl -sf http://127.0.0.1:$NEXO_PORT/api/health || { echo "NEXO backend health check failed"; exit 1; }
+          curl -sf -H "X-Forwarded-Proto: https" http://127.0.0.1:$NEXO_PORT/api/health || { echo "NEXO backend health check failed"; exit 1; }
           echo ""
           echo "NEXO server is up on port $NEXO_PORT (dir: $DEPLOY_DIR)"
           if [ "${NGINX_OK:-1}" = "0" ]; then
@@ -308,27 +285,13 @@ jobs:
           fi
           REMOTE
 
-      - name: Verify public site answers as server mode
+      - name: Verify public HTTPS site
         run: |
-          for base in "http://${{ secrets.SSH_HOST }}" "http://${{ secrets.SSH_HOST }}:8080"; do
-            for i in $(seq 1 6); do
-              if curl -sf "$base/api/health" | grep -q '"mode":"server"'; then
-                echo "Public site is live in server mode: $base/"
-                exit 0
-              fi
-              echo "Waiting for $base ... ($i/6)"
-              sleep 5
-            done
+          for i in $(seq 1 6); do
+            if curl -fsS --max-time 15 "https://nexomessenger.space/api/health" | grep -q '"mode":"server"'; then
+              result=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -H 'X-Forwarded-Proto: https' http://nexomessenger.space/api/health)
+              case "$result" in "301 https://nexomessenger.space/"*|"302 https://nexomessenger.space/"*|"307 https://nexomessenger.space/"*|"308 https://nexomessenger.space/"*) exit 0;; *) echo "HTTP bypass check failed: $result"; exit 1;; esac
+            fi
+            sleep 5
           done
-          echo "Public /api/health did not answer in server mode (see server step log above)."
-          exit 1
-
-      - name: Check custom domain (warning only)
-        run: |
-          if curl -sf "https://nexomessenger.space/api/health" | grep -q '"mode":"server"'; then
-            echo "Custom domain is live in server mode: https://nexomessenger.space/"
-          elif curl -sf "http://nexomessenger.space/api/health" | grep -q '"mode":"server"'; then
-            echo "::warning::http://nexomessenger.space works in server mode, but HTTPS is not ready yet. Run once on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
-          else
-            echo "::warning::nexomessenger.space does not serve the real NEXO server yet (DNS already points to this VPS; nginx still serves the old static copy). Run once on the server console: sudo bash $DEPLOY_DIR/deploy/fix-port80.sh"
-          fi
+          echo "HTTPS health check failed"; exit 1

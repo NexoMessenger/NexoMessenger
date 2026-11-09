@@ -106,10 +106,12 @@ try {
   db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'))
   if (!Array.isArray(db.sessions)) db.sessions = []
   if (!Array.isArray(db.reactions)) db.reactions = []
-} catch {
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error // Never overwrite an unreadable or corrupt database.
   db = seed()
   persist()
 }
+try { fs.chmodSync(DB_FILE, 0o600) } catch (error) { console.error('Unable to secure database permissions:', error.message) }
 if (!Array.isArray(db.channelComments)) db.channelComments = []
 if (!db.moderation || typeof db.moderation !== 'object' || Array.isArray(db.moderation)) db.moderation = {}
 if (!Array.isArray(db.adminAudit)) db.adminAudit = []
@@ -118,7 +120,8 @@ const interactionBlocked = id => ['frozen', 'banned'].includes(accountStatus(id)
 if (!Array.isArray(db.scheduledMessages)) db.scheduledMessages = []
 function persist() {
   const tmp = DB_FILE + '.tmp'
-  fs.writeFileSync(tmp, JSON.stringify(db))
+  fs.writeFileSync(tmp, JSON.stringify(db), { mode: 0o600 })
+  fs.chmodSync(tmp, 0o600)
   fs.renameSync(tmp, DB_FILE)
 }
 
@@ -504,6 +507,20 @@ function touchGlobal() {
 
 const app = express()
 app.disable('x-powered-by')
+const requireHttps = process.env.NEXO_REQUIRE_HTTPS === '1'
+const loopback = address => address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1'
+const secureTransport = req => Boolean(req.socket.encrypted || (loopback(req.socket.remoteAddress) && req.headers['x-forwarded-proto'] === 'https'))
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('Referrer-Policy', 'same-origin')
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+  if (secureTransport(req)) res.setHeader('Strict-Transport-Security', 'max-age=31536000')
+  if (requireHttps && !secureTransport(req)) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(403).json({ error: 'HTTPS_REQUIRED' })
+    return res.redirect(308, `https://nexomessenger.space${req.originalUrl}`)
+  }
+  next()
+})
 app.use(express.json({ limit: '36mb' }))
 app.use('/api/files', express.static(UPLOAD_DIR, { fallthrough: false, maxAge: '7d', setHeaders(res, filePath) {
   // Attachments may now include arbitrary files; never execute uploaded HTML or SVG on our origin.
@@ -1867,7 +1884,7 @@ app.use('/api', (req, res) => fail(res, 404, 'Not found.'))
 /* ============================== http + ws ============================== */
 
 const server = createServer(app)
-const wss = new WebSocketServer({ server, path: '/ws' })
+const wss = new WebSocketServer({ server, path: '/ws', verifyClient: ({ req }) => !requireHttps || secureTransport(req) })
 
 // In-memory call sessions: only authenticated direct-chat members can signal.
 // Media travels peer-to-peer, never through this signalling server.
