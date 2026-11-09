@@ -984,6 +984,11 @@ export async function setChannelPoster(channelId: string, userId: string, canPos
   const db = loadDB(); const m = db.channelMembers.find((x) => x.channel_id === channelId && x.user_id === userId); if (m) m.can_post = canPost; saveDB(db)
 }
 
+export async function setChannelBusiness(channelId: string, business: NonNullable<Channel['business']>): Promise<Channel> {
+  if (!isSrv()) err('Business channels are available on the NEXO server only.')
+  return (await srv<{ channel: Channel }>(`/api/channels/${channelId}/business`, { method: 'PUT', body: business })).channel
+}
+
 export async function setChannelComments(channelId: string, enabled: boolean): Promise<void> {
   if (!isSrv()) err('Channel comments are available on the NEXO server only.')
   await srv(`/api/channels/${channelId}/comments-setting`, { method: 'PUT', body: { enabled } })
