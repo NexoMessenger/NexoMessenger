@@ -514,6 +514,11 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('Referrer-Policy', 'same-origin')
   res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+  // Permit same-origin app scripts and blob workers, while preventing injected
+  // scripts, framing and untrusted form submissions. External HTTPS media is
+  // supported for existing profile content and alternative backends.
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'")
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self), display-capture=(self), payment=(), usb=()')
   if (secureTransport(req)) res.setHeader('Strict-Transport-Security', 'max-age=31536000')
   if (requireHttps && !secureTransport(req)) {
     if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(403).json({ error: 'HTTPS_REQUIRED' })
@@ -1871,8 +1876,9 @@ app.get('/__clear', (req, res) => {
 
 if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
   app.use(express.static(DIST_DIR, { maxAge: '1h', index: false }))
-  app.use((req, res, next) => {
-    if (req.method !== 'GET' || req.path.startsWith('/api')) return next()
+  // The app uses hash-based routing. Unknown paths must be real 404s,
+  // not a misleading 200 response containing the application shell.
+  app.get('/', (req, res) => {
     res.setHeader('Cache-Control', 'no-store')
     res.sendFile(path.join(DIST_DIR, 'index.html'))
   })
@@ -1880,6 +1886,14 @@ if (fs.existsSync(path.join(DIST_DIR, 'index.html'))) {
   app.get('/', (req, res) => res.json({ ok: true, mode: 'server', hint: 'Frontend not built yet. Run: npm run build:server' }))
 }
 app.use('/api', (req, res) => fail(res, 404, 'Not found.'))
+// Never expose stack traces, local paths or parser internals to visitors.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err)
+  const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 500 ? err.status : 500
+  if (status >= 500) console.error('Request failed:', err.name || 'Error')
+  if (req.path.startsWith('/api')) return res.status(status).json({ error: status === 413 ? 'Request too large.' : status === 400 ? 'Invalid request.' : status === 404 ? 'Not found.' : 'Request failed.' })
+  return res.status(status).type('text/plain').send(status === 404 ? 'Not found.' : 'Request failed.')
+})
 
 /* ============================== http + ws ============================== */
 
