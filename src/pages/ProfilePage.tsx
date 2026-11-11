@@ -11,6 +11,7 @@ import ProfileShowcase from '../components/ProfileShowcase'
 import { ProfileBackground } from '../components/ProfileBackground'
 import { GameActivity } from './GamingPage'
 import { gamingText } from '../lib/gamingText'
+import gamingArtwork from '../assets/gaming/nexo-gaming.webp'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -91,7 +92,7 @@ export default function ProfilePage() {
       {notice && <div className="notice-box">{notice}</div>}
 
       <button className="gaming-profile-entry" onClick={() => navigate('/gaming', { state: { gamingIntro: true } })}>
-        <span className="gaming-profile-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M10 10h12c3 0 5 2 6 6l1 5c.5 3-2 5-4 3l-4-3H11l-4 3c-2 2-4.5 0-4-3l1-5c1-4 3-6 6-6Z" stroke="currentColor" strokeWidth="2"/><path d="M9 15v6m-3-3h6m9-1h.01m3 3h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg></span>
+        <span className="gaming-profile-icon" aria-hidden="true"><img src={gamingArtwork} alt="" /></span>
         <span className="gaming-profile-copy"><strong>{gamingText[locale].title}</strong><small>{gamingText[locale].open}</small></span>
         <span className="gaming-profile-arrow" aria-hidden="true">›</span>
       </button>

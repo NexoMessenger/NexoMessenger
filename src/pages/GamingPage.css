@@ -34,3 +34,15 @@
 @keyframes gaming-intro-in { 0% { opacity:0; transform:scale(.8) translateY(12px); } 32%,75% { opacity:1; transform:scale(1) translateY(0); } 100% { opacity:0; transform:scale(1.04); } }
 @keyframes gaming-intro-out { 0%,70% { opacity:1; visibility:visible; } 100% { opacity:0; visibility:hidden; } }
 @media (prefers-reduced-motion: reduce) { .gaming-intro { display:none; } }
+/* Animate the selected artwork without altering or redrawing it. */
+.gaming-profile-icon { overflow:hidden; }
+.gaming-profile-icon img { width:100%; height:100%; object-fit:cover; }
+.gaming-intro { background:radial-gradient(circle at center,#21113e 0%,#07060c 72%); animation-duration:2.4s; }
+.gaming-intro-content { gap:10px; animation:gaming-art-entrance 2.25s ease both; }
+.gaming-intro-art { width:min(70vw, 330px, 48dvh); aspect-ratio:1; position:relative; overflow:hidden; border-radius:22px; border:1px solid rgba(185,155,255,.4); box-shadow:0 0 40px rgba(149,64,255,.35); animation:gaming-art-glow 2.25s ease both; }
+.gaming-intro-art img { display:block; width:100%; height:100%; object-fit:cover; animation:gaming-art-drift 2.25s ease-out both; }
+.gaming-intro-shine { position:absolute; inset:-40%; background:linear-gradient(115deg,transparent 40%,rgba(192,166,255,.12) 48%,rgba(255,255,255,.22) 50%,transparent 56%); transform:translateX(-100%); animation:gaming-art-shine 1.8s ease-out .2s both; pointer-events:none; }
+@keyframes gaming-art-entrance { 0% { opacity:0; transform:scale(.87) translateY(14px); } 22%,78% { opacity:1; transform:scale(1) translateY(0); } 100% { opacity:0; transform:scale(1.025); } }
+@keyframes gaming-art-glow { 0% { box-shadow:0 0 10px rgba(149,64,255,.1); } 45% { box-shadow:0 0 55px rgba(149,64,255,.55); } 100% { box-shadow:0 0 25px rgba(149,64,255,.2); } }
+@keyframes gaming-art-drift { from { transform:scale(1.08); } to { transform:scale(1); } }
+@keyframes gaming-art-shine { from { transform:translateX(-75%); } to { transform:translateX(75%); } }
