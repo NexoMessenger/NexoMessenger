@@ -14,7 +14,7 @@ test('gaming communities persist, support discussions and enforce moderation', a
  const req=async(url,token,method='GET',body)=>{const r=await fetch(`http://127.0.0.1:${port}${url}`,{method,headers:{'content-type':'application/json',...(token?{authorization:`Bearer ${token}`}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()}}
  try {await start();const reg=async name=>(await req('/api/auth/register',null,'POST',{email:`${name}@test.example`,username:name,password:'secret1'})).data
  const a=await reg('gameowner'),b=await reg('gameguest'),c=await reg('gameother');assert.equal((await req('/api/gaming/communities')).status,401)
- assert.deepEqual((await req('/api/gaming/catalog',a.token)).data.games,[]);assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'fake',url:'https://example.com'})).status,400)
+ assert.deepEqual((await req('/api/gaming/catalog',a.token)).data.games,[{id:'rust',name:'Rust',steam_app_id:252490,url:'https://store.steampowered.com/app/252490/'}]);assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'fake',url:'https://example.com'})).status,400)
  assert.equal((await req('/api/gaming/communities',a.token,'POST',{name:'   '})).status,400)
  const community=(await req('/api/gaming/communities',a.token,'POST',{name:'Players',description:'hello'})).data.community
  assert.equal((await req('/api/gaming/communities',b.token)).data.communities[0].name,'Players')
@@ -29,6 +29,10 @@ test('gaming communities persist, support discussions and enforce moderation', a
  await stop();await start();assert.equal((await req(tr,a.token)).data.topic.title,'First')
  assert.equal((await req(tr+'/replies/'+reply.id,a.token,'DELETE')).status,200)
  assert.equal((await req(tr,c.token,'DELETE')).status,403);assert.equal((await req(tr,a.token,'DELETE')).status,200);assert.equal((await req(tr,b.token)).status,404)
+ assert.equal((await req('/api/gaming/activity/'+a.profile.id,b.token)).data.activity,null)
+ assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'rust'})).status,200)
+ assert.equal((await req('/api/gaming/activity/'+a.profile.id,b.token)).data.activity.name,'Rust')
+ assert.equal((await req('/api/gaming/activity',a.token,'DELETE')).status,200)
  assert.equal((await req('/api/gaming/activity/'+a.profile.id,b.token)).data.activity,null)
  } finally {if(child?.exitCode===null)await stop();await rm(dir,{recursive:true,force:true})}
 })

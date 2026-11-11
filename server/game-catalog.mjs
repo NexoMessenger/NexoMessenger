@@ -1,3 +1,4 @@
-// Add reviewed games here when the catalogue is ready. Only HTTPS links to
-// official game pages should be used; never accept launch URLs from clients.
-export const GAME_CATALOG = []
+// Curated game IDs and official store pages only; clients cannot add URLs.
+export const GAME_CATALOG = [
+  { id: 'rust', name: 'Rust', steam_app_id: 252490, url: 'https://store.steampowered.com/app/252490/' },
+]
