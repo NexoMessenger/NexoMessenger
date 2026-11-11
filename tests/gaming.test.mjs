@@ -14,7 +14,14 @@ test('gaming communities persist, support discussions and enforce moderation', a
  const req=async(url,token,method='GET',body)=>{const r=await fetch(`http://127.0.0.1:${port}${url}`,{method,headers:{'content-type':'application/json',...(token?{authorization:`Bearer ${token}`}:{})},...(body!==undefined?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()}}
  try {await start();const reg=async name=>(await req('/api/auth/register',null,'POST',{email:`${name}@test.example`,username:name,password:'secret1'})).data
  const a=await reg('gameowner'),b=await reg('gameguest'),c=await reg('gameother');assert.equal((await req('/api/gaming/communities')).status,401)
- const games=(await req('/api/gaming/catalog',a.token)).data.games;assert.equal(games.length,101);assert.equal(new Set(games.map(g=>g.steam_app_id)).size,101); assert.deepEqual(games[0],{id:'rust',name:'Rust',steam_app_id:252490,url:'https://store.steampowered.com/app/252490/',image_url:'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/252490/header.jpg'});assert.ok(games.every(g=>g.url === `https://store.steampowered.com/app/${g.steam_app_id}/` && g.image_url === `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${g.steam_app_id}/header.jpg`));assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'fake',url:'https://example.com'})).status,400)
+ const games=(await req('/api/gaming/catalog',a.token)).data.games;const pc=games.filter(g=>g.platform==='pc'), mobile=games.filter(g=>g.platform==='mobile');assert.equal(pc.length,101);assert.equal(mobile.length,102);assert.equal(new Set(pc.map(g=>g.steam_app_id)).size,101);assert.equal(new Set(games.map(g=>g.id)).size,203); assert.deepEqual(games[0],{id:'rust',name:'Rust',steam_app_id:252490,url:'https://store.steampowered.com/app/252490/',image_url:'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/252490/header.jpg',platform:'pc'});assert.ok(pc.every(g=>g.url === `https://store.steampowered.com/app/${g.steam_app_id}/` && g.image_url === `https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/${g.steam_app_id}/header.jpg`));assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'fake',url:'https://example.com'})).status,400)
+ assert.equal(mobile[0].name,'Brawl Stars');assert.equal(mobile[1].name,'Standoff 2');assert.ok(mobile.every(g=>g.url.startsWith('https://play.google.com/store/apps/details?id=') && g.ios_url.startsWith('https://apps.apple.com/')))
+ assert.equal((await req('/api/gaming/mobile-visit',a.token,'POST',{game_id:'invalid'})).status,400)
+ assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:mobile[0].id})).status,400)
+ assert.deepEqual((await req('/api/gaming/mobile-visit',b.token,'POST',{game_id:mobile[0].id})).data.recent,[mobile[0].id])
+ assert.equal((await req('/api/gaming/favorites/'+mobile[0].id,b.token,'PUT')).status,200)
+ assert.deepEqual((await req('/api/gaming/library',b.token)).data,{recent:[mobile[0].id],favorites:[mobile[0].id]})
+ assert.equal((await req('/api/gaming/activity/'+b.profile.id,a.token)).data.activity,null)
  assert.equal((await req('/api/gaming/communities',a.token,'POST',{name:'   '})).status,400)
  const community=(await req('/api/gaming/communities',a.token,'POST',{name:'Players',description:'hello'})).data.community
  assert.equal((await req('/api/gaming/communities',b.token)).data.communities[0].name,'Players')
@@ -35,7 +42,7 @@ test('gaming communities persist, support discussions and enforce moderation', a
  assert.equal((await req('/api/gaming/favorites/unknown',a.token,'PUT')).status,404)
  assert.deepEqual((await req('/api/gaming/favorites/rust',a.token,'PUT')).data.favorites,['rust'])
  assert.deepEqual((await req('/api/gaming/favorites/rust',a.token,'PUT')).data.favorites,['rust'])
- assert.deepEqual((await req('/api/gaming/library',b.token)).data,{recent:[],favorites:[]})
+ assert.deepEqual((await req('/api/gaming/library',b.token)).data,{recent:[mobile[0].id],favorites:[mobile[0].id]})
  assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'rust'})).status,200)
  assert.equal((await req('/api/gaming/activity/'+a.profile.id,b.token)).data.activity.name,'Rust')
  assert.equal((await req('/api/gaming/activity',a.token,'POST',{game_id:'steam-730'})).status,200)
@@ -43,7 +50,7 @@ test('gaming communities persist, support discussions and enforce moderation', a
  assert.deepEqual((await req('/api/gaming/library',a.token)).data,{recent:['rust','steam-730'],favorites:['rust']})
  await stop();await start()
  assert.deepEqual((await req('/api/gaming/library',a.token)).data,{recent:['rust','steam-730'],favorites:['rust']})
- assert.deepEqual((await req('/api/gaming/library',b.token)).data,{recent:[],favorites:[]})
+ assert.deepEqual((await req('/api/gaming/library',b.token)).data,{recent:[mobile[0].id],favorites:[mobile[0].id]})
  assert.deepEqual((await req('/api/gaming/favorites/rust',a.token,'DELETE')).data.favorites,[])
 
  assert.equal((await req('/api/gaming/activity',a.token,'DELETE')).status,200)

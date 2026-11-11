@@ -1,4 +1,5 @@
 import { GAME_CATALOG } from './game-catalog.mjs'
+import { MOBILE_GAMES } from './mobile-games.mjs'
 import { STEAM_GAMES, parseTradeUrl, tradeKey, encryptTrade, fetchInventory } from './steam-inventory.mjs'
 /**
  * NEXO Messenger — self-hosted website server.
@@ -1179,8 +1180,9 @@ app.post('/api/chats/:id/read', auth, (req, res) => {
 })
 
 /* ---------- gaming communities ---------- */
+const ALL_GAMES = [...GAME_CATALOG, ...MOBILE_GAMES]
 const gameText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : ''
-app.get('/api/gaming/catalog', auth, (req, res) => res.json({ games: GAME_CATALOG }))
+app.get('/api/gaming/catalog', auth, (req, res) => res.json({ games: [...GAME_CATALOG.map(game => ({ ...game, platform: 'pc' })), ...MOBILE_GAMES] }))
 const steamInventoryHits = new Map()
 app.get('/api/gaming/steam', auth, (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
@@ -1214,14 +1216,14 @@ app.get('/api/gaming/steam/inventory', auth, async (req, res) => {
 
 // Lists are private to the authenticated account and store only catalog IDs.
 app.get('/api/gaming/library', auth, (req, res) => {
-  const valid = id => GAME_CATALOG.some(game => game.id === id)
+  const valid = id => ALL_GAMES.some(game => game.id === id)
   const recent = Array.isArray(db.gameRecents[req.me.id]) ? db.gameRecents[req.me.id].filter(valid) : []
   const favorites = Array.isArray(db.gameFavorites[req.me.id]) ? db.gameFavorites[req.me.id].filter(valid) : []
   res.setHeader('Cache-Control', 'no-store')
   res.json({ recent, favorites })
 })
 app.put('/api/gaming/favorites/:id', auth, (req, res) => {
-  if (!GAME_CATALOG.some(game => game.id === req.params.id)) return fail(res, 404, 'Game not found.')
+  if (!ALL_GAMES.some(game => game.id === req.params.id)) return fail(res, 404, 'Game not found.')
   const favorites = Array.isArray(db.gameFavorites[req.me.id]) ? db.gameFavorites[req.me.id] : []
   db.gameFavorites[req.me.id] = [req.params.id, ...favorites.filter(id => id !== req.params.id)]
   persist(); res.json({ favorites: db.gameFavorites[req.me.id] })
@@ -1230,6 +1232,14 @@ app.delete('/api/gaming/favorites/:id', auth, (req, res) => {
   const favorites = Array.isArray(db.gameFavorites[req.me.id]) ? db.gameFavorites[req.me.id] : []
   db.gameFavorites[req.me.id] = favorites.filter(id => id !== req.params.id)
   persist(); res.json({ favorites: db.gameFavorites[req.me.id] })
+})
+// Opening a store page is not a confirmed app launch; record only private history.
+app.post('/api/gaming/mobile-visit', auth, (req, res) => {
+  const game = MOBILE_GAMES.find(x => x.id === req.body?.game_id)
+  if (!game) return fail(res, 400, 'Invalid game.')
+  const recent = Array.isArray(db.gameRecents[req.me.id]) ? db.gameRecents[req.me.id] : []
+  db.gameRecents[req.me.id] = [game.id, ...recent.filter(id => id !== game.id)].slice(0, 30)
+  persist(); res.json({ recent: db.gameRecents[req.me.id] })
 })
 app.post('/api/gaming/activity', auth, (req, res) => {
   const game = GAME_CATALOG.find(x => x.id === req.body?.game_id)

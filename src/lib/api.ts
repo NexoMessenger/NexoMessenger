@@ -1696,11 +1696,12 @@ export async function claimGiftBonus(): Promise<{ balance: number }> {
 export type GameCommunity = { id:string; name:string; description:string; owner_id:string; created_at:string }
 export type GameTopic = { id:string; community_id:string; author_id:string; author:string; title:string; body:string; created_at:string; reply_count?:number }
 export type GameReply = { id:string; topic_id:string; author_id:string; author:string; body:string; created_at:string }
-export type CatalogGame = { id:string; name:string; url:string; steam_app_id:number; image_url:string }
+export type CatalogGame = { id:string; name:string; url:string; image_url:string; platform:'pc'|'mobile'; steam_app_id?:number; ios_url?:string }
 function gamingServer() { if (!isSrv()) throw new Error('Gaming is available on the NEXO server.') }
 export async function gamingCatalog() { gamingServer(); return (await srv<{games:CatalogGame[]}>('/api/gaming/catalog')).games }
 export async function gamingActivity(id:string) { gamingServer(); return (await srv<{activity:{name:string;launched_at:string}|null}>(`/api/gaming/activity/${encodeURIComponent(id)}`)).activity }
 export async function launchGame(id:string) { gamingServer(); return (await srv<{recent:string[]}>('/api/gaming/activity',{method:'POST',body:{game_id:id}})).recent }
+export async function visitMobileGame(id:string) { gamingServer(); return (await srv<{recent:string[]}>('/api/gaming/mobile-visit',{method:'POST',body:{game_id:id}})).recent }
 export async function gamingLibrary() { gamingServer(); return srv<{recent:string[];favorites:string[]}>('/api/gaming/library') }
 export async function setGameFavorite(id:string, favorite:boolean) { gamingServer(); return (await srv<{favorites:string[]}>(`/api/gaming/favorites/${encodeURIComponent(id)}`,{method:favorite?'PUT':'DELETE'})).favorites }
 export async function clearGameActivity() { gamingServer(); await srv('/api/gaming/activity',{method:'DELETE'}) }
