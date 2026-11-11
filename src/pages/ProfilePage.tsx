@@ -9,6 +9,8 @@ import { fmtNex } from '../lib/giftCatalog'
 import { PREMIUM_PRICE_RUB, isPremiumActive } from '../lib/premiumData'
 import ProfileShowcase from '../components/ProfileShowcase'
 import { ProfileBackground } from '../components/ProfileBackground'
+import { GameActivity } from './GamingPage'
+import { gamingText } from '../lib/gamingText'
 
 export default function ProfilePage() {
   const { profile, refresh, signOut } = useAuth()
@@ -125,6 +127,7 @@ export default function ProfilePage() {
         )}
         <div style={{ marginTop: 8 }}><span className="pill"><span style={{ width: 7, height: 7, borderRadius: '50%', background: profile.is_online ? 'var(--ok)' : 'var(--text-3)', display: 'inline-block' }} />{profile.is_online ? t('profile.onlineNow') : t('profile.offlineNow')}</span></div>
         {profile.mood_status && <p className="profile-mood">{profile.mood_status}</p>}
+        <GameActivity userId={profile.id} own />
         {profile.bio && <p style={{ color: 'var(--text-2)', maxWidth: 420, margin: '14px auto 0', fontSize: 14 }}>{profile.bio}</p>}
         <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={(e) => changeAvatar(e.target.files?.[0])} />
         <button className="btn btn-sm" style={{ marginTop: 16 }} disabled={uploading} onClick={() => fileRef.current?.click()}>
@@ -168,6 +171,7 @@ export default function ProfilePage() {
         <ProfileShowcase userId={profile.id} isOwn owner={profile} />
       </div>
 
+      <button className="premium-profile-card glass" onClick={() => navigate('/gaming')}><span className="logo-badge premium-profile-logo"><IconGroups size={23} /></span><span className="row-main" style={{ textAlign: 'left' }}><span className="row-title">{gamingText[locale].title}</span><span className="row-preview">{gamingText[locale].open}</span></span></button>
       <button className="premium-profile-card glass" onClick={() => navigate('/premium')}>
         <span className="logo-badge premium-profile-logo"><NexoMark size={26} /></span>
         <span className="row-main" style={{ textAlign: 'left' }}>

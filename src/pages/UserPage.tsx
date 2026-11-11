@@ -9,6 +9,7 @@ import { ProfileBackground } from '../components/ProfileBackground'
 import { Avatar, BusinessBadge, ErrorBox, FloatingGifts, ProfileMusicCard, ProfileName, errText, fmtLastSeen, profileThemeClass } from '../components/ui'
 import { IconBack, IconChats } from '../components/icons'
 import ProfileShowcase from '../components/ProfileShowcase'
+import { GameActivity } from './GamingPage'
 import noxTheme from '../assets/bot/nox-theme.wav'
 
 /**
@@ -114,6 +115,7 @@ export default function UserPage() {
               </span>
             </div>
             {user.mood_status && <p className="profile-mood">{user.mood_status}</p>}
+            <GameActivity userId={user.id} />
             {user.bio && <p className="user-profile-bio-full">{user.bio}</p>}
 
             <div className="user-profile-meta">

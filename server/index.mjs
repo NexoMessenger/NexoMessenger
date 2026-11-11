@@ -1,3 +1,4 @@
+import { GAME_CATALOG } from './game-catalog.mjs'
 /**
  * NEXO Messenger — self-hosted website server.
  *
@@ -112,6 +113,10 @@ try {
   persist()
 }
 try { fs.chmodSync(DB_FILE, 0o600) } catch (error) { console.error('Unable to secure database permissions:', error.message) }
+if (!Array.isArray(db.gameCommunities)) db.gameCommunities = []
+if (!Array.isArray(db.gameTopics)) db.gameTopics = []
+if (!Array.isArray(db.gameReplies)) db.gameReplies = []
+if (!db.gameActivity || typeof db.gameActivity !== 'object' || Array.isArray(db.gameActivity)) db.gameActivity = {}
 if (!Array.isArray(db.channelComments)) db.channelComments = []
 if (!db.moderation || typeof db.moderation !== 'object' || Array.isArray(db.moderation)) db.moderation = {}
 if (!Array.isArray(db.adminAudit)) db.adminAudit = []
@@ -1167,6 +1172,76 @@ app.post('/api/chats/:id/read', auth, (req, res) => {
     if (hasUnread) { m.last_read_at = now(); persist(); touch('direct', req.params.id) }
   }
   res.json({ ok: true })
+})
+
+/* ---------- gaming communities ---------- */
+const gameText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : ''
+app.get('/api/gaming/catalog', auth, (req, res) => res.json({ games: GAME_CATALOG }))
+app.post('/api/gaming/activity', auth, (req, res) => {
+  const game = GAME_CATALOG.find(x => x.id === req.body?.game_id)
+  if (!game || !/^https:\/\//i.test(game.url)) return fail(res, 400, 'Invalid game.')
+  db.gameActivity[req.me.id] = { game_id: game.id, launched_at: now() }
+  persist(); touchGlobal(); res.json({ ok: true })
+})
+app.delete('/api/gaming/activity', auth, (req, res) => {
+  delete db.gameActivity[req.me.id]; persist(); touchGlobal(); res.json({ ok: true })
+})
+app.get('/api/gaming/activity/:userId', auth, (req, res) => {
+  if (!profileOf(req.params.userId)) return fail(res, 404, 'Profile not found.')
+  const activity = db.gameActivity[req.params.userId]
+  const game = activity && GAME_CATALOG.find(x => x.id === activity.game_id)
+  // Web browsers cannot tell whether another app is actually still running.
+  res.json({ activity: game && Date.now() - Date.parse(activity.launched_at) < 4 * 60 * 60 * 1000 ? { name: game.name, launched_at: activity.launched_at } : null })
+})
+app.get('/api/gaming/communities', auth, (req, res) => {
+  res.json({ communities: db.gameCommunities.slice().reverse().slice(0, 200) })
+})
+app.post('/api/gaming/communities', auth, (req, res) => {
+  const name = gameText(req.body?.name, 80), description = gameText(req.body?.description, 500)
+  if (!name) return fail(res, 400, 'Name required.')
+  const community = { id: uid(), name, description, owner_id: req.me.id, created_at: now() }
+  db.gameCommunities.push(community); persist(); touchGlobal(); res.json({ community })
+})
+app.get('/api/gaming/communities/:id', auth, (req, res) => {
+  const community = db.gameCommunities.find(x => x.id === req.params.id)
+  if (!community) return fail(res, 404, 'Not found.')
+  const topics = db.gameTopics.filter(x => x.community_id === community.id).slice().reverse().slice(0, 200).map(x => ({ ...x, reply_count: db.gameReplies.filter(r => r.topic_id === x.id).length }))
+  res.json({ community, topics })
+})
+app.post('/api/gaming/communities/:id/topics', auth, (req, res) => {
+  if (!db.gameCommunities.some(x => x.id === req.params.id)) return fail(res, 404, 'Not found.')
+  const title = gameText(req.body?.title, 120), body = gameText(req.body?.body, 4000)
+  if (!title || !body) return fail(res, 400, 'Title and message required.')
+  const topic = { id: uid(), community_id: req.params.id, author_id: req.me.id, author: req.me.display_name || req.me.username, title, body, created_at: now() }
+  db.gameTopics.push(topic); persist(); touchGlobal(); res.json({ topic })
+})
+app.get('/api/gaming/topics/:id', auth, (req, res) => {
+  const topic = db.gameTopics.find(x => x.id === req.params.id)
+  if (!topic) return fail(res, 404, 'Not found.')
+  res.json({ topic, replies: db.gameReplies.filter(x => x.topic_id === topic.id).slice(-500) })
+})
+app.post('/api/gaming/topics/:id/replies', auth, (req, res) => {
+  if (!db.gameTopics.some(x => x.id === req.params.id)) return fail(res, 404, 'Not found.')
+  const body = gameText(req.body?.body, 4000)
+  if (!body) return fail(res, 400, 'Message required.')
+  const reply = { id: uid(), topic_id: req.params.id, author_id: req.me.id, author: req.me.display_name || req.me.username, body, created_at: now() }
+  db.gameReplies.push(reply); persist(); touchGlobal(); res.json({ reply })
+})
+app.delete('/api/gaming/topics/:id', auth, (req, res) => {
+  const topic = db.gameTopics.find(x => x.id === req.params.id)
+  if (!topic) return fail(res, 404, 'Not found.')
+  const community = db.gameCommunities.find(x => x.id === topic.community_id)
+  if (topic.author_id !== req.me.id && community?.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.gameTopics = db.gameTopics.filter(x => x.id !== topic.id); db.gameReplies = db.gameReplies.filter(x => x.topic_id !== topic.id)
+  persist(); touchGlobal(); res.json({ ok: true })
+})
+app.delete('/api/gaming/topics/:id/replies/:replyId', auth, (req, res) => {
+  const reply = db.gameReplies.find(x => x.id === req.params.replyId && x.topic_id === req.params.id)
+  if (!reply) return fail(res, 404, 'Not found.')
+  const topic = db.gameTopics.find(x => x.id === reply.topic_id)
+  const community = db.gameCommunities.find(x => x.id === topic?.community_id)
+  if (reply.author_id !== req.me.id && community?.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  db.gameReplies = db.gameReplies.filter(x => x.id !== reply.id); persist(); touchGlobal(); res.json({ ok: true })
 })
 
 /* ---------- groups ---------- */
