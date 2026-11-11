@@ -50,3 +50,10 @@
 .gaming-catalog-card strong { font-size:21px; }
 .gaming-platform { display:inline-block; margin-left:10px; padding:4px 8px; border-radius:8px; background:rgba(145,120,255,.14); }
 .gaming-catalog-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.gaming-search { margin-bottom:16px; }
+.gaming-catalog-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:12px; }
+.gaming-catalog-card { min-width:0; }
+.gaming-cover { position:relative; width:100%; aspect-ratio:460/215; border-radius:11px; overflow:hidden; display:grid; place-items:center; background:linear-gradient(135deg,#18142a,#342050); color:#d9cbff; text-align:center; font-weight:700; }
+.gaming-cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.gaming-cover span { padding:10px; color:#d9cbff; font-size:16px; }
+.gaming-catalog-actions .btn { text-align:center; }
