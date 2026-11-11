@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useI18n } from '../i18n'
 import { gamingText } from '../lib/gamingText'
@@ -16,7 +16,7 @@ export function GameActivity({ userId, own = false }: {userId:string; own?:boole
 }
 
 export default function GamingPage() {
- const { locale, t }=useI18n(); const text=gamingText[locale]; const navigate=useNavigate(); const { communityId, topicId }=useParams(); const {profile}=useAuth()
+ const { locale, t }=useI18n(); const text=gamingText[locale]; const navigate=useNavigate(); const location=useLocation(); const [showIntro] = useState(() => Boolean((location.state as { gamingIntro?: boolean } | null)?.gamingIntro)); const { communityId, topicId }=useParams(); const {profile}=useAuth()
  const [tab,setTab]=useState<'communities'|'catalog'>('communities')
  const [communities,setCommunities]=useState<api.GameCommunity[]>([]); const [community,setCommunity]=useState<api.GameCommunity|null>(null); const [topics,setTopics]=useState<api.GameTopic[]>([]); const [topic,setTopic]=useState<api.GameTopic|null>(null); const [replies,setReplies]=useState<api.GameReply[]>([]); const [games,setGames]=useState<api.CatalogGame[]>([])
  const [name,setName]=useState('');const [description,setDescription]=useState('');const [title,setTitle]=useState('');const [body,setBody]=useState('');const [showForm,setShowForm]=useState(false); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState(false); const [error,setError]=useState('')
@@ -24,7 +24,7 @@ export default function GamingPage() {
  useEffect(()=>{setLoading(true);setShowForm(false);setBody(''); void load();const unsubscribe=api.subscribeGlobal(()=>void load());return unsubscribe},[load])
  const run=async(fn:()=>Promise<void>)=>{if(busy)return;setBusy(true);setError('');try{await fn();await load()}catch{setError(text.failed)}finally{setBusy(false)}}
  const back=()=> topicId ? navigate(`/gaming/${communityId}`) : communityId ? navigate('/gaming') : navigate('/profile')
- return <div className="page gaming-page"><div className="page-head"><button className="icon-btn" onClick={back} aria-label={text.back}><IconBack size={19}/></button><div><h1 className="page-title">{topic && topic.id===topicId ? topic.title : community && community.id===communityId ? community.name : text.title}</h1><p className="page-sub">{communityId ? community?.description : text.sub}</p></div></div>
+ return <div className="page gaming-page">{showIntro && !communityId && <div className="gaming-intro" aria-hidden="true"><div className="gaming-intro-content"><div className="gaming-intro-mark"><svg viewBox="0 0 32 32" fill="none"><path d="M10 10h12c3 0 5 2 6 6l1 5c.5 3-2 5-4 3l-4-3H11l-4 3c-2 2-4.5 0-4-3l1-5c1-4 3-6 6-6Z" stroke="currentColor" strokeWidth="2"/><path d="M9 15v6m-3-3h6m9-1h.01m3 3h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg></div><strong>NEXO</strong><span>{text.title}</span></div></div>}<div className="page-head"><button className="icon-btn" onClick={back} aria-label={text.back}><IconBack size={19}/></button><div><h1 className="page-title">{topic && topic.id===topicId ? topic.title : community && community.id===communityId ? community.name : text.title}</h1><p className="page-sub">{communityId ? community?.description : text.sub}</p></div></div>
  {error && <div className="error-box" role="alert">{error}</div>}
  {loading ? <div className="center-loader"><div className="spinner"/>{t('common.loading')}</div> : api.mode!=='server'?null: topicId && topic?.id===topicId ? <>
  <article className="gaming-post glass card"><button className="gaming-author" onClick={()=>navigate(`/user/${topic.author_id}`)}>{topic.author}</button><p>{topic.body}</p>{(profile?.id===topic.author_id||profile?.id===community?.owner_id)&&<button className="btn btn-sm" onClick={()=>{if(window.confirm(text.confirm))void run(async()=>{await api.deleteGameTopic(topic.id);navigate(`/gaming/${communityId}`)})}}>{text.delete}</button>}</article>
