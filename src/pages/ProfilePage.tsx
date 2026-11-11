@@ -90,6 +90,12 @@ export default function ProfilePage() {
       <ErrorBox error={error} />
       {notice && <div className="notice-box">{notice}</div>}
 
+      <button className="gaming-profile-entry" onClick={() => navigate('/gaming', { state: { gamingIntro: true } })}>
+        <span className="gaming-profile-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M10 10h12c3 0 5 2 6 6l1 5c.5 3-2 5-4 3l-4-3H11l-4 3c-2 2-4.5 0-4-3l1-5c1-4 3-6 6-6Z" stroke="currentColor" strokeWidth="2"/><path d="M9 15v6m-3-3h6m9-1h.01m3 3h.01" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg></span>
+        <span className="gaming-profile-copy"><strong>{gamingText[locale].title}</strong><small>{gamingText[locale].open}</small></span>
+        <span className="gaming-profile-arrow" aria-hidden="true">›</span>
+      </button>
+
       <div className="settings-group glass card" style={{ padding: '16px 20px', marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
           <div className="sw-title" style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontSize: 15 }}>
@@ -171,7 +177,6 @@ export default function ProfilePage() {
         <ProfileShowcase userId={profile.id} isOwn owner={profile} />
       </div>
 
-      <button className="premium-profile-card glass" onClick={() => navigate('/gaming')}><span className="logo-badge premium-profile-logo"><IconGroups size={23} /></span><span className="row-main" style={{ textAlign: 'left' }}><span className="row-title">{gamingText[locale].title}</span><span className="row-preview">{gamingText[locale].open}</span></span></button>
       <button className="premium-profile-card glass" onClick={() => navigate('/premium')}>
         <span className="logo-badge premium-profile-logo"><NexoMark size={26} /></span>
         <span className="row-main" style={{ textAlign: 'left' }}>
