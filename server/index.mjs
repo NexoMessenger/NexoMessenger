@@ -117,6 +117,8 @@ if (!Array.isArray(db.gameCommunities)) db.gameCommunities = []
 if (!Array.isArray(db.gameTopics)) db.gameTopics = []
 if (!Array.isArray(db.gameReplies)) db.gameReplies = []
 if (!db.gameActivity || typeof db.gameActivity !== 'object' || Array.isArray(db.gameActivity)) db.gameActivity = {}
+if (!db.gameRecents || typeof db.gameRecents !== 'object' || Array.isArray(db.gameRecents)) db.gameRecents = {}
+if (!db.gameFavorites || typeof db.gameFavorites !== 'object' || Array.isArray(db.gameFavorites)) db.gameFavorites = {}
 if (!Array.isArray(db.channelComments)) db.channelComments = []
 if (!db.moderation || typeof db.moderation !== 'object' || Array.isArray(db.moderation)) db.moderation = {}
 if (!Array.isArray(db.adminAudit)) db.adminAudit = []
@@ -1177,11 +1179,32 @@ app.post('/api/chats/:id/read', auth, (req, res) => {
 /* ---------- gaming communities ---------- */
 const gameText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : ''
 app.get('/api/gaming/catalog', auth, (req, res) => res.json({ games: GAME_CATALOG }))
+// Lists are private to the authenticated account and store only catalog IDs.
+app.get('/api/gaming/library', auth, (req, res) => {
+  const valid = id => GAME_CATALOG.some(game => game.id === id)
+  const recent = Array.isArray(db.gameRecents[req.me.id]) ? db.gameRecents[req.me.id].filter(valid) : []
+  const favorites = Array.isArray(db.gameFavorites[req.me.id]) ? db.gameFavorites[req.me.id].filter(valid) : []
+  res.setHeader('Cache-Control', 'no-store')
+  res.json({ recent, favorites })
+})
+app.put('/api/gaming/favorites/:id', auth, (req, res) => {
+  if (!GAME_CATALOG.some(game => game.id === req.params.id)) return fail(res, 404, 'Game not found.')
+  const favorites = Array.isArray(db.gameFavorites[req.me.id]) ? db.gameFavorites[req.me.id] : []
+  db.gameFavorites[req.me.id] = [req.params.id, ...favorites.filter(id => id !== req.params.id)]
+  persist(); res.json({ favorites: db.gameFavorites[req.me.id] })
+})
+app.delete('/api/gaming/favorites/:id', auth, (req, res) => {
+  const favorites = Array.isArray(db.gameFavorites[req.me.id]) ? db.gameFavorites[req.me.id] : []
+  db.gameFavorites[req.me.id] = favorites.filter(id => id !== req.params.id)
+  persist(); res.json({ favorites: db.gameFavorites[req.me.id] })
+})
 app.post('/api/gaming/activity', auth, (req, res) => {
   const game = GAME_CATALOG.find(x => x.id === req.body?.game_id)
   if (!game || !/^https:\/\//i.test(game.url)) return fail(res, 400, 'Invalid game.')
   db.gameActivity[req.me.id] = { game_id: game.id, launched_at: now() }
-  persist(); touchGlobal(); res.json({ ok: true })
+  const recent = Array.isArray(db.gameRecents[req.me.id]) ? db.gameRecents[req.me.id] : []
+  db.gameRecents[req.me.id] = [game.id, ...recent.filter(id => id !== game.id)].slice(0, 30)
+  persist(); touchGlobal(); res.json({ ok: true, recent: db.gameRecents[req.me.id] })
 })
 app.delete('/api/gaming/activity', auth, (req, res) => {
   delete db.gameActivity[req.me.id]; persist(); touchGlobal(); res.json({ ok: true })
