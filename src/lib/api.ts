@@ -1700,7 +1700,9 @@ export type CatalogGame = { id:string; name:string; url:string; steam_app_id:num
 function gamingServer() { if (!isSrv()) throw new Error('Gaming is available on the NEXO server.') }
 export async function gamingCatalog() { gamingServer(); return (await srv<{games:CatalogGame[]}>('/api/gaming/catalog')).games }
 export async function gamingActivity(id:string) { gamingServer(); return (await srv<{activity:{name:string;launched_at:string}|null}>(`/api/gaming/activity/${encodeURIComponent(id)}`)).activity }
-export async function launchGame(id:string) { gamingServer(); await srv('/api/gaming/activity',{method:'POST',body:{game_id:id}}) }
+export async function launchGame(id:string) { gamingServer(); return (await srv<{recent:string[]}>('/api/gaming/activity',{method:'POST',body:{game_id:id}})).recent }
+export async function gamingLibrary() { gamingServer(); return srv<{recent:string[];favorites:string[]}>('/api/gaming/library') }
+export async function setGameFavorite(id:string, favorite:boolean) { gamingServer(); return (await srv<{favorites:string[]}>(`/api/gaming/favorites/${encodeURIComponent(id)}`,{method:favorite?'PUT':'DELETE'})).favorites }
 export async function clearGameActivity() { gamingServer(); await srv('/api/gaming/activity',{method:'DELETE'}) }
 export async function gamingCommunities() { gamingServer(); return (await srv<{communities:GameCommunity[]}>('/api/gaming/communities')).communities }
 export async function createGamingCommunity(name:string,description:string) { gamingServer(); return (await srv<{community:GameCommunity}>('/api/gaming/communities',{method:'POST',body:{name,description}})).community }

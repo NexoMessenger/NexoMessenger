@@ -57,3 +57,15 @@
 .gaming-cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .gaming-cover span { padding:10px; color:#d9cbff; font-size:16px; }
 .gaming-catalog-actions .btn { text-align:center; }
+/* Background stays inside the gaming page, without affecting navigation or scrolling. */
+.gaming-page { isolation:isolate; position:relative; background:linear-gradient(125deg,#080910,#181027,#102037,#29133b,#090a13); background-size:350% 350%; animation:gaming-gradient 16s ease-in-out infinite; }
+@keyframes gaming-gradient { 0%,100% { background-position:0% 45%; } 50% { background-position:100% 55%; } }
+.gaming-library-tabs { display:flex; gap:8px; flex-wrap:wrap; margin: 0 0 14px; }
+.gaming-card-title { display:flex; gap:8px; align-items:center; justify-content:space-between; width:100%; }
+.gaming-card-title strong { min-width:0; overflow-wrap:anywhere; }
+.gaming-favorite { flex:none; display:grid; place-items:center; width:42px; height:42px; border:1px solid rgba(255,255,255,.15); border-radius:12px; color:#dcd3ef; background:rgba(255,255,255,.06); cursor:pointer; }
+.gaming-favorite.is-favorite { color:#ff83c0; background:rgba(255,92,174,.14); border-color:rgba(255,131,192,.55); }
+.gaming-favorite.is-favorite svg { fill:currentColor; }
+.gaming-favorite:disabled { opacity:.55; }
+.gaming-favorite:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce) { .gaming-page { animation:none; } }
