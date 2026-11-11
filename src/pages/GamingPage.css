@@ -46,3 +46,7 @@
 @keyframes gaming-art-glow { 0% { box-shadow:0 0 10px rgba(149,64,255,.1); } 45% { box-shadow:0 0 55px rgba(149,64,255,.55); } 100% { box-shadow:0 0 25px rgba(149,64,255,.2); } }
 @keyframes gaming-art-drift { from { transform:scale(1.08); } to { transform:scale(1); } }
 @keyframes gaming-art-shine { from { transform:translateX(-75%); } to { transform:translateX(75%); } }
+.gaming-catalog-card { cursor:default; gap:12px; }
+.gaming-catalog-card strong { font-size:21px; }
+.gaming-platform { display:inline-block; margin-left:10px; padding:4px 8px; border-radius:8px; background:rgba(145,120,255,.14); }
+.gaming-catalog-actions { display:flex; flex-wrap:wrap; gap:8px; }
