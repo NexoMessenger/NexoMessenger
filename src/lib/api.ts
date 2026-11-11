@@ -1691,3 +1691,22 @@ export async function claimGiftBonus(): Promise<{ balance: number }> {
   saveDB(db)
   return { balance: w.balance }
 }
+
+/* Gaming communities are supported by the NEXO server. */
+export type GameCommunity = { id:string; name:string; description:string; owner_id:string; created_at:string }
+export type GameTopic = { id:string; community_id:string; author_id:string; author:string; title:string; body:string; created_at:string; reply_count?:number }
+export type GameReply = { id:string; topic_id:string; author_id:string; author:string; body:string; created_at:string }
+export type CatalogGame = { id:string; name:string; url:string; description:string }
+function gamingServer() { if (!isSrv()) throw new Error('Gaming is available on the NEXO server.') }
+export async function gamingCatalog() { gamingServer(); return (await srv<{games:CatalogGame[]}>('/api/gaming/catalog')).games }
+export async function gamingActivity(id:string) { gamingServer(); return (await srv<{activity:{name:string;launched_at:string}|null}>(`/api/gaming/activity/${encodeURIComponent(id)}`)).activity }
+export async function launchGame(id:string) { gamingServer(); await srv('/api/gaming/activity',{method:'POST',body:{game_id:id}}) }
+export async function clearGameActivity() { gamingServer(); await srv('/api/gaming/activity',{method:'DELETE'}) }
+export async function gamingCommunities() { gamingServer(); return (await srv<{communities:GameCommunity[]}>('/api/gaming/communities')).communities }
+export async function createGamingCommunity(name:string,description:string) { gamingServer(); return (await srv<{community:GameCommunity}>('/api/gaming/communities',{method:'POST',body:{name,description}})).community }
+export async function gamingCommunity(id:string) { gamingServer(); return srv<{community:GameCommunity;topics:GameTopic[]}>(`/api/gaming/communities/${encodeURIComponent(id)}`) }
+export async function createGameTopic(id:string,title:string,body:string) { gamingServer(); return (await srv<{topic:GameTopic}>(`/api/gaming/communities/${encodeURIComponent(id)}/topics`,{method:'POST',body:{title,body}})).topic }
+export async function gamingTopic(id:string) { gamingServer(); return srv<{topic:GameTopic;replies:GameReply[]}>(`/api/gaming/topics/${encodeURIComponent(id)}`) }
+export async function createGameReply(id:string,body:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}/replies`,{method:'POST',body:{body}}) }
+export async function deleteGameTopic(id:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}`,{method:'DELETE'}) }
+export async function deleteGameReply(id:string,rid:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}/replies/${encodeURIComponent(rid)}`,{method:'DELETE'}) }
