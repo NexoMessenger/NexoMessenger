@@ -1696,7 +1696,7 @@ export async function claimGiftBonus(): Promise<{ balance: number }> {
 export type GameCommunity = { id:string; name:string; description:string; owner_id:string; created_at:string }
 export type GameTopic = { id:string; community_id:string; author_id:string; author:string; title:string; body:string; created_at:string; reply_count?:number }
 export type GameReply = { id:string; topic_id:string; author_id:string; author:string; body:string; created_at:string }
-export type CatalogGame = { id:string; name:string; url:string; steam_app_id:number }
+export type CatalogGame = { id:string; name:string; url:string; steam_app_id:number; image_url:string }
 function gamingServer() { if (!isSrv()) throw new Error('Gaming is available on the NEXO server.') }
 export async function gamingCatalog() { gamingServer(); return (await srv<{games:CatalogGame[]}>('/api/gaming/catalog')).games }
 export async function gamingActivity(id:string) { gamingServer(); return (await srv<{activity:{name:string;launched_at:string}|null}>(`/api/gaming/activity/${encodeURIComponent(id)}`)).activity }
