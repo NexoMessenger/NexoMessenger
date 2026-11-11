@@ -1712,3 +1712,10 @@ export async function gamingTopic(id:string) { gamingServer(); return srv<{topic
 export async function createGameReply(id:string,body:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}/replies`,{method:'POST',body:{body}}) }
 export async function deleteGameTopic(id:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}`,{method:'DELETE'}) }
 export async function deleteGameReply(id:string,rid:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}/replies/${encodeURIComponent(rid)}`,{method:'DELETE'}) }
+
+export type SteamGame = { appid:number; name:string; context:number }
+export type SteamItem = { id:string; name:string; type:string; amount:string; icon:string }
+export async function steamConnection() { gamingServer(); return srv<{connected:boolean; steamId:string|null; games:SteamGame[]}>('/api/gaming/steam') }
+export async function saveSteamTradeUrl(tradeUrl:string) { gamingServer(); return srv<{connected:boolean;steamId:string}>('/api/gaming/steam',{method:'PUT',body:{tradeUrl}}) }
+export async function deleteSteamConnection() { gamingServer(); await srv('/api/gaming/steam',{method:'DELETE'}) }
+export async function steamInventory(appid:number,language:string,cursor?:string) { gamingServer(); const q=new URLSearchParams({appid:String(appid),language});if(cursor)q.set('cursor',cursor);return srv<{items:SteamItem[];next:string|null;total:number|null}>(`/api/gaming/steam/inventory?${q}`) }

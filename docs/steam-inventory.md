@@ -1,0 +1,5 @@
+# Steam inventory
+
+The Steam tab accepts trade URLs, extracts their public SteamID64, and fetches public Steam Community inventory pages from a fixed hostname. A trade URL is not a login and does not prove ownership; it cannot open a private inventory. Only the listed games/context IDs are supported. Steam can rate-limit or block server requests. The endpoint returns a neutral error if Steam is unavailable and does not log the trade URL.
+
+The trade URL is encrypted with AES-256-GCM and bound to the NEXO user ID. The key is generated at first connection and stored as `data/steam-trade-key` with mode 0600, separately from `data/db.json`. **Back up both files securely together**: losing the key makes existing encrypted links unrecoverable. A database-only leak does not expose the URL, but an attacker with server or key access can decrypt it. Neither the key nor database belongs in the repository. Deleting the connection removes the encrypted record; it does not revoke the Steam token. Users can regenerate their trade URL on Steam if it has been shared.

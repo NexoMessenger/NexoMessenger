@@ -1,4 +1,5 @@
 import { GAME_CATALOG } from './game-catalog.mjs'
+import { STEAM_GAMES, parseTradeUrl, tradeKey, encryptTrade, fetchInventory } from './steam-inventory.mjs'
 /**
  * NEXO Messenger — self-hosted website server.
  *
@@ -116,6 +117,7 @@ try { fs.chmodSync(DB_FILE, 0o600) } catch (error) { console.error('Unable to se
 if (!Array.isArray(db.gameCommunities)) db.gameCommunities = []
 if (!Array.isArray(db.gameTopics)) db.gameTopics = []
 if (!Array.isArray(db.gameReplies)) db.gameReplies = []
+if (!db.steamConnections || typeof db.steamConnections !== 'object' || Array.isArray(db.steamConnections)) db.steamConnections = {}
 if (!db.gameActivity || typeof db.gameActivity !== 'object' || Array.isArray(db.gameActivity)) db.gameActivity = {}
 if (!db.gameRecents || typeof db.gameRecents !== 'object' || Array.isArray(db.gameRecents)) db.gameRecents = {}
 if (!db.gameFavorites || typeof db.gameFavorites !== 'object' || Array.isArray(db.gameFavorites)) db.gameFavorites = {}
@@ -1179,6 +1181,37 @@ app.post('/api/chats/:id/read', auth, (req, res) => {
 /* ---------- gaming communities ---------- */
 const gameText = (value, max) => typeof value === 'string' ? value.trim().slice(0, max) : ''
 app.get('/api/gaming/catalog', auth, (req, res) => res.json({ games: GAME_CATALOG }))
+const steamInventoryHits = new Map()
+app.get('/api/gaming/steam', auth, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store')
+  res.json({ connected: Boolean(db.steamConnections[req.me.id]), steamId: db.steamConnections[req.me.id]?.steamId || null, games: STEAM_GAMES })
+})
+app.put('/api/gaming/steam', auth, (req, res) => {
+  let parsed
+  try { parsed = parseTradeUrl(req.body?.tradeUrl) } catch { return fail(res, 400, 'INVALID_TRADE_URL') }
+  try {
+    const key=tradeKey(DATA_DIR, Object.keys(db.steamConnections).length > 0)
+    db.steamConnections[req.me.id] = { steamId: parsed.steamId, encrypted: encryptTrade(parsed.url,key,req.me.id) }
+    persist(); res.setHeader('Cache-Control','no-store'); res.json({ connected:true, steamId:parsed.steamId })
+  } catch { return fail(res, 503, 'STEAM_STORAGE_UNAVAILABLE') }
+})
+app.delete('/api/gaming/steam', auth, (req, res) => {
+  delete db.steamConnections[req.me.id]; persist();res.setHeader('Cache-Control','no-store');res.json({ok:true})
+})
+app.get('/api/gaming/steam/inventory', auth, async (req, res) => {
+  res.setHeader('Cache-Control','no-store')
+  const connection=db.steamConnections[req.me.id]
+  if(!connection) return fail(res,400,'STEAM_NOT_CONNECTED')
+  const time=Date.now(), previous=steamInventoryHits.get(req.me.id) || []
+  const hits=previous.filter(t=>t>time-60000);if(hits.length>=10)return fail(res,429,'STEAM_RATE_LIMIT')
+  hits.push(time);steamInventoryHits.set(req.me.id,hits)
+  try { res.json(await fetchInventory(connection.steamId,req.query.appid,req.query.cursor,req.query.language)) }
+  catch(error) {
+    const code=['INVALID_INVENTORY_REQUEST','INVENTORY_PRIVATE','STEAM_RATE_LIMIT','INVENTORY_UNAVAILABLE'].includes(error.message) ? error.message : 'STEAM_UNAVAILABLE'
+    return fail(res, code==='INVALID_INVENTORY_REQUEST'?400:code==='STEAM_RATE_LIMIT'?429:502, code)
+  }
+})
+
 // Lists are private to the authenticated account and store only catalog IDs.
 app.get('/api/gaming/library', auth, (req, res) => {
   const valid = id => GAME_CATALOG.some(game => game.id === id)
