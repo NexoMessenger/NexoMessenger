@@ -1,5 +1,5 @@
 import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { LanguageProvider, useI18n } from './i18n'
 import Layout from './components/Layout'
@@ -8,20 +8,20 @@ import { CallsProvider } from './components/Calls'
 import WelcomePage from './pages/WelcomePage'
 import { LoginPage, RegisterPage, ForgotPage } from './pages/AuthPages'
 import ChatsPage from './pages/ChatsPage'
-import AiPage from './pages/AiPage'
-import ZeronBotPage from './pages/ZeronBotPage'
-import ChatRoomPage from './pages/ChatRoomPage'
-import GroupsPage from './pages/GroupsPage'
-import GroupRoomPage from './pages/GroupRoomPage'
-import ChannelsPage from './pages/ChannelsPage'
-import ChannelRoomPage from './pages/ChannelRoomPage'
-import SearchPage from './pages/SearchPage'
-import ProfilePage from './pages/ProfilePage'
-import UserPage from './pages/UserPage'
-import SettingsPage from './pages/SettingsPage'
-import GiftsPage from './pages/GiftsPage'
-import PremiumPage from './pages/PremiumPage'
-import GamingPage from './pages/GamingPage'
+const AiPage = lazy(() => import('./pages/AiPage'))
+const ZeronBotPage = lazy(() => import('./pages/ZeronBotPage'))
+const ChatRoomPage = lazy(() => import('./pages/ChatRoomPage'))
+const GroupsPage = lazy(() => import('./pages/GroupsPage'))
+const GroupRoomPage = lazy(() => import('./pages/GroupRoomPage'))
+const ChannelsPage = lazy(() => import('./pages/ChannelsPage'))
+const ChannelRoomPage = lazy(() => import('./pages/ChannelRoomPage'))
+const SearchPage = lazy(() => import('./pages/SearchPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const UserPage = lazy(() => import('./pages/UserPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const GiftsPage = lazy(() => import('./pages/GiftsPage'))
+const PremiumPage = lazy(() => import('./pages/PremiumPage'))
+const GamingPage = lazy(() => import('./pages/GamingPage'))
 import { NexoMark } from './components/icons'
 import type { ReactNode } from 'react'
 
@@ -60,7 +60,7 @@ function Protected({ children }: { children: ReactNode }) {
   }, [blocked])
   if (loading || blocked) return <SessionSplash />
   if (!profile) return <Navigate to="/" replace />
-  return <Layout>{children}</Layout>
+  return <Layout><Suspense fallback={<div className="center-loader" role="status"><div className="spinner" /></div>}>{children}</Suspense></Layout>
 }
 
 function PublicOnly({ children }: { children: ReactNode }) {

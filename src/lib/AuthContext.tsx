@@ -27,7 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const p = await api.getCurrentProfile()
       idRef.current = p?.id ?? null
-      setProfile(p)
+      // Polling returns a new object each time; retain the reference when nothing changed.
+      setProfile(previous => JSON.stringify(previous) === JSON.stringify(p) ? previous : p)
       if (p && !shown.current) {
         shown.current = true
         let event: string | null = null

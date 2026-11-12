@@ -1793,3 +1793,9 @@ html[data-theme="light"] .page-title { background:none; -webkit-text-fill-color:
   .bottom-nav .nav-item > span { text-decoration:none; font-size:clamp(8px,2.35vw,10px); letter-spacing:0; line-height:1.15; }
   .bottom-nav .nav-item svg { width:21px; height:21px; stroke-width:1.7; }
 }
+
+/* Avoid a separate live blur for every scrolling chat card on mobile.
+   The fixed navigation retains its glass blur. */
+@media (max-width:860px) {
+  .chats-page .row-card.glass { backdrop-filter:none; -webkit-backdrop-filter:none; }
+}
