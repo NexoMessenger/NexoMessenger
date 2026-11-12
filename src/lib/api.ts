@@ -1715,6 +1715,12 @@ export async function createGameReply(id:string,body:string) { gamingServer(); a
 export async function deleteGameTopic(id:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}`,{method:'DELETE'}) }
 export async function deleteGameReply(id:string,rid:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}/replies/${encodeURIComponent(rid)}`,{method:'DELETE'}) }
 
+export type GameSquad = { id:string; community_id:string; title:string; note:string; platform:'pc'|'mobile'|'cross'; capacity:number; created_at:string; expires_at:number; owner_id:string; joined:boolean; members:{id:string;display_name:string;username:string;avatar_url:string}[] }
+export async function listGameSquads(id:string) { gamingServer(); return (await srv<{squads:GameSquad[]}>(`/api/gaming/communities/${encodeURIComponent(id)}/squads`)).squads }
+export async function createGameSquad(id:string, data:{title:string;note:string;platform:string;capacity:number}) { gamingServer(); await srv(`/api/gaming/communities/${encodeURIComponent(id)}/squads`,{method:'POST',body:data}) }
+export async function joinGameSquad(id:string, joined:boolean) { gamingServer(); await srv(`/api/gaming/squads/${encodeURIComponent(id)}/join`,{method:joined?'PUT':'DELETE'}) }
+export async function deleteGameSquad(id:string) { gamingServer(); await srv(`/api/gaming/squads/${encodeURIComponent(id)}`,{method:'DELETE'}) }
+
 export type SteamGame = { appid:number; name:string; context:number }
 export type SteamItem = { id:string; name:string; type:string; amount:string; icon:string }
 export async function steamConnection() { gamingServer(); return srv<{connected:boolean; steamId:string|null; games:SteamGame[]}>('/api/gaming/steam') }

@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { worldText } from '../lib/gamingWorldText'
 import * as api from '../lib/api'
 import arena from '../assets/gaming/nexo-arena.webp'
+import { SquadDiscovery } from './GamingSquads'
 
 type Props = { communities: api.GameCommunity[] }
 export function GamingWorlds({communities}:Props) {
@@ -14,6 +15,7 @@ export function GamingWorlds({communities}:Props) {
   <section className="world-hero" style={{backgroundImage:`linear-gradient(90deg, rgba(9,8,25,.96), rgba(13,10,35,.48)), url(${arena})`}}>
    <span className="world-eyebrow">{w.eyebrow}</span><h2>{w.headline}</h2><p>{w.intro}</p><button type="button" className="world-hero-action" onClick={()=>document.getElementById('gaming-worlds')?.scrollIntoView({behavior:'smooth',block:'start'})}>{w.explore} <span aria-hidden="true">↗</span></button>
   </section>
+  <SquadDiscovery />
   <div className="world-discovery" id="gaming-worlds"><div><span className="world-eyebrow">NEXO / DISCOVER</span><h2>{w.explore}</h2><p>{w.exploreHint}</p></div><input className="input" type="search" aria-label={w.search} placeholder={w.search} value={query} onChange={e=>setQuery(e.target.value)}/></div>
   <div className="world-filters" role="group" aria-label={w.explore}>{([['all',w.all],['joined',w.joined],['pc','PC'],['mobile','Mobile']] as const).map(([key,label])=><button key={key} type="button" className={filter===key?'active':''} aria-pressed={filter===key} onClick={()=>setFilter(key)}>{label}</button>)}</div>
   {results.length===0?<p className="gaming-muted">{filter==='joined'&&!query?w.noJoined:w.noResults}</p>:<div className="world-grid">{results.map((c,i)=><button className="world-card" key={c.id} onClick={()=>navigate(`/gaming/${c.id}`)}>
