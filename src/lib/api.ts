@@ -1715,9 +1715,12 @@ export async function createGameReply(id:string,body:string) { gamingServer(); a
 export async function deleteGameTopic(id:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}`,{method:'DELETE'}) }
 export async function deleteGameReply(id:string,rid:string) { gamingServer(); await srv(`/api/gaming/topics/${encodeURIComponent(id)}/replies/${encodeURIComponent(rid)}`,{method:'DELETE'}) }
 
-export type GameSquad = { id:string; community_id:string; title:string; note:string; platform:'pc'|'mobile'|'cross'; capacity:number; created_at:string; expires_at:number; owner_id:string; joined:boolean; members:{id:string;display_name:string;username:string;avatar_url:string}[] }
+export type GameSquad = { id:string; community_id:string; title:string; note:string; platform:'pc'|'mobile'|'cross'; capacity:number; created_at:string; expires_at:number; owner_id:string; starts_at:number|null; language:string; style:string; joined:boolean; members:{id:string;display_name:string;username:string;avatar_url:string}[] }
 export async function listGameSquads(id:string) { gamingServer(); return (await srv<{squads:GameSquad[]}>(`/api/gaming/communities/${encodeURIComponent(id)}/squads`)).squads }
-export async function createGameSquad(id:string, data:{title:string;note:string;platform:string;capacity:number}) { gamingServer(); await srv(`/api/gaming/communities/${encodeURIComponent(id)}/squads`,{method:'POST',body:data}) }
+export type SquadInput = {title:string;note:string;platform:string;capacity:number;starts_at:string;language:string;style:string}
+export async function createGameSquad(id:string, data:SquadInput) { gamingServer(); await srv(`/api/gaming/communities/${encodeURIComponent(id)}/squads`,{method:'POST',body:data}) }
+export async function updateGameSquad(id:string, data:SquadInput) { gamingServer(); await srv(`/api/gaming/squads/${encodeURIComponent(id)}`,{method:'PUT',body:data}) }
+export async function myGameSquads() { gamingServer(); return (await srv<{squads:(GameSquad & {community_name:string})[]}>('/api/gaming/squads/mine')).squads }
 export async function joinGameSquad(id:string, joined:boolean) { gamingServer(); await srv(`/api/gaming/squads/${encodeURIComponent(id)}/join`,{method:joined?'PUT':'DELETE'}) }
 export async function deleteGameSquad(id:string) { gamingServer(); await srv(`/api/gaming/squads/${encodeURIComponent(id)}`,{method:'DELETE'}) }
 
