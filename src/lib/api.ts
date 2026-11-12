@@ -1693,7 +1693,7 @@ export async function claimGiftBonus(): Promise<{ balance: number }> {
 }
 
 /* Gaming communities are supported by the NEXO server. */
-export type GameCommunity = { id:string; name:string; description:string; owner_id:string; created_at:string }
+export type GameCommunity = { id:string; name:string; description:string; owner_id:string; created_at:string; official?:boolean; can_moderate?:boolean; game?:CatalogGame|null; joined?:boolean; member_count?:number; topic_count?:number }
 export type GameTopic = { id:string; community_id:string; author_id:string; author:string; title:string; body:string; created_at:string; reply_count?:number }
 export type GameReply = { id:string; topic_id:string; author_id:string; author:string; body:string; created_at:string }
 export type CatalogGame = { id:string; name:string; url:string; image_url:string; platform:'pc'|'mobile'; steam_app_id?:number; ios_url?:string }
@@ -1706,6 +1706,7 @@ export async function gamingLibrary() { gamingServer(); return srv<{recent:strin
 export async function setGameFavorite(id:string, favorite:boolean) { gamingServer(); return (await srv<{favorites:string[]}>(`/api/gaming/favorites/${encodeURIComponent(id)}`,{method:favorite?'PUT':'DELETE'})).favorites }
 export async function clearGameActivity() { gamingServer(); await srv('/api/gaming/activity',{method:'DELETE'}) }
 export async function gamingCommunities() { gamingServer(); return (await srv<{communities:GameCommunity[]}>('/api/gaming/communities')).communities }
+export async function setCommunityMembership(id:string, joined:boolean) { gamingServer(); return (await srv<{community:GameCommunity}>(`/api/gaming/communities/${encodeURIComponent(id)}/membership`, {method:joined?'PUT':'DELETE'})).community }
 export async function createGamingCommunity(name:string,description:string) { gamingServer(); return (await srv<{community:GameCommunity}>('/api/gaming/communities',{method:'POST',body:{name,description}})).community }
 export async function gamingCommunity(id:string) { gamingServer(); return srv<{community:GameCommunity;topics:GameTopic[]}>(`/api/gaming/communities/${encodeURIComponent(id)}`) }
 export async function createGameTopic(id:string,title:string,body:string) { gamingServer(); return (await srv<{topic:GameTopic}>(`/api/gaming/communities/${encodeURIComponent(id)}/topics`,{method:'POST',body:{title,body}})).topic }
