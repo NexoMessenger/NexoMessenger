@@ -1,5 +1,6 @@
 import { GAME_CATALOG } from './game-catalog.mjs'
 import { MOBILE_GAMES } from './mobile-games.mjs'
+import { GAMING_WORLDS } from './gaming-worlds.mjs'
 import { STEAM_GAMES, parseTradeUrl, tradeKey, encryptTrade, fetchInventory } from './steam-inventory.mjs'
 /**
  * NEXO Messenger — self-hosted website server.
@@ -121,6 +122,13 @@ if (!Array.isArray(db.stories)) db.stories = []
 if (!Array.isArray(db.gameCommunities)) db.gameCommunities = []
 if (!Array.isArray(db.gameTopics)) db.gameTopics = []
 if (!Array.isArray(db.gameReplies)) db.gameReplies = []
+if (!Array.isArray(db.gameCommunityMembers)) db.gameCommunityMembers = []
+// Add missing curated spaces once without touching existing communities or discussions.
+if (!db.gamingWorldsInitialized) {
+  for (const world of GAMING_WORLDS) if (!db.gameCommunities.some(c => c.id === world.id)) db.gameCommunities.push({ ...world, created_at: now() })
+  db.gamingWorldsInitialized = true
+  persist()
+}
 if (!db.steamConnections || typeof db.steamConnections !== 'object' || Array.isArray(db.steamConnections)) db.steamConnections = {}
 if (!db.gameActivity || typeof db.gameActivity !== 'object' || Array.isArray(db.gameActivity)) db.gameActivity = {}
 if (!db.gameRecents || typeof db.gameRecents !== 'object' || Array.isArray(db.gameRecents)) db.gameRecents = {}
@@ -1318,8 +1326,32 @@ app.get('/api/gaming/activity/:userId', auth, (req, res) => {
   // Web browsers cannot tell whether another app is actually still running.
   res.json({ activity: game && Date.now() - Date.parse(activity.launched_at) < 4 * 60 * 60 * 1000 ? { name: game.name, launched_at: activity.launched_at } : null })
 })
+const communityInfo = (community, me) => {
+  const members = db.gameCommunityMembers.filter(m => m.community_id === community.id)
+  const rawGame = community.game_id ? ALL_GAMES.find(g => g.id === community.game_id) : null
+  const game = rawGame ? { ...rawGame, platform:rawGame.platform || 'pc' } : null
+  return { ...community, can_moderate:community.owner_id === me || Boolean(community.official && isAdmin(me)), game:game || null, joined:members.some(m => m.user_id === me), member_count:members.length, topic_count:db.gameTopics.filter(t => t.community_id === community.id).length }
+}
 app.get('/api/gaming/communities', auth, (req, res) => {
-  res.json({ communities: db.gameCommunities.slice().reverse().slice(0, 200) })
+  const curated = db.gameCommunities.filter(c => c.official)
+  const others = db.gameCommunities.filter(c => !c.official).slice().reverse().slice(0, 200)
+  res.json({ communities: [...others, ...curated].map(c => communityInfo(c, req.me.id)) })
+})
+app.put('/api/gaming/communities/:id/membership', auth, (req, res) => {
+  const community = db.gameCommunities.find(c => c.id === req.params.id)
+  if (!community) return fail(res,404,'Not found.')
+  if (!db.gameCommunityMembers.some(m => m.community_id === community.id && m.user_id === req.me.id)) {
+    db.gameCommunityMembers.push({community_id:community.id,user_id:req.me.id,joined_at:now()}); persist(); touchGlobal()
+  }
+  res.json({community:communityInfo(community,req.me.id)})
+})
+app.delete('/api/gaming/communities/:id/membership', auth, (req, res) => {
+  const community = db.gameCommunities.find(c => c.id === req.params.id)
+  if (!community) return fail(res,404,'Not found.')
+  const before = db.gameCommunityMembers.length
+  db.gameCommunityMembers = db.gameCommunityMembers.filter(m => m.community_id !== community.id || m.user_id !== req.me.id)
+  if (before !== db.gameCommunityMembers.length) { persist(); touchGlobal() }
+  res.json({community:communityInfo(community,req.me.id)})
 })
 app.post('/api/gaming/communities', auth, (req, res) => {
   const name = gameText(req.body?.name, 80), description = gameText(req.body?.description, 500)
@@ -1331,7 +1363,7 @@ app.get('/api/gaming/communities/:id', auth, (req, res) => {
   const community = db.gameCommunities.find(x => x.id === req.params.id)
   if (!community) return fail(res, 404, 'Not found.')
   const topics = db.gameTopics.filter(x => x.community_id === community.id).slice().reverse().slice(0, 200).map(x => ({ ...x, reply_count: db.gameReplies.filter(r => r.topic_id === x.id).length }))
-  res.json({ community, topics })
+  res.json({ community: communityInfo(community, req.me.id), topics })
 })
 app.post('/api/gaming/communities/:id/topics', auth, (req, res) => {
   if (!db.gameCommunities.some(x => x.id === req.params.id)) return fail(res, 404, 'Not found.')
@@ -1356,7 +1388,7 @@ app.delete('/api/gaming/topics/:id', auth, (req, res) => {
   const topic = db.gameTopics.find(x => x.id === req.params.id)
   if (!topic) return fail(res, 404, 'Not found.')
   const community = db.gameCommunities.find(x => x.id === topic.community_id)
-  if (topic.author_id !== req.me.id && community?.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  if (topic.author_id !== req.me.id && community?.owner_id !== req.me.id && !(community?.official && isAdmin(req.me.id))) return fail(res, 403, 'Access denied.')
   db.gameTopics = db.gameTopics.filter(x => x.id !== topic.id); db.gameReplies = db.gameReplies.filter(x => x.topic_id !== topic.id)
   persist(); touchGlobal(); res.json({ ok: true })
 })
@@ -1365,7 +1397,7 @@ app.delete('/api/gaming/topics/:id/replies/:replyId', auth, (req, res) => {
   if (!reply) return fail(res, 404, 'Not found.')
   const topic = db.gameTopics.find(x => x.id === reply.topic_id)
   const community = db.gameCommunities.find(x => x.id === topic?.community_id)
-  if (reply.author_id !== req.me.id && community?.owner_id !== req.me.id) return fail(res, 403, 'Access denied.')
+  if (reply.author_id !== req.me.id && community?.owner_id !== req.me.id && !(community?.official && isAdmin(req.me.id))) return fail(res, 403, 'Access denied.')
   db.gameReplies = db.gameReplies.filter(x => x.id !== reply.id); persist(); touchGlobal(); res.json({ ok: true })
 })
 
