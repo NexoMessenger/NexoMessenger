@@ -22,6 +22,7 @@ import SettingsPage from './pages/SettingsPage'
 import GiftsPage from './pages/GiftsPage'
 import PremiumPage from './pages/PremiumPage'
 import GamingPage from './pages/GamingPage'
+import SurvivalPage from './pages/SurvivalPage'
 import { NexoMark } from './components/icons'
 import type { ReactNode } from 'react'
 
@@ -88,6 +89,7 @@ export default function App() {
             <Route path="/channels" element={<Protected><ChannelsPage /></Protected>} />
             <Route path="/channel/:id" element={<Protected><ChannelRoomPage /></Protected>} />
             <Route path="/search" element={<Protected><SearchPage /></Protected>} />
+            <Route path="/play/survival" element={<Protected><SurvivalPage /></Protected>} />
             <Route path="/gaming" element={<Protected><GamingPage /></Protected>} />
             <Route path="/gaming/:communityId" element={<Protected><GamingPage /></Protected>} />
             <Route path="/gaming/:communityId/:topicId" element={<Protected><GamingPage /></Protected>} />

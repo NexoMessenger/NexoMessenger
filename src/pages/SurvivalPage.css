@@ -1,0 +1,24 @@
+.survival-page { position:relative; flex:1; min-height:0; width:100%; overflow:hidden; background:#182026; color:white; user-select:none; touch-action:none; }
+.survival-world { position:absolute; inset:0; touch-action:none; }
+.survival-world canvas { display:block; width:100%; height:100%; }
+.survival-top { position:absolute; inset:12px 12px auto; display:flex; align-items:flex-start; gap:10px; pointer-events:none; }
+.survival-top button { pointer-events:auto; }
+.survival-top strong,.survival-top small { display:block; text-shadow:0 1px 4px #000; }
+.survival-top small { margin-top:3px; font-size:11px; color:#eef3f3; }
+.survival-button,.survival-action { border:1px solid rgba(255,255,255,.36); border-radius:12px; background:rgba(18,27,28,.76); color:#fff; padding:10px 13px; font-size:12px; font-weight:700; touch-action:manipulation; }
+.survival-resources { position:absolute; top:68px; right:12px; display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+.survival-resources span,.survival-cost,.survival-instructions { background:rgba(14,22,24,.72); border-radius:10px; padding:7px 10px; font-size:12px; }
+.survival-crosshair { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:25px; text-shadow:0 1px 4px #000; pointer-events:none; }
+.survival-instructions { position:absolute; top:105px; left:12px; right:12px; margin:auto; max-width:400px; text-align:center; pointer-events:none; }
+.survival-stick { position:absolute; left:20px; bottom:28px; width:110px; height:110px; border-radius:50%; border:1px solid #ffffff70; background:#19262988; display:grid; place-items:center; touch-action:none; }
+.survival-stick span { display:block; width:48px; height:48px; border:1px solid #fff9; border-radius:50%; background:#dae8dc66; pointer-events:none; }
+.survival-actions { position:absolute; bottom:28px; right:16px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; justify-content:flex-end; max-width:55%; }
+.survival-action { min-width:76px; min-height:64px; border-radius:50%; background:rgba(181,121,52,.9); }
+.survival-cost { position:absolute; bottom:112px; right:16px; }
+.survival-wheel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:230px; height:230px; border-radius:50%; border:1px solid #8fd4ff88; background:rgba(7,29,45,.95); box-shadow:0 0 40px #20aaff66; display:grid; grid-template-columns:1fr 1fr; gap:7px; align-content:center; padding:25px; }
+.survival-wheel span { grid-column:1/-1; text-align:center; font-size:12px; }
+.survival-wheel button { border:1px solid #8ccfff88; border-radius:11px; padding:8px 3px; background:#164866; color:white; font-size:11px; }
+.survival-wheel button:last-child { grid-column:1/-1; justify-self:center; width:90px; }
+.survival-wheel button.selected { background:#287eaa; }
+.survival-wheel small { display:block; color:#c4e8ff; }
+@media (max-width:400px) { .survival-stick { width:90px;height:90px;left:12px;bottom:18px; } .survival-actions { right:10px;bottom:18px; } .survival-top small { max-width:215px; } }
