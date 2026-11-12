@@ -1362,7 +1362,27 @@ app.post('/api/gaming/communities', auth, (req, res) => {
 })
 // Player-created squad calls. Each join is checked and committed synchronously.
 const activeSquad = s => s.expires_at > Date.now()
-const squadPublic = (s, me) => ({ id:s.id, community_id:s.community_id, title:s.title, note:s.note, platform:s.platform, capacity:s.capacity, created_at:s.created_at, expires_at:s.expires_at, owner_id:s.owner_id, joined:s.members.includes(me), members:s.members.map(id => { const p=profileOf(id); return p ? {id:p.id, display_name:p.display_name, username:p.username, avatar_url:p.avatar_url} : null }).filter(Boolean) })
+const squadPublic = (s, me) => ({ id:s.id, community_id:s.community_id, title:s.title, note:s.note, platform:s.platform, capacity:s.capacity, created_at:s.created_at, expires_at:s.expires_at, owner_id:s.owner_id, starts_at:s.starts_at || null, language:s.language || '', style:s.style || '', joined:s.members.includes(me), members:s.members.map(id => { const p=profileOf(id); return p ? {id:p.id, display_name:p.display_name, username:p.username, avatar_url:p.avatar_url} : null }).filter(Boolean) })
+function squadInput(body) {
+  const title=gameText(body?.title,80), note=gameText(body?.note,300), platform=body?.platform, capacity=body?.capacity
+  const starts_at=body?.starts_at == null || body.starts_at === '' ? null : Date.parse(body.starts_at)
+  const language=body?.language || '', style=body?.style || ''
+  const valid=Boolean(title && ['pc','mobile','cross'].includes(platform) && Number.isInteger(capacity) && capacity>=2 && capacity<=8 && (starts_at === null || (Number.isFinite(starts_at) && starts_at > Date.now() && starts_at <= Date.now()+24*60*60*1000)) && ['', 'en','ru','uk','zh-CN'].includes(language) && ['', 'casual','competitive','training'].includes(style))
+  return {title,note,platform,capacity,starts_at,language,style,valid}
+}
+app.get('/api/gaming/squads/mine', auth, (req,res) => {
+  res.set('Cache-Control','no-store')
+  const squads=db.gameSquads.filter(s=>activeSquad(s) && s.members.includes(req.me.id)).slice().reverse().map(s=>({ ...squadPublic(s,req.me.id), community_name:db.gameCommunities.find(c=>c.id===s.community_id)?.name || '' }))
+  res.json({squads})
+})
+app.put('/api/gaming/squads/:id', auth, (req,res) => {
+  const squad=db.gameSquads.find(s=>s.id===req.params.id && activeSquad(s)); if(!squad) return fail(res,404,'Not found.')
+  if(squad.owner_id!==req.me.id) return fail(res,403,'Access denied.')
+  const {title,note,platform,capacity,starts_at,language,style,valid}=squadInput(req.body)
+  if(!valid || capacity<squad.members.length || (starts_at !== null && starts_at>squad.expires_at)) return fail(res,400,'Invalid squad.')
+  const previous={...squad}; Object.assign(squad,{title,note,platform,capacity,starts_at,language,style})
+  try {persist()} catch(e) {Object.assign(squad,previous);throw e}; touchGlobal();res.json({squad:squadPublic(squad,req.me.id)})
+})
 app.get('/api/gaming/communities/:id/squads', auth, (req,res) => {
   if (!db.gameCommunities.some(c => c.id === req.params.id)) return fail(res,404,'Not found.')
   res.set('Cache-Control','no-store')
@@ -1370,10 +1390,10 @@ app.get('/api/gaming/communities/:id/squads', auth, (req,res) => {
 })
 app.post('/api/gaming/communities/:id/squads', auth, (req,res) => {
   if (!db.gameCommunities.some(c => c.id === req.params.id)) return fail(res,404,'Not found.')
-  const title = gameText(req.body?.title, 80), note = gameText(req.body?.note, 300), platform=req.body?.platform, capacity=req.body?.capacity
-  if (!title || !['pc','mobile','cross'].includes(platform) || !Number.isInteger(capacity) || capacity < 2 || capacity > 8) return fail(res,400,'Invalid squad.')
+  const { title, note, platform, capacity, starts_at, language, style, valid } = squadInput(req.body)
+  if (!valid) return fail(res,400,'Invalid squad.')
   if (db.gameSquads.filter(s=>s.owner_id===req.me.id && activeSquad(s)).length >= 3) return fail(res,429,'Squad limit reached.')
-  const squad={id:uid(),community_id:req.params.id,owner_id:req.me.id,title,note,platform,capacity,members:[req.me.id],created_at:now(),expires_at:Date.now()+24*60*60*1000}
+  const squad={id:uid(),community_id:req.params.id,owner_id:req.me.id,title,note,platform,capacity,starts_at,language,style,members:[req.me.id],created_at:now(),expires_at:Date.now()+24*60*60*1000}
   db.gameSquads.push(squad); try { persist() } catch(e) { db.gameSquads.pop(); throw e }
   touchGlobal();res.status(201).json({squad:squadPublic(squad,req.me.id)})
 })
