@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Stories from '../components/Stories'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import * as api from '../lib/api'
@@ -59,6 +60,7 @@ export default function ChatsPage() {
         <button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.new')}</button>
       </div>
 
+      <Stories />
       <div className="search-input-wrap chat-search-glass">
         <span className="search-icon" aria-hidden="true"><IconSearch size={19} /></span>
         <input className="input" type="search" aria-label={gradientText[locale].search} placeholder={gradientText[locale].search} value={query} onChange={e => setQuery(e.target.value)} />

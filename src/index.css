@@ -1799,3 +1799,14 @@ html[data-theme="light"] .page-title { background:none; -webkit-text-fill-color:
 @media (max-width:860px) {
   .chats-page .row-card.glass { backdrop-filter:none; -webkit-backdrop-filter:none; }
 }
+
+.stories { margin:0 0 16px; }.stories h2 { font-size:15px; margin:0 0 10px; }
+.stories-strip { display:flex; gap:12px; overflow-x:auto; touch-action:pan-x; -webkit-overflow-scrolling:touch; padding:2px 2px 6px; }
+.story-person { flex:0 0 66px; min-width:0; display:flex; flex-direction:column; align-items:center; gap:5px; border:0; background:none; color:var(--text); font-size:11px; }
+.story-person > span:last-child { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.story-ring,.story-add { width:56px; height:56px; border-radius:50%; display:grid; place-items:center; border:2px solid var(--violet); }
+.story-add { font-size:30px; line-height:1; background:var(--glass); }.story-error { color:#ff9baf; font-size:13px; }
+.story-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.88); display:flex; justify-content:center; align-items:center; padding: max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom)); }
+.story-compose,.story-viewer { width:min(100%,440px); max-height:100%; border-radius:24px; background:var(--sheet-bg); border:1px solid var(--border); padding:16px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
+.story-compose h2,.story-compose p { margin:0; }.story-compose textarea { width:100%; min-height:80px; resize:vertical; }.story-filename { overflow-wrap:anywhere; }
+.story-top { display:flex; align-items:center; gap:10px; min-width:0; }.story-top strong { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.story-control { border:0; background:transparent; color:var(--text); font-size:30px; width:44px; height:44px; }
+.story-media { min-height:120px; height:min(65dvh,620px); display:flex; align-items:center; justify-content:center; background:#000; border-radius:16px; overflow:hidden; }.story-media img,.story-media video { max-width:100%; max-height:100%; object-fit:contain; }.story-caption { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; }.story-actions { display:flex; gap:8px; justify-content:space-between; }

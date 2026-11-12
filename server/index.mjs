@@ -36,6 +36,7 @@ const ROOT = path.join(__dirname, '..')
 // fresh code, and the database must survive every deploy untouched.
 const DATA_DIR = process.env.NEXO_DATA_DIR || path.join(ROOT, 'data')
 const UPLOAD_DIR = path.join(DATA_DIR, 'uploads')
+const STORY_DIR = path.join(DATA_DIR, 'stories')
 const DB_FILE = path.join(DATA_DIR, 'db.json')
 const DIST_DIR = path.join(ROOT, 'dist')
 const PORT = Number(process.env.PORT || 8080)
@@ -44,6 +45,7 @@ const SESSION_TTL = 30 * 24 * 60 * 60 * 1000 // 30 days
 const MAX_UPLOAD = 25 * 1024 * 1024
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+fs.mkdirSync(STORY_DIR, { recursive: true, mode: 0o700 })
 
 const now = () => new Date().toISOString()
 const uid = () => crypto.randomBytes(9).toString('hex') + Date.now().toString(36)
@@ -115,6 +117,7 @@ try {
   persist()
 }
 try { fs.chmodSync(DB_FILE, 0o600) } catch (error) { console.error('Unable to secure database permissions:', error.message) }
+if (!Array.isArray(db.stories)) db.stories = []
 if (!Array.isArray(db.gameCommunities)) db.gameCommunities = []
 if (!Array.isArray(db.gameTopics)) db.gameTopics = []
 if (!Array.isArray(db.gameReplies)) db.gameReplies = []
@@ -1031,6 +1034,62 @@ app.post('/api/zeron/action', auth, rateLimitZeron, (req, res) => {
   }
   res.json({ ...chat, canIssue: zeronCanIssue(req.me.id) })
 })
+
+/* ---------- private 24-hour stories ---------- */
+const STORY_TTL = 24 * 60 * 60 * 1000
+const STORY_MAX_BYTES = 15 * 1024 * 1024
+function storyAccessible(story, viewer) {
+  return story.expires_at > Date.now() && (story.author_id === viewer || db.convMembers.some(m => m.user_id === viewer && isConvMember(m.conversation_id, story.author_id) && db.conversations.some(c => c.id === m.conversation_id && !c.saved_owner_id) && db.messages.some(msg => msg.conversation_id === m.conversation_id && msg.sender_id === story.author_id)))
+}
+function storyType(buf) {
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg'
+  if (buf.length >= 8 && buf.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'))) return 'image/png'
+  if (buf.length >= 12 && buf.toString('ascii',0,4) === 'RIFF' && buf.toString('ascii',8,12) === 'WEBP') return 'image/webp'
+  if (buf.length >= 12 && buf.toString('ascii',4,8) === 'ftyp') return 'video/mp4'
+  if (buf.length >= 4 && buf.subarray(0,4).equals(Buffer.from('1a45dfa3','hex'))) return 'video/webm'
+  return null
+}
+function purgeStories() {
+  const expired = db.stories.filter(s => s.expires_at <= Date.now())
+  if (!expired.length) return
+  const previous = db.stories
+  db.stories = db.stories.filter(s => s.expires_at > Date.now())
+  try { persist() } catch (e) { db.stories = previous; throw e }
+  for (const s of expired) { try { fs.unlinkSync(path.join(STORY_DIR, s.id)) } catch (e) { if (e.code !== 'ENOENT') console.error('Story cleanup failed:', e.message) } }
+}
+app.get('/api/stories', auth, (req, res) => {
+  res.set('Cache-Control', 'no-store')
+  res.json({ items: db.stories.filter(s => storyAccessible(s, req.me.id)).map(s => ({ id:s.id, author:profileOf(s.author_id), type:s.type, caption:s.caption, created_at:s.created_at, expires_at:s.expires_at })).filter(s => s.author) })
+})
+app.post('/api/stories', auth, (req, res) => {
+  const { data, caption = '' } = req.body || {}
+  if (typeof data !== 'string' || data.length > Math.ceil(STORY_MAX_BYTES / 3) * 4 + 4 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(data) || typeof caption !== 'string' || caption.length > 300) return fail(res, 400, 'Invalid story.')
+  if (db.stories.filter(s => s.author_id === req.me.id && s.expires_at > Date.now()).length >= 5) return fail(res, 400, 'Story limit reached.')
+  const buf = Buffer.from(data, 'base64'), type = storyType(buf)
+  if (!type || !buf.length || buf.length > STORY_MAX_BYTES) return fail(res, 400, 'Unsupported or oversized media.')
+  const id = crypto.randomBytes(16).toString('hex'), created = Date.now()
+  const story = { id, author_id:req.me.id, type, caption, created_at:new Date(created).toISOString(), expires_at:created + STORY_TTL }
+  fs.writeFileSync(path.join(STORY_DIR,id), buf, { mode:0o600, flag:'wx' })
+  db.stories.push(story)
+  try { persist() } catch (e) { db.stories.pop(); try { fs.unlinkSync(path.join(STORY_DIR,id)) } catch {} throw e }
+  touchGlobal(); res.status(201).json({ id })
+})
+app.get('/api/stories/:id/media', auth, (req, res) => {
+  const story = db.stories.find(s => s.id === req.params.id)
+  if (!story || !storyAccessible(story, req.me.id)) return fail(res, 404, 'Story not found.')
+  res.set({ 'Content-Type':story.type, 'Cache-Control':'private, no-store', 'X-Content-Type-Options':'nosniff', 'Content-Security-Policy':"sandbox; default-src 'none'" })
+  res.sendFile(path.join(STORY_DIR, story.id))
+})
+app.delete('/api/stories/:id', auth, (req,res) => {
+  const index = db.stories.findIndex(s => s.id === req.params.id && s.author_id === req.me.id)
+  if (index < 0) return fail(res,404,'Story not found.')
+  const [story] = db.stories.splice(index,1)
+  try { persist() } catch(e) { db.stories.splice(index,0,story); throw e }
+  try { fs.unlinkSync(path.join(STORY_DIR,story.id)) } catch(e) { if(e.code !== 'ENOENT') console.error('Story cleanup failed:',e.message) }
+  touchGlobal(); res.json({ok:true})
+})
+try { purgeStories() } catch(e) { console.error('Story cleanup failed:', e.message) }
+setInterval(() => { try { purgeStories() } catch(e) { console.error('Story cleanup failed:', e.message) } }, 60 * 60 * 1000).unref()
 
 /* ---------- direct chats ---------- */
 app.get('/api/chats', auth, (req, res) => {
