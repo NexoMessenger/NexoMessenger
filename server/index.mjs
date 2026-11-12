@@ -1325,7 +1325,7 @@ app.get('/api/gaming/activity/:userId', auth, (req, res) => {
   const activity = db.gameActivity[req.params.userId]
   const game = activity && GAME_CATALOG.find(x => x.id === activity.game_id)
   // Web browsers cannot tell whether another app is actually still running.
-  res.json({ activity: game && Date.now() - Date.parse(activity.launched_at) < 4 * 60 * 60 * 1000 ? { name: game.name, launched_at: activity.launched_at } : null })
+  res.json({ activity: game && Date.now() - Date.parse(activity.launched_at) < 4 * 60 * 60 * 1000 ? { name: game.name, image_url: game.image_url, launched_at: activity.launched_at } : null })
 })
 const communityInfo = (community, me) => {
   const members = db.gameCommunityMembers.filter(m => m.community_id === community.id)
