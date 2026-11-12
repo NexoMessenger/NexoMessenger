@@ -8,6 +8,7 @@ import { PROFILE_FONTS, PROFILE_THEMES, isPremiumActive, profileFontClass } from
 import { useI18n, type TranslationKey } from '../i18n'
 import { LOCALES } from '../i18n/translations'
 import AdminPanel from '../components/AdminPanel'
+import { gradients, gradientText, readGradient, saveGradient, type InterfaceGradient } from '../lib/interfaceGradient'
 
 const THEMES: { id: UserSettings['theme']; labelKey: TranslationKey; hintKey: TranslationKey; swatches: [string, string, string] }[] = [
   { id: 'nexoglass', labelKey: 'settings.themeDark', hintKey: 'settings.themeDarkHint', swatches: ['#050507', '#8b5cf6', '#f0abfc'] },
@@ -32,6 +33,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushBusy, setPushBusy] = useState(false)
+  const [gradient, setGradient] = useState<InterfaceGradient>('aurora')
+  useEffect(() => { if (profile?.id) setGradient(readGradient(profile.id)) }, [profile?.id])
 
   useEffect(() => {
     if (!profile) return
@@ -132,6 +135,12 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="settings-group glass card gradient-settings">
+            <div className="sw-title">{gradientText[locale].title}</div>
+            <p className="sw-sub">{gradientText[locale].hint}</p>
+            <div className="gradient-options">{gradients.map(g => <button key={g} type="button" className={`gradient-option gradient-option-${g} ${gradient===g?'selected':''}`} aria-pressed={gradient===g} onClick={() => { if (!profile) return; try { saveGradient(profile.id,g); setGradient(g); setError('') } catch { setError(gradientText[locale].failed) } }}><span className="gradient-swatch"/><span>{gradientText[locale].names[g]}</span></button>)}</div>
           </div>
 
           <div className="section-label">{t('settings.profileStyle')}</div>

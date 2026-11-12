@@ -5,11 +5,13 @@ import * as api from '../lib/api'
 import type { Profile } from '../lib/types'
 import { Avatar, EmptyState, ErrorBox, Modal, ProfileName, UserPicker, fmtTime, errText } from '../components/ui'
 import { useI18n } from '../i18n'
+import { gradientText } from '../lib/interfaceGradient'
 import { IconPlus, IconBack, IconChats, IconGroups, IconChannel, IconSearch, IconChecks, IconSettings, IconStar, NexoMark } from '../components/icons'
 
 export default function ChatsPage() {
   const { profile } = useAuth()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const [query, setQuery] = useState('')
   const navigate = useNavigate()
   const [items, setItems] = useState<api.DirectListItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,7 +50,7 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page chats-page">
       <div className="page-head">
         <div>
           <h1 className="page-title">{t('chats.title')}</h1>
@@ -57,28 +59,35 @@ export default function ChatsPage() {
         <button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.new')}</button>
       </div>
 
-      <button className="row-card glass ai-entry" onClick={() => navigate('/ai')}>
+      <div className="search-input-wrap chat-search-glass">
+        <span className="search-icon" aria-hidden="true"><IconSearch size={19} /></span>
+        <input className="input" type="search" aria-label={gradientText[locale].search} placeholder={gradientText[locale].search} value={query} onChange={e => setQuery(e.target.value)} />
+      </div>
+
+      {!query.trim() && <button className="row-card glass ai-entry" onClick={() => navigate('/ai')}>
         <span className="ai-avatar"><NexoMark size={25} /></span>
         <span className="row-main"><span className="row-title">NEXO AI</span><span className="row-preview">{t('ai.entry')}</span></span>
-      </button>
-      {api.mode === 'server' && <button className="row-card glass zeron-entry" onClick={() => navigate('/zeron')}>
+      </button>}
+      {!query.trim() && api.mode === 'server' && <button className="row-card glass zeron-entry" onClick={() => navigate('/zeron')}>
         <span className="ai-avatar"><NexoMark size={25} /></span>
         <span className="row-main"><span className="row-title">Zeron</span><span className="row-preview">{t('zeron.entry')}</span></span>
       </button>}
-      {api.mode === 'server' && <button className="row-card glass" disabled={starting} onClick={() => {
+      {!query.trim() && api.mode === 'server' && <button className="row-card glass" disabled={starting} onClick={() => {
         setStarting(true); setError('')
         void api.getSavedChat().then(id => navigate(`/chat/${id}`)).catch(e => setError(errText(e, t))).finally(() => setStarting(false))
       }}><span className="ai-avatar"><IconStar size={22} /></span><span className="row-main"><span className="row-title">{t('extras.saved')}</span><span className="row-preview">{t('extras.savedHint')}</span></span></button>}
       <ErrorBox error={error} />
       {loading ? (
         <div className="center-loader"><div className="spinner" />{t('chats.loading')}</div>
-      ) : items.every(item => !!item.conv.saved_owner_id) ? (
+      ) : query.trim() && !items.some(({conv,other,lastMessage}) => !conv.saved_owner_id && [other.display_name,other.username,lastMessage?.body || ''].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))) ? (
+        <p className="chat-search-empty">{gradientText[locale].notFound}</p>
+      ) : !query.trim() && items.every(item => !!item.conv.saved_owner_id) ? (
         <EmptyState icon={<IconChats size={30} />} title={t('chats.emptyTitle')} text={t('chats.emptyText')}>
           <div style={{ marginTop: 18 }}><button className="btn btn-primary" onClick={() => setShowNew(true)}><IconPlus size={16} /> {t('chats.startFirst')}</button></div>
         </EmptyState>
       ) : (
         <div className="list">
-          {items.filter(({ conv }) => !conv.saved_owner_id).map(({ conv, other, lastMessage, unread }) => (
+          {items.filter(({ conv, other, lastMessage }) => !conv.saved_owner_id && (!query.trim() || [other.display_name, other.username, lastMessage?.body || ''].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))).map(({ conv, other, lastMessage, unread }) => (
             <button key={conv.id} className="row-card glass" onClick={() => navigate(`/chat/${conv.id}`)}>
               <Avatar profile={other} showOnline />
               <span className="row-main">
