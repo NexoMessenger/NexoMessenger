@@ -122,6 +122,7 @@ if (!Array.isArray(db.stories)) db.stories = []
 if (!Array.isArray(db.gameCommunities)) db.gameCommunities = []
 if (!Array.isArray(db.gameTopics)) db.gameTopics = []
 if (!Array.isArray(db.gameReplies)) db.gameReplies = []
+if (!Array.isArray(db.gameSquads)) db.gameSquads = []
 if (!Array.isArray(db.gameCommunityMembers)) db.gameCommunityMembers = []
 // Add missing curated spaces once without touching existing communities or discussions.
 if (!db.gamingWorldsInitialized) {
@@ -1359,6 +1360,50 @@ app.post('/api/gaming/communities', auth, (req, res) => {
   const community = { id: uid(), name, description, owner_id: req.me.id, created_at: now() }
   db.gameCommunities.push(community); persist(); touchGlobal(); res.json({ community })
 })
+// Player-created squad calls. Each join is checked and committed synchronously.
+const activeSquad = s => s.expires_at > Date.now()
+const squadPublic = (s, me) => ({ id:s.id, community_id:s.community_id, title:s.title, note:s.note, platform:s.platform, capacity:s.capacity, created_at:s.created_at, expires_at:s.expires_at, owner_id:s.owner_id, joined:s.members.includes(me), members:s.members.map(id => { const p=profileOf(id); return p ? {id:p.id, display_name:p.display_name, username:p.username, avatar_url:p.avatar_url} : null }).filter(Boolean) })
+app.get('/api/gaming/communities/:id/squads', auth, (req,res) => {
+  if (!db.gameCommunities.some(c => c.id === req.params.id)) return fail(res,404,'Not found.')
+  res.set('Cache-Control','no-store')
+  res.json({squads:db.gameSquads.filter(s => s.community_id === req.params.id && activeSquad(s)).slice().reverse().slice(0,100).map(s => squadPublic(s,req.me.id))})
+})
+app.post('/api/gaming/communities/:id/squads', auth, (req,res) => {
+  if (!db.gameCommunities.some(c => c.id === req.params.id)) return fail(res,404,'Not found.')
+  const title = gameText(req.body?.title, 80), note = gameText(req.body?.note, 300), platform=req.body?.platform, capacity=req.body?.capacity
+  if (!title || !['pc','mobile','cross'].includes(platform) || !Number.isInteger(capacity) || capacity < 2 || capacity > 8) return fail(res,400,'Invalid squad.')
+  if (db.gameSquads.filter(s=>s.owner_id===req.me.id && activeSquad(s)).length >= 3) return fail(res,429,'Squad limit reached.')
+  const squad={id:uid(),community_id:req.params.id,owner_id:req.me.id,title,note,platform,capacity,members:[req.me.id],created_at:now(),expires_at:Date.now()+24*60*60*1000}
+  db.gameSquads.push(squad); try { persist() } catch(e) { db.gameSquads.pop(); throw e }
+  touchGlobal();res.status(201).json({squad:squadPublic(squad,req.me.id)})
+})
+app.put('/api/gaming/squads/:id/join', auth, (req,res) => {
+  const squad=db.gameSquads.find(s=>s.id===req.params.id && activeSquad(s))
+  if (!squad) return fail(res,404,'Not found.')
+  if (!squad.members.includes(req.me.id)) {
+    if (squad.members.length >= squad.capacity) return fail(res,409,'Squad is full.')
+    squad.members.push(req.me.id); try { persist() } catch(e) { squad.members.pop(); throw e }; touchGlobal()
+  }
+  res.json({squad:squadPublic(squad,req.me.id)})
+})
+app.delete('/api/gaming/squads/:id/join', auth, (req,res) => {
+  const squad=db.gameSquads.find(s=>s.id===req.params.id && activeSquad(s))
+  if (!squad) return fail(res,404,'Not found.')
+  if (squad.owner_id===req.me.id) return fail(res,400,'The creator can delete the squad.')
+  const old=squad.members; squad.members=old.filter(id=>id!==req.me.id)
+  if (old.length!==squad.members.length) { try { persist() } catch(e) { squad.members=old; throw e }; touchGlobal() }
+  res.json({squad:squadPublic(squad,req.me.id)})
+})
+app.delete('/api/gaming/squads/:id', auth, (req,res) => {
+  const i=db.gameSquads.findIndex(s=>s.id===req.params.id && activeSquad(s)); if(i<0) return fail(res,404,'Not found.')
+  const squad=db.gameSquads[i], community=db.gameCommunities.find(c=>c.id===squad.community_id)
+  if (squad.owner_id!==req.me.id && community?.owner_id!==req.me.id && !(community?.official && isAdmin(req.me.id))) return fail(res,403,'Access denied.')
+  db.gameSquads.splice(i,1); try { persist() } catch(e) { db.gameSquads.splice(i,0,squad); throw e }; touchGlobal(); res.json({ok:true})
+})
+// Expired recruitment cards are no longer visible; only these cards are removed.
+function cleanSquads() { const old=db.gameSquads; db.gameSquads=old.filter(activeSquad); if (old.length!==db.gameSquads.length) { try { persist() } catch(e) { db.gameSquads=old; throw e } } }
+try { cleanSquads() } catch(e) { console.error('Squad cleanup failed:',e.message) }
+setInterval(()=>{try {cleanSquads()} catch(e){console.error('Squad cleanup failed:',e.message)}},60*60*1000).unref()
 app.get('/api/gaming/communities/:id', auth, (req, res) => {
   const community = db.gameCommunities.find(x => x.id === req.params.id)
   if (!community) return fail(res, 404, 'Not found.')
