@@ -15,10 +15,10 @@ import './GamingPage.css'
 
 export function GameActivity({ userId, own = false }: {userId:string; own?:boolean}) {
  const { locale } = useI18n(); const text = gamingText[locale]
- const [activity,setActivity]=useState<{name:string;launched_at:string}|null>(null)
+ const [activity,setActivity]=useState<{name:string;launched_at:string}|null>(null); const [clearing,setClearing]=useState(false); const [clearError,setClearError]=useState(false)
  useEffect(()=>{ let active=true; const load=()=>{if(api.mode==='server') api.gamingActivity(userId).then(a=>{if(active)setActivity(a)}).catch(()=>undefined)};load();const unsubscribe=api.subscribeGlobal(load);const timer=window.setInterval(load,60000);return ()=>{active=false;unsubscribe();window.clearInterval(timer)} },[userId])
  if(!activity)return null
- return <div className="gaming-activity"><strong>◈ {text.launched}: {activity.name}</strong><p>{text.activityHint}</p>{own && <button className="btn btn-sm" onClick={()=>void api.clearGameActivity().then(()=>setActivity(null)).catch(()=>undefined)}>{text.clear}</button>}</div>
+ return <div className="gaming-activity"><strong>◈ {text.playing.replace('{game}',activity.name)}</strong><p>{text.activityHint}</p>{own && <button className="btn btn-sm" disabled={clearing} onClick={()=>{setClearing(true);setClearError(false);void api.clearGameActivity().then(()=>setActivity(null)).catch(()=>setClearError(true)).finally(()=>setClearing(false))}}>{text.clear}</button>}{clearError && <p role="alert">{text.failed}</p>}</div>
 }
 
 export default function GamingPage() {
