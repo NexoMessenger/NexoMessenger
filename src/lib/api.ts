@@ -1720,3 +1720,14 @@ export async function steamConnection() { gamingServer(); return srv<{connected:
 export async function saveSteamTradeUrl(tradeUrl:string) { gamingServer(); return srv<{connected:boolean;steamId:string}>('/api/gaming/steam',{method:'PUT',body:{tradeUrl}}) }
 export async function deleteSteamConnection() { gamingServer(); await srv('/api/gaming/steam',{method:'DELETE'}) }
 export async function steamInventory(appid:number,language:string,cursor?:string) { gamingServer(); const q=new URLSearchParams({appid:String(appid),language});if(cursor)q.set('cursor',cursor);return srv<{items:SteamItem[];next:string|null;total:number|null}>(`/api/gaming/steam/inventory?${q}`) }
+
+export type Story = { id: string; author: Profile; type: string; caption: string; created_at: string; expires_at: number }
+export async function listStories(): Promise<Story[]> { return (await srv<{items: Story[]}>('/api/stories')).items }
+export async function createStory(file: File, caption: string): Promise<void> { await srv('/api/stories', {method:'POST', body:{data:await fileToBase64(file),caption}}) }
+export async function deleteStory(id: string): Promise<void> { await srv(`/api/stories/${encodeURIComponent(id)}`, {method:'DELETE'}) }
+export async function storyMedia(id: string, signal: AbortSignal): Promise<Blob> {
+  const token = getServerToken()
+  const r = await fetch(`${apiBase}/api/stories/${encodeURIComponent(id)}/media`, {headers:token ? {Authorization:`Bearer ${token}`} : {}, signal, cache:'no-store'})
+  if (!r.ok) throw new Error('Story unavailable')
+  return r.blob()
+}
