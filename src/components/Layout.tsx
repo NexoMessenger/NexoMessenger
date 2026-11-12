@@ -6,20 +6,21 @@ import { Avatar } from './ui'
 import MessagePopups from './MessagePopups'
 import AiLauncher from './AiLauncher'
 import { FrozenNotice } from './AccountRestrictionNotice'
-import { IconChats, IconGroups, IconChannel, IconGift, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
+import { IconAlert, NexoMark, type IconProps } from './icons'
+import { NavChats, NavGroups, NavChannel, NavGift, NavSearch, NavProfile, NavSettings } from './NavIcons'
 import type { ComponentType } from 'react'
 import { useI18n } from '../i18n'
 import { applyGradient, readGradient } from '../lib/interfaceGradient'
 import type { TranslationKey } from '../i18n/translations'
 
 const NAV: { to: string; labelKey: TranslationKey; icon: ComponentType<IconProps> }[] = [
-  { to: '/chats', labelKey: 'nav.chats', icon: IconChats },
-  { to: '/groups', labelKey: 'nav.groups', icon: IconGroups },
-  { to: '/channels', labelKey: 'nav.channels', icon: IconChannel },
-  { to: '/gifts', labelKey: 'nav.gifts', icon: IconGift },
-  { to: '/search', labelKey: 'nav.search', icon: IconSearch },
-  { to: '/profile', labelKey: 'nav.profile', icon: IconProfile },
-  { to: '/settings', labelKey: 'nav.settings', icon: IconSettings },
+  { to: '/chats', labelKey: 'nav.chats', icon: NavChats },
+  { to: '/groups', labelKey: 'nav.groups', icon: NavGroups },
+  { to: '/channels', labelKey: 'nav.channels', icon: NavChannel },
+  { to: '/gifts', labelKey: 'nav.gifts', icon: NavGift },
+  { to: '/search', labelKey: 'nav.search', icon: NavSearch },
+  { to: '/profile', labelKey: 'nav.profile', icon: NavProfile },
+  { to: '/settings', labelKey: 'nav.settings', icon: NavSettings },
 ]
 
 export default function Layout({ children }: { children: ReactNode }) {
