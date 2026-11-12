@@ -64,18 +64,18 @@ export default function ChatsPage() {
         <input className="input" type="search" aria-label={gradientText[locale].search} placeholder={gradientText[locale].search} value={query} onChange={e => setQuery(e.target.value)} />
       </div>
 
-      {!query.trim() && <button className="row-card glass ai-entry" onClick={() => navigate('/ai')}>
+      {!query.trim() && <div className="chats-shortcuts"><button className="row-card glass ai-entry" onClick={() => navigate('/ai')}>
         <span className="ai-avatar"><NexoMark size={25} /></span>
         <span className="row-main"><span className="row-title">NEXO AI</span><span className="row-preview">{t('ai.entry')}</span></span>
-      </button>}
-      {!query.trim() && api.mode === 'server' && <button className="row-card glass zeron-entry" onClick={() => navigate('/zeron')}>
+      </button>
+      {api.mode === 'server' && <button className="row-card glass zeron-entry" onClick={() => navigate('/zeron')}>
         <span className="ai-avatar"><NexoMark size={25} /></span>
         <span className="row-main"><span className="row-title">Zeron</span><span className="row-preview">{t('zeron.entry')}</span></span>
       </button>}
-      {!query.trim() && api.mode === 'server' && <button className="row-card glass" disabled={starting} onClick={() => {
+      {api.mode === 'server' && <button className="row-card glass" disabled={starting} onClick={() => {
         setStarting(true); setError('')
         void api.getSavedChat().then(id => navigate(`/chat/${id}`)).catch(e => setError(errText(e, t))).finally(() => setStarting(false))
-      }}><span className="ai-avatar"><IconStar size={22} /></span><span className="row-main"><span className="row-title">{t('extras.saved')}</span><span className="row-preview">{t('extras.savedHint')}</span></span></button>}
+      }}><span className="ai-avatar"><IconStar size={22} /></span><span className="row-main"><span className="row-title">{t('extras.saved')}</span><span className="row-preview">{t('extras.savedHint')}</span></span></button>}</div>}
       <ErrorBox error={error} />
       {loading ? (
         <div className="center-loader"><div className="spinner" />{t('chats.loading')}</div>
