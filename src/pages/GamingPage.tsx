@@ -6,7 +6,6 @@ import { gamingText } from '../lib/gamingText'
 import * as api from '../lib/api'
 import { IconBack, IconGroups, IconPlus, IconHeart } from '../components/icons'
 import SteamInventory from '../components/SteamInventory'
-import { survivalText } from '../lib/survivalText'
 import { steamText } from '../lib/steamText'
 import gamingArtwork from '../assets/gaming/nexo-gaming.webp'
 import './GamingPage.css'
@@ -42,7 +41,6 @@ export default function GamingPage() {
  <button className={`btn btn-sm ${catalogView==='recent'?'btn-primary':''}`} onClick={()=>setCatalogView('recent')}>{text.recent}</button>
  <button className={`btn btn-sm ${catalogView==='favorites'?'btn-primary':''}`} onClick={()=>setCatalogView('favorites')}>{text.favorites}</button></div>
  {catalogView==='recent' && <p className="gaming-muted">{platform==='mobile'?text.mobileRecent:text.recentHint}</p>}
- {platform==='mobile' && catalogView==='all' && (!gameSearch.trim() || 'rust демо rust demo'.includes(gameSearch.toLowerCase().trim())) && <div className="survival-catalog glass"><div><strong>{survivalText[locale].title}</strong><p>{survivalText[locale].demo}</p></div><button className="btn btn-primary" onClick={()=>navigate('/play/survival')}>{text.launch}</button></div>}
  <input className="input gaming-search" type="search" aria-label={text.gameSearch} placeholder={text.gameSearch} value={gameSearch} onChange={e=>setGameSearch(e.target.value)} />
  {(() => { const ids=catalogView==='recent'?recent:catalogView==='favorites'?favorites:null; const selected=ids ? ids.map(id=>games.find(g=>g.id===id)).filter((g):g is api.CatalogGame=>Boolean(g)) : games; const filtered=selected.filter(g=>g.platform===platform && g.name.toLocaleLowerCase().includes(gameSearch.trim().toLocaleLowerCase()));
  if (!filtered.length) return <p className="gaming-muted">{gameSearch.trim()?text.noGames:catalogView==='recent'?(platform==='mobile'?text.mobileNoRecent:text.noRecent):catalogView==='favorites'?text.noFavorites:text.catalogEmpty}</p>;
