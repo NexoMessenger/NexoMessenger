@@ -9,6 +9,7 @@ import { FrozenNotice } from './AccountRestrictionNotice'
 import { IconChats, IconGroups, IconChannel, IconGift, IconSearch, IconProfile, IconSettings, IconAlert, NexoMark, type IconProps } from './icons'
 import type { ComponentType } from 'react'
 import { useI18n } from '../i18n'
+import { applyGradient, readGradient } from '../lib/interfaceGradient'
 import type { TranslationKey } from '../i18n/translations'
 
 const NAV: { to: string; labelKey: TranslationKey; icon: ComponentType<IconProps> }[] = [
@@ -29,6 +30,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   // the screen — the fixed bottom navigation would cover it on mobile.
   const inRoom = (pathname === '/ai' || pathname === '/zeron') || /^\/(chat|group|channel)\//.test(pathname)
   const [unread, setUnread] = useState(0)
+  useEffect(() => { if (profile?.id) applyGradient(readGradient(profile.id)); return () => { delete document.documentElement.dataset.uiGradient } }, [profile?.id])
 
   useEffect(() => {
     if (!profile) return

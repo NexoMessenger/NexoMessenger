@@ -1731,3 +1731,40 @@ html[data-theme] .direct-chat-room:not(.chat-theme-default) .msg-row.theirs .bub
 .channel-business-card { flex: none; margin-bottom: 16px; padding: 16px; border-radius: 17px; background: var(--glass); border: 1px solid var(--border); font-size: 13px; }.channel-business-card > div { display: flex; justify-content: space-between; gap: 15px; margin-top: 9px; }.channel-business-card > div span:first-child { color: var(--text-2); }.channel-business-card > div span:last-child { text-align: right; overflow-wrap: anywhere; }.channel-business-card a { display: inline-block; margin-top: 12px; color: #cbb1ff; }.channel-business-card p { color: var(--text-2); margin-bottom: 0; }
 .channel-post { max-width: min(100%, 680px); width: 100%; margin-bottom: 12px; }.channel-post .bubble { width: 100%; padding: 15px; border-radius: 18px; }.channel-business-settings { padding: 14px; margin: 12px 0; border: 1px solid var(--border); border-radius: 16px; background: var(--glass); }.channel-business-settings-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }.channel-business-settings p { margin: 5px 0; color: var(--text-2); font-size: 12px; }
 @media (max-width: 500px) { .channel-room-head { gap: 7px; }.channel-room-head .btn { padding: 7px 9px; font-size: 12px; }.channel-welcome { padding: 15px; }.channel-post .bubble { padding: 12px; } }
+
+/* NEXO rounded glass messenger. Decorative only; scroll and room layout stay intact. */
+html[data-ui-gradient]:not([data-ui-gradient="off"]) body::before { background:var(--interface-gradient); background-size:300% 300%; animation:interface-gradient-drift 10s ease-in-out infinite; }
+html[data-ui-gradient="aurora"] { --interface-gradient:linear-gradient(120deg,#101020,#45265e,#23466b,#593159,#18243d,#101020); }
+html[data-ui-gradient="ocean"] { --interface-gradient:linear-gradient(120deg,#071a29,#17465f,#20627a,#253a70,#0d3d49,#071a29); }
+html[data-ui-gradient="sunset"] { --interface-gradient:linear-gradient(120deg,#211122,#743a49,#7b5035,#603453,#39315e,#211122); }
+html[data-ui-gradient="forest"] { --interface-gradient:linear-gradient(120deg,#101e1b,#254f42,#345e56,#3d4e6d,#425531,#101e1b); }
+@keyframes interface-gradient-drift { 0%,100% { background-position:0% 50% } 50% { background-position:100% 50% } }
+.chats-page .row-card { border-radius:22px; padding:13px 15px; background:color-mix(in srgb, var(--glass-strong) 82%, transparent); }
+.chats-page .list { gap:6px; }
+.chats-page .row-title { letter-spacing:-.15px; }
+.chat-search-glass .input,.search-input-wrap .input { border-radius:999px; border:1px solid var(--border-strong); background:var(--glass-strong); box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 28px rgba(0,0,0,.15); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+.chat-search-glass .input { width:100%; min-height:48px; padding-left:46px; }
+.chat-search-glass .search-icon { pointer-events:none; }
+.chat-search-empty { padding:18px 8px; color:var(--text-2); text-align:center; }
+.gradient-settings { margin-bottom:14px; }
+.gradient-settings .sw-title { font-weight:700; }
+.gradient-settings .sw-sub { margin:4px 0 12px; color:var(--text-2); }
+.gradient-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:9px; }
+.gradient-option { min-width:0; padding:8px; display:flex; flex-direction:column; gap:7px; text-align:left; border:1px solid var(--border); border-radius:16px; background:var(--glass); color:var(--text); font-size:12px; }
+.gradient-option.selected { border-color:#c4aaff; box-shadow:0 0 0 2px rgba(174,145,255,.32); }
+.gradient-option:focus-visible { outline:2px solid var(--text); outline-offset:2px; }
+.gradient-swatch { height:42px; width:100%; border-radius:10px; background:linear-gradient(120deg,#45265e,#23466b,#b25c9d); }
+.gradient-option-ocean .gradient-swatch { background:linear-gradient(120deg,#17465f,#48a9b7,#253a70); }
+.gradient-option-sunset .gradient-swatch { background:linear-gradient(120deg,#a24c5e,#d08148,#603453); }
+.gradient-option-forest .gradient-swatch { background:linear-gradient(120deg,#254f42,#62a78a,#425531); }
+.gradient-option-off .gradient-swatch { background:linear-gradient(120deg,#24242d,#0e0e13); }
+@media (prefers-reduced-motion:reduce) { html[data-ui-gradient] body::before { animation:none !important; } }
+/* Keep the existing light theme readable with lighter versions of each gradient. */
+html[data-theme="light"][data-ui-gradient="aurora"] { --interface-gradient:linear-gradient(120deg,#f8f5ff,#dacbf2,#c9e6ef,#f3d9eb,#f8f5ff); }
+html[data-theme="light"][data-ui-gradient="ocean"] { --interface-gradient:linear-gradient(120deg,#eef8ff,#c2e7ef,#c8d9f8,#c6ece7,#eef8ff); }
+html[data-theme="light"][data-ui-gradient="sunset"] { --interface-gradient:linear-gradient(120deg,#fff6f2,#f8d4cf,#f9dfbc,#e9d1ee,#fff6f2); }
+html[data-theme="light"][data-ui-gradient="forest"] { --interface-gradient:linear-gradient(120deg,#f2faf5,#cde9da,#d6e9e8,#e3ecd1,#f2faf5); }
+html[data-theme="light"] .page-title { background:none; -webkit-text-fill-color:currentColor; color:var(--text); }
+.app-shell .btn { border-radius:16px; }
+.app-shell .card { border-radius:22px; }
+.app-shell .bubble { border-radius:20px; }

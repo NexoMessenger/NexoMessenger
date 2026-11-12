@@ -24,7 +24,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (!profile) return
-    if (!q.trim()) { setPeople([]); setGroups([]); setChannels([]); setSearched(false); return }
+    if (!q.trim()) { seqRef.current++; setPeople([]); setGroups([]); setChannels([]); setSearched(false); setLoading(false); setError(''); return }
     setLoading(true)
     const seq = ++seqRef.current
     timer.current = window.setTimeout(async () => {
