@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useI18n } from '../i18n'
@@ -15,10 +15,11 @@ import './GamingPage.css'
 
 export function GameActivity({ userId, own = false }: {userId:string; own?:boolean}) {
  const { locale } = useI18n(); const text = gamingText[locale]
- const [activity,setActivity]=useState<{name:string;launched_at:string}|null>(null); const [clearing,setClearing]=useState(false); const [clearError,setClearError]=useState(false)
- useEffect(()=>{ let active=true; const load=()=>{if(api.mode==='server') api.gamingActivity(userId).then(a=>{if(active)setActivity(a)}).catch(()=>undefined)};load();const unsubscribe=api.subscribeGlobal(load);const timer=window.setInterval(load,60000);return ()=>{active=false;unsubscribe();window.clearInterval(timer)} },[userId])
+ const [activity,setActivity]=useState<{name:string;image_url:string;launched_at:string}|null>(null); const [clearing,setClearing]=useState(false); const [clearError,setClearError]=useState(false); const [imageFailed,setImageFailed]=useState(false); const sequence=useRef(0)
+ useEffect(()=>{ let active=true; const load=()=>{const request=++sequence.current;if(api.mode==='server') api.gamingActivity(userId).then(a=>{if(active && request===sequence.current)setActivity(a)}).catch(()=>undefined)};setActivity(null);load();const unsubscribe=api.subscribeGlobal(load);const timer=window.setInterval(load,60000);return ()=>{active=false;unsubscribe();window.clearInterval(timer)} },[userId])
+ useEffect(()=>{setImageFailed(false)},[activity?.image_url])
  if(!activity)return null
- return <div className="gaming-activity"><strong>◈ {text.playing.replace('{game}',activity.name)}</strong><p>{text.activityHint}</p>{own && <button className="btn btn-sm" disabled={clearing} onClick={()=>{setClearing(true);setClearError(false);void api.clearGameActivity().then(()=>setActivity(null)).catch(()=>setClearError(true)).finally(()=>setClearing(false))}}>{text.clear}</button>}{clearError && <p role="alert">{text.failed}</p>}</div>
+ return <div className="gaming-activity"><div className="gaming-activity-title"><span className="gaming-activity-icon" aria-hidden="true">{activity.image_url && !imageFailed ? <img src={activity.image_url} alt="" referrerPolicy="no-referrer" onError={()=>setImageFailed(true)} /> : <IconGroups size={21}/>}</span><strong>{text.playing.replace('{game}',activity.name)}</strong></div><p>{text.activityHint}</p>{own && <button className="btn btn-sm" disabled={clearing} onClick={()=>{setClearing(true);setClearError(false);void api.clearGameActivity().then(()=>{sequence.current++;setActivity(null)}).catch(()=>setClearError(true)).finally(()=>setClearing(false))}}>{text.clear}</button>}{clearError && <p role="alert">{text.failed}</p>}</div>
 }
 
 export default function GamingPage() {
