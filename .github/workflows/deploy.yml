@@ -216,22 +216,25 @@ jobs:
           grep -R -E -q 'proxy_set_header[[:space:]]+X-Forwarded-Proto[[:space:]]+[$]scheme[[:space:]]*;' /etc/nginx/sites-enabled /etc/nginx/conf.d
           REMOTE
 
-      - name: Upload website + server to VPS (tar over SSH, with retries)
+      - name: Stage complete website and server before activation
         run: |
-          echo "Uploading to $VPS:$DEPLOY_DIR"
-          send_dir() {
-            for i in 1 2 3; do
-              tar czf - -C "$1" . | ssh -o StrictHostKeyChecking=accept-new "$VPS" "mkdir -p '$2' && find '$2' -mindepth 1 -delete 2>/dev/null; tar xzf - -C '$2'" && return 0
-              echo "upload of $1 attempt $i failed, retrying in 10s..."
-              sleep 10
-            done
-            return 1
-          }
-          send_dir dist "$DEPLOY_DIR/dist"
-          send_dir server "$DEPLOY_DIR/server"
+          set -euo pipefail
+          STAGE="$DEPLOY_DIR/.release-stage-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "Staging release on VPS"
+          # A failed upload only affects its staging directory, never the live site.
           for i in 1 2 3; do
-            tar czf - package.json package-lock.json ecosystem.config.cjs deploy/fix-port80.sh | ssh -o StrictHostKeyChecking=accept-new "$VPS" "tar xzf - -C '$DEPLOY_DIR'" && break
-            echo "config upload attempt $i failed, retrying in 10s..."
+            if tar czf - dist server | ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=6 "$VPS" "mkdir -p '$STAGE' && tar xzf - -C '$STAGE'"; then
+              break
+            fi
+            if [ "$i" -eq 3 ]; then echo 'Release upload failed; existing site unchanged'; exit 1; fi
+            echo "Release upload attempt $i failed; retrying in 10s"
+            sleep 10
+          done
+          # Check both entry points before moving either live directory.
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" bash -s -- "$DEPLOY_DIR" "$STAGE" < deploy/activate-release.sh
+          for i in 1 2 3; do
+            if tar czf - package.json package-lock.json ecosystem.config.cjs deploy/fix-port80.sh | ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "$VPS" "tar xzf - -C '$DEPLOY_DIR'"; then break; fi
+            if [ "$i" -eq 3 ]; then echo 'Config upload failed'; exit 1; fi
             sleep 10
           done
 
