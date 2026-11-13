@@ -539,7 +539,7 @@ app.use((req, res, next) => {
   // Permit same-origin app scripts and blob workers, while preventing injected
   // scripts, framing and untrusted form submissions. External HTTPS media is
   // supported for existing profile content and alternative backends.
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'")
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: wss:; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://www.youtube-nocookie.com; frame-ancestors 'self'")
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self), display-capture=(self), payment=(), usb=()')
   if (secureTransport(req)) res.setHeader('Strict-Transport-Security', 'max-age=31536000')
   if (requireHttps && !secureTransport(req)) {
