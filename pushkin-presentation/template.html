@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>А. С. Пушкин — жизнь и творчество</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b0b10;
+    --ink-2:#12121a;
+    --gold:#d9b874;
+    --gold-soft:#e8d5a8;
+    --gold-dim:rgba(217,184,116,.32);
+    --paper:#f3ece0;
+    --muted:rgba(243,236,224,.62);
+    --serif:"Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
+    --sans:"Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%, #1b1a24 0%, #0b0b10 55%, #06060a 100%);
+    color:var(--paper);
+    font-family:var(--sans);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── общий каркас ─────────────────────────────────────── */
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:clamp(10px,2.2vw,42px)}
+  .deck{position:relative;width:min(100%, calc((100vh - clamp(20px,4.4vw,84px)) * 16 / 9));aspect-ratio:16/9;
+        border-radius:18px;overflow:hidden;
+        box-shadow:0 40px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(217,184,116,.18), 0 0 80px -20px rgba(217,184,116,.12);
+        background:#0d0d13;}
+
+  .tex{position:absolute;inset:0;pointer-events:none;opacity:.5;
+       background-image:radial-gradient(rgba(255,255,255,.05) .5px, transparent .5px);
+       background-size:3px 3px;mix-blend-mode:overlay}
+  .vignette{position:absolute;inset:0;pointer-events:none;
+       background:radial-gradient(120% 100% at 50% 40%, transparent 45%, rgba(0,0,0,.72) 100%)}
+  .aurora{position:absolute;inset:-20%;pointer-events:none;opacity:.5;filter:blur(60px);
+       background:
+         radial-gradient(30% 30% at 20% 25%, rgba(150,110,40,.35), transparent 70%),
+         radial-gradient(28% 28% at 82% 78%, rgba(60,70,130,.35), transparent 70%);
+       animation:drift 26s ease-in-out infinite alternate}
+  @keyframes drift{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(3%,2%,0) scale(1.08)}}
+
+  /* пылинки */
+  .dust{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .dust i{position:absolute;display:block;width:3px;height:3px;border-radius:50%;
+          background:radial-gradient(circle,#ffe9b8,rgba(255,233,184,0));
+          opacity:0;animation:float linear infinite}
+  @keyframes float{
+    0%{opacity:0;transform:translate3d(0,30px,0) scale(.6)}
+    15%{opacity:.85}
+    85%{opacity:.5}
+    100%{opacity:0;transform:translate3d(26px,-120px,0) scale(1.1)}
+  }
+
+  /* ── слайды ───────────────────────────────────────────── */
+  .slide{position:absolute;inset:0;padding:clamp(22px,3.4vw,58px) clamp(24px,4vw,72px);
+         display:flex;flex-direction:column;justify-content:center;
+         opacity:0;visibility:hidden;transform:translateY(14px) scale(1.015);
+         transition:opacity .7s ease, transform .9s cubic-bezier(.16,.8,.24,1), visibility .7s;
+         z-index:1}
+  .slide.active{opacity:1;visibility:visible;transform:none;z-index:2}
+
+  /* появление элементов внутри слайда */
+  .slide .r{opacity:0;transform:translateY(22px);
+            transition:opacity .8s ease, transform .9s cubic-bezier(.16,.8,.24,1);
+            transition-delay:var(--d,0s)}
+  .slide.active .r{opacity:1;transform:none}
+  .slide .r.from-left{transform:translateX(-28px)}
+  .slide .r.from-right{transform:translateX(28px)}
+  .slide .r.zoom{transform:scale(.92)}
+  .slide .r.line{transform:scaleX(0);transform-origin:left}
+  .slide.active .r.line{transform:scaleX(1)}
+
+  /* типографика */
+  .kicker{font-family:var(--sans);font-size:clamp(9px,1.05vw,13px);letter-spacing:.32em;text-transform:uppercase;
+          color:var(--gold);font-weight:500;display:flex;align-items:center;gap:.9em}
+  .kicker::before{content:"";width:clamp(18px,3vw,52px);height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.02;letter-spacing:-.01em;
+     font-size:clamp(30px,5.6vw,76px)}
+  h2{font-family:var(--serif);font-weight:600;line-height:1.06;letter-spacing:-.01em;
+     font-size:clamp(22px,3.7vw,50px);margin-bottom:.5em}
+  h3{font-family:var(--serif);font-size:clamp(15px,1.75vw,25px);font-weight:600;color:var(--gold-soft);margin-bottom:.28em}
+  p,li{font-size:clamp(11px,1.18vw,17px);line-height:1.62;color:rgba(243,236,224,.86);font-weight:300}
+  b,strong{font-weight:600;color:#fff8ea}
+  .lead{font-size:clamp(12px,1.32vw,19px);color:var(--muted)}
+  .gold{color:var(--gold)}
+  em{color:var(--gold-soft)}
+
+  .rule{height:1px;width:100%;background:linear-gradient(90deg,var(--gold),rgba(217,184,116,.12),transparent)}
+
+  /* ── титул ────────────────────────────────────────────── */
+  .title-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:clamp(16px,3vw,54px);align-items:center;height:100%}
+  .title-grid h1{margin:.22em 0 .12em}
+  .years{font-family:var(--serif);font-size:clamp(16px,2.3vw,34px);color:var(--gold);letter-spacing:.16em;font-weight:400}
+  .subtitle{max-width:36ch;margin-top:1.1em}
+  .portrait{position:relative;justify-self:center;width:100%;max-width:clamp(180px,26vw,400px);aspect-ratio:3/3.7}
+  .portrait .frame{position:absolute;inset:0;border-radius:50% 50% 46% 46%/42% 42% 58% 58%;
+       overflow:hidden;box-shadow:0 30px 70px -24px rgba(0,0,0,.95), inset 0 0 0 1px rgba(217,184,116,.45)}
+  .portrait .frame::after{content:"";position:absolute;inset:0;
+       background:linear-gradient(160deg,rgba(217,184,116,.16),transparent 45%),
+                  radial-gradient(120% 100% at 50% 110%, rgba(10,10,14,.85), transparent 60%);
+       mix-blend-mode:normal}
+  .portrait img{width:100%;height:100%;object-fit:cover;display:block;
+       filter:saturate(.92) contrast(1.05);
+       animation:ken 24s ease-in-out infinite alternate}
+  @keyframes ken{from{transform:scale(1.02) translateY(0)}to{transform:scale(1.13) translateY(-2%)}}
+  .portrait .halo{position:absolute;inset:-8%;border-radius:50%;pointer-events:none;
+       background:radial-gradient(circle at 50% 45%, rgba(217,184,116,.26), transparent 62%);filter:blur(24px);
+       animation:pulse 7s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.55;transform:scale(.97)}50%{opacity:.95;transform:scale(1.03)}}
+  .portrait .ring{position:absolute;inset:-4%;border:1px solid rgba(217,184,116,.35);border-radius:50%;
+       animation:spin 34s linear infinite;border-top-color:transparent;border-left-color:rgba(217,184,116,.12)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── сетки ────────────────────────────────────────────── */
+  .cols-2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2.4vw,40px);align-items:center}
+  .cols-3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.4vw,20px)}
+  .cols-4{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(8px,1.2vw,16px)}
+  .stack{display:flex;flex-direction:column;gap:clamp(6px,.9vw,14px)}
+  .stack.tight{gap:clamp(5px,.62vw,10px)}
+  .stack.tight .card{padding:clamp(8px,1.02vw,15px)}
+  .stack.tight .card p{font-size:clamp(9px,.95vw,13.5px)}
+
+  .card{position:relative;padding:clamp(10px,1.5vw,22px);border-radius:14px;
+        background:linear-gradient(155deg,rgba(255,255,255,.062),rgba(255,255,255,.018));
+        border:1px solid rgba(217,184,116,.2);backdrop-filter:blur(6px);
+        transition:transform .5s cubic-bezier(.16,.8,.24,1), border-color .4s, box-shadow .5s, background .4s}
+  .card:hover{transform:translateY(-4px);border-color:rgba(217,184,116,.55);
+        box-shadow:0 18px 40px -22px rgba(217,184,116,.5);background:linear-gradient(155deg,rgba(255,255,255,.1),rgba(255,255,255,.03))}
+  .card .yr{font-family:var(--serif);color:var(--gold);font-size:clamp(13px,1.5vw,22px);font-weight:600;letter-spacing:.02em}
+  .card p{font-size:clamp(9.5px,1.02vw,14.5px);line-height:1.5;color:rgba(243,236,224,.72);margin-top:.35em}
+
+  /* таймлайн */
+  .timeline{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(6px,1.3vw,18px);
+            margin-top:clamp(10px,2vw,30px)}
+  .timeline::before{content:"";position:absolute;top:9px;left:2px;right:2px;height:1px;
+            background:linear-gradient(90deg,rgba(217,184,116,.15),var(--gold),rgba(217,184,116,.15));
+            transform:scaleX(0);transform-origin:left;transition:transform 1.6s cubic-bezier(.16,.8,.24,1) .25s}
+  .slide.active .timeline::before{transform:scaleX(1)}
+  .tl{position:relative;padding-top:clamp(18px,2.4vw,30px)}
+  .tl::before{content:"";position:absolute;top:4px;left:0;width:11px;height:11px;border-radius:50%;
+            background:#0d0d13;border:1px solid var(--gold);box-shadow:0 0 0 4px rgba(217,184,116,.1)}
+  .slide.active .tl::before{animation:dotIn .6s ease forwards;animation-delay:calc(.4s + var(--i,0) * .18s);opacity:0}
+  @keyframes dotIn{from{transform:scale(.2);opacity:0;background:var(--gold)}to{transform:scale(1);opacity:1;background:var(--gold)}}
+  .tl .yr{font-family:var(--serif);color:var(--gold-soft);font-weight:600;font-size:clamp(12px,1.4vw,20px)}
+  .tl p{font-size:clamp(9px,.98vw,13.5px);line-height:1.45;color:rgba(243,236,224,.7);margin-top:.3em}
+
+  /* портретные фото на слайдах */
+  .photo{position:relative;border-radius:14px;overflow:hidden;
+         box-shadow:0 30px 70px -30px rgba(0,0,0,.95), 0 0 0 1px rgba(217,184,116,.22)}
+  .photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.2s cubic-bezier(.16,.8,.24,1)}
+  .photo:hover img{transform:scale(1.05)}
+  .photo.stretch{position:relative;align-self:stretch;min-height:0;aspect-ratio:auto}
+  .photo.stretch img{position:absolute;inset:0;width:100%;height:100%}
+  .photo .cap{position:absolute;left:0;right:0;bottom:0;padding:clamp(8px,1.4vw,18px);
+        font-size:clamp(8px,.82vw,11.5px);color:rgba(243,236,224,.78);letter-spacing:.02em;
+        background:linear-gradient(transparent,rgba(6,6,10,.92))}
+
+  /* цитата */
+  .quote{position:relative;padding-left:clamp(14px,2.2vw,34px);border-left:1px solid rgba(217,184,116,.5)}
+  .quote p{font-family:var(--serif);font-style:italic;font-size:clamp(14px,2.1vw,30px);line-height:1.4;color:#fbf4e6}
+  .quote small{display:block;margin-top:.7em;font-size:clamp(9px,1vw,13px);letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+
+  /* чипы */
+  .chips{display:flex;flex-wrap:wrap;gap:clamp(5px,.7vw,10px);margin-top:.6em}
+  .chip{font-size:clamp(8.5px,.92vw,13px);padding:.42em .85em;border-radius:999px;
+        border:1px solid rgba(217,184,116,.32);color:var(--gold-soft);background:rgba(217,184,116,.07);
+        transition:background .35s,border-color .35s,transform .35s}
+  .chip:hover{background:rgba(217,184,116,.18);border-color:var(--gold);transform:translateY(-2px)}
+
+  /* ── управление ───────────────────────────────────────── */
+  .hud{position:fixed;left:0;right:0;bottom:0;padding:clamp(8px,1.5vw,18px) clamp(12px,2.5vw,34px);
+       display:flex;align-items:center;gap:16px;z-index:20;pointer-events:none}
+  .hud > *{pointer-events:auto}
+  .bar{position:absolute;left:0;right:0;top:0;height:2px;background:rgba(255,255,255,.07)}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,rgba(217,184,116,.5),var(--gold));
+         box-shadow:0 0 12px rgba(217,184,116,.7);transition:width .6s cubic-bezier(.16,.8,.24,1)}
+  .dots{display:flex;gap:9px;margin:0 auto}
+  .dot{width:8px;height:8px;border-radius:50%;border:0;padding:0;cursor:pointer;
+       background:rgba(243,236,224,.22);transition:all .35s}
+  .dot:hover{background:rgba(243,236,224,.5)}
+  .dot.on{width:26px;border-radius:99px;background:var(--gold);box-shadow:0 0 14px rgba(217,184,116,.6)}
+  .nav{display:flex;align-items:center;gap:8px}
+  .btn{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+       background:rgba(255,255,255,.05);border:1px solid rgba(217,184,116,.25);color:var(--paper);
+       transition:all .3s;font-size:14px;line-height:1}
+  .btn:hover{background:rgba(217,184,116,.18);border-color:var(--gold);transform:translateY(-1px)}
+  .count{font-variant-numeric:tabular-nums;font-size:11px;letter-spacing:.16em;color:var(--muted);min-width:56px;text-align:right}
+  .hint{position:fixed;left:50%;bottom:clamp(44px,5vw,66px);transform:translateX(-50%);z-index:19;
+        font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(243,236,224,.42);
+        animation:hintFade 6s ease forwards;pointer-events:none;white-space:nowrap}
+  @keyframes hintFade{0%{opacity:0}15%{opacity:1}70%{opacity:1}100%{opacity:0}}
+
+  .orn{display:flex;align-items:center;gap:10px;color:var(--gold);opacity:.8}
+  .orn::before,.orn::after{content:"";height:1px;width:clamp(20px,4vw,70px);background:currentColor;opacity:.45}
+
+  /* адаптив */
+  @media (max-width:820px){
+    .deck{border-radius:12px}
+    .title-grid{grid-template-columns:1fr .7fr;gap:14px}
+    .cols-2{gap:12px}
+    .cols-4{grid-template-columns:repeat(2,1fr)}
+    .timeline{grid-template-columns:repeat(3,1fr);row-gap:10px}
+    .timeline::before{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="dust" id="dust"></div>
+
+<div class="stage">
+  <div class="deck" id="deck">
+    <div class="aurora"></div>
+    <div class="tex"></div>
+
+    <!-- 1 ─ титул -->
+    <section class="slide active" data-title="Титул">
+      <div class="title-grid">
+        <div>
+          <div class="kicker r" style="--d:.05s">Русская литература · 9 класс</div>
+          <h1 class="r" style="--d:.15s">Александр<br>Сергеевич<br><span class="gold">Пушкин</span></h1>
+          <div class="years r" style="--d:.3s">1799 — 1837</div>
+          <div class="rule r line" style="--d:.45s;margin:1.1em 0 1em;width:min(100%,420px)"></div>
+          <p class="lead subtitle r" style="--d:.55s">Жизнь и творчество: от лицейских стихов до «Евгения Онегина» — поэт, который создал современный русский литературный язык.</p>
+          <div class="chips r" style="--d:.7s">
+            <span class="chip">поэт</span><span class="chip">драматург</span><span class="chip">прозаик</span><span class="chip">критик</span>
+          </div>
+        </div>
+        <div class="portrait r zoom" style="--d:.35s">
+          <div class="halo"></div>
+          <div class="ring"></div>
+          <div class="frame"><img src="{{KIPRENSKY}}" alt="Портрет А. С. Пушкина, О. Кипренский, 1827"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 ─ почему важно -->
+    <section class="slide" data-title="Почему Пушкин">
+      <div class="kicker r">Значение</div>
+      <h2 class="r" style="--d:.1s">Почему Пушкин —<br><span class="gold">«наше всё»</span></h2>
+      <div class="cols-3" style="margin-top:1.2em">
+        <div class="card r" style="--d:.25s">
+          <div class="yr">01</div><h3>Создатель языка</h3>
+          <p>Соединил живой разговорный русский с книжным. Именно его язык лёг в основу современной литературной нормы.</p>
+        </div>
+        <div class="card r" style="--d:.4s">
+          <div class="yr">02</div><h3>Все жанры</h3>
+          <p>Роман в стихах, трагедия, поэма, повесть, сказка, эпиграмма, критическая статья — везде он был первым.</p>
+        </div>
+        <div class="card r" style="--d:.55s">
+          <div class="yr">03</div><h3>«Евгений Онегин»</h3>
+          <p>Первый русский реалистический роман в стихах и энциклопедия русской жизни своего времени.</p>
+        </div>
+      </div>
+      <div class="quote r" style="--d:.75s;margin-top:1.2em">
+        <p>«Пушкин — наше всё»</p>
+        <small>Аполлон Григорьев, 1859</small>
+      </div>
+    </section>
+
+    <!-- 3 ─ детство и лицей -->
+    <section class="slide" data-title="Детство и лицей">
+      <div class="kicker r">1799 — 1817</div>
+      <h2 class="r" style="--d:.08s">Детство и <span class="gold">Царское Село</span></h2>
+      <div class="cols-2" style="margin-top:.6em">
+        <div class="stack">
+          <div class="card r" style="--d:.22s"><div class="yr">1799</div>
+            <h3>Москва</h3>
+            <p>26 мая (6 июня) в старинной дворянской семье. Правнук Абрама Ганнибала — «арапа Петра Великого». Читать и писать выучился рано; няню Арину Родионовну помнил всю жизнь.</p>
+          </div>
+          <div class="card r" style="--d:.36s"><div class="yr">1811 — 1817</div>
+            <h3>Царскосельский лицей</h3>
+            <p>Одно из лучших учебных заведений России. Здесь появились настоящие друзья — Пущин, Кюхельбекер, Дельвиг. Поэт-Державин услышал его стихи на экзамене и предсказал большое будущее.</p>
+          </div>
+          <div class="chips r" style="--d:.5s">
+            <span class="chip">«Воспоминания в Царском Селе»</span><span class="chip">1815</span><span class="chip">кружок лицейских</span>
+          </div>
+        </div>
+        <figure class="photo r from-right" style="--d:.3s;aspect-ratio:4/3">
+          <img src="{{LICEY}}" alt="Пушкин на экзамене в Царском Селе, И. Репин">
+          <figcaption class="cap">И. Е. Репин. «Пушкин на экзамене в Царском Селе 8 января 1815 года», 1911</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 4 ─ Петербург и юг -->
+    <section class="slide" data-title="Петербург и ссылки">
+      <div class="kicker r">1817 — 1824</div>
+      <h2 class="r" style="--d:.08s">Петербург и <span class="gold">южная ссылка</span></h2>
+      <div class="cols-2" style="margin-top:.7em">
+        <div class="stack">
+          <div class="card r" style="--d:.2s"><div class="yr">1817 — 1820</div>
+            <h3>Свобода, театр, друзья</h3>
+            <p>Служба в Коллегии иностранных дел. Стихи, эпиграммы, вольнолюбивые одежды — «Вольность», «К Чаадаеву», «Деревня». Так появились не только поклонники, но и недоброжелатели.</p>
+          </div>
+          <div class="card r" style="--d:.34s"><div class="yr">1820 — 1824</div>
+            <h3>Кавказ, Крым, Кишинёв, Одесса</h3>
+            <p>Ссылка за вольнодумие становится подарком для поэта: новые места и южная романтическая поэзия — «Кавказский пленник», «Бахчисарайский фонтан», «Цыганы», «Братья-разбойники».</p>
+          </div>
+          <div class="chips r" style="--d:.48s">
+            <span class="chip">романтизм</span><span class="chip">ссылка</span><span class="chip">Пётр Чаадаев</span>
+          </div>
+        </div>
+        <div class="stack r from-right" style="--d:.28s">
+          <div class="card" style="border-color:rgba(217,184,116,.45);background:linear-gradient(155deg,rgba(217,184,116,.16),rgba(217,184,116,.02))">
+            <h3 style="margin-bottom:.35em">Важно</h3>
+            <p style="color:rgba(243,236,224,.9)">Именно в южный период Пушкин осознаёт себя профессиональным литератором: стихи становятся главным делом жизни, а не развлечением.</p>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:.35em">Вольнодумие и власть</h3>
+            <p>Покровители и цензоры, тайная полиция и личная цензура императора — отношения с властью будут висеть над поэтом до конца.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 ─ Михайловское -->
+    <section class="slide" data-title="Михайловское">
+      <div class="kicker r">1824 — 1826</div>
+      <h2 class="r" style="--d:.08s">Михайловское:<br><span class="gold">два года в тишине</span></h2>
+      <div class="cols-2" style="margin-top:.5em">
+        <figure class="photo r from-left" style="--d:.25s;aspect-ratio:16/10">
+          <img src="{{MIHAILOVSKOE}}" alt="Пушкин в селе Михайловском, Н. Ге, 1875">
+          <figcaption class="cap">Н. Н. Ге. «Пушкин в селе Михайловском», 1875</figcaption>
+        </figure>
+        <div class="stack">
+          <div class="card r" style="--d:.36s"><div class="yr">1824</div>
+            <h3>Новая ссылка</h3>
+            <p>После Одессы — в родовое имение матери под надзор. Вдали от шумного Петербурга Пушкин много читает и мало печатается.</p>
+          </div>
+          <div class="card r" style="--d:.5s"><div class="yr">1825</div>
+            <h3>Главное</h3>
+            <p>Трагедия «Борис Годунов», сатирическая поэма «Граф Нулин», центральные главы «Евгения Онегина».</p>
+          </div>
+          <div class="card r" style="--d:.64s"><div class="yr">1826</div>
+            <h3>Возвращение</h3>
+            <p>Николай I разрешает приехать, но ставит на цензуру самого себя: свободного поэта отныне не будет никогда.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 ─ Болдинская осень -->
+    <section class="slide" data-title="Болдинская осень">
+      <div class="kicker r">1830</div>
+      <h2 class="r" style="--d:.08s">Болдинская осень —<br><span class="gold">взрыв гения</span></h2>
+      <p class="lead r" style="--d:.18s;max-width:58ch">Три месяца в Нижегородской губернии, из-за карантина по холере. То, что он написал там за один сезон, сравнимо с целой библиотекой.</p>
+      <div class="timeline">
+        <div class="tl r" style="--d:.3s;--i:0"><div class="yr">Сентябрь</div><p>«Повести Белкина», «Маленькие трагедии»</p></div>
+        <div class="tl r" style="--d:.42s;--i:1"><div class="yr">Октябрь</div><p>Последние главы «Евгения Онегина»</p></div>
+        <div class="tl r" style="--d:.54s;--i:2"><div class="yr">Октябрь</div><p>«Домик в Коломне», «Пир во время чумы»</p></div>
+        <div class="tl r" style="--d:.66s;--i:3"><div class="yr">Ноябрь</div><p>«Медный всадник», сказка о попе и работнике</p></div>
+        <div class="tl r" style="--d:.78s;--i:4"><div class="yr">Итог</div><p>Около 30 произведений за 3 месяца</p></div>
+      </div>
+      <div class="rule r line" style="--d:.9s;margin-top:clamp(12px,2vw,28px)"></div>
+    </section>
+
+    <!-- 7 ─ семья -->
+    <section class="slide" data-title="Семья">
+      <div class="kicker r">1831 — 1837</div>
+      <h2 class="r" style="--d:.08s">Дом, семья,<br><span class="gold">Петербург</span></h2>
+      <div class="cols-2" style="margin-top:.5em">
+        <div class="stack">
+          <div class="card r" style="--d:.2s"><div class="yr">1831</div>
+            <h3>Женитьба</h3>
+            <p>18 февраля — венчание с Натальей Николаевной Гончаровой (1812–1863) в Москве. Мысль о семейном счастье он вынашивал годами.</p>
+          </div>
+          <div class="card r" style="--d:.34s"><div class="yr">1831 — 1837</div>
+            <h3>Отцы и дети</h3>
+            <p>Четыре ребёнка: Мария, Александр, Григорий, Наталья. Дом на Мойке, 12 становится литературным центром Петербурга.</p>
+          </div>
+          <div class="card r" style="--d:.48s"><div class="yr">1836 — 1837</div>
+            <h3>Долги и бумаги</h3>
+            <p>Светские расходы росли быстрее доходов, а издательские дела шли трудно. Писатель жил на гонорары — и жил в долг.</p>
+          </div>
+        </div>
+        <figure class="photo stretch r from-right" style="--d:.3s;min-height:clamp(150px,17vw,330px)">
+          <img src="{{GONCHAROVA}}" alt="Наталья Николаевна Гончарова, портрет А. Брюллова">
+          <figcaption class="cap">А. П. Брюллов. Портрет Н. Н. Гончаровой, 1831</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 8 ─ произведения -->
+    <section class="slide" data-title="Главные произведения">
+      <div class="kicker r">Библиотека</div>
+      <h2 class="r" style="--d:.08s">Что читать <span class="gold">в первую очередь</span></h2>
+      <div class="cols-3" style="margin-top:1em">
+        <div class="card r" style="--d:.2s"><div class="yr">1823–1831</div><h3>«Евгений Онегин»</h3><p>Роман в стихах. «Онегинская строфа», судьба свободного человека в России — и энциклопедия русской жизни.</p></div>
+        <div class="card r" style="--d:.3s"><div class="yr">1825</div><h3>«Борис Годунов»</h3><p>Трагедия о власти и совести. Народ, который «безмолвствует», — один из ключевых образов русской драмы.</p></div>
+        <div class="card r" style="--d:.4s"><div class="yr">1830</div><h3>«Повести Белкина»</h3><p>Первая русская реалистическая проза: «Метель», «Выстрел», «Станционный смотритель».</p></div>
+        <div class="card r" style="--d:.5s"><div class="yr">1830</div><h3>«Маленькие трагедии»</h3><p>«Скупой рыцарь», «Моцарт и Сальери», «Каменный гость», «Пир во время чумы» — о зависти, страсти и смерти.</p></div>
+        <div class="card r" style="--d:.6s"><div class="yr">1833</div><h3>«Медный всадник»</h3><p>Петербургская повесть о «маленьком человеке» и мощи империи.</p></div>
+        <div class="card r" style="--d:.7s"><div class="yr">1836</div><h3>«Капитанская дочка»</h3><p>Проза о Пугачёвском бунте: честь, милосердие и история, которая решает за людей.</p></div>
+      </div>
+      <div class="chips r" style="--d:.82s;margin-top:.9em">
+        <span class="chip">сказки</span><span class="chip">«Пиковая дама»</span><span class="chip">«Медный всадник»</span><span class="chip">лирика</span>
+      </div>
+    </section>
+
+    <!-- 9 ─ дуэль -->
+    <section class="slide" data-title="Дуэль и последние дни">
+      <div class="kicker r">1837</div>
+      <h2 class="r" style="--d:.08s">Дуэль на <span class="gold">Чёрной речке</span></h2>
+      <div class="cols-2" style="margin-top:.5em">
+        <figure class="photo r from-left" style="--d:.22s;aspect-ratio:16/10">
+          <img src="{{DUEL}}" alt="Пушкин на смертном одре, картина">
+          <figcaption class="cap">Пушкин на смертном одре. Художник П. Ф. Борель (по рисунку А. Козлова)</figcaption>
+        </figure>
+        <div class="stack tight">
+          <div class="card r" style="--d:.32s"><div class="yr">4 ноября 1836</div>
+            <h3>Анонимный пасквиль</h3>
+            <p>Оскорбительные письма о жене и Дантесе: Пушкин был уверен в существовании заговора против его чести и семьи.</p>
+          </div>
+          <div class="card r" style="--d:.46s"><div class="yr">27 января (8 февраля) 1837</div>
+            <h3>Поединок</h3>
+            <p>Дуэль с Жоржем Дантесом у Чёрной речки. Пушкин смертельно ранен в живот.</p>
+          </div>
+          <div class="card r" style="--d:.6s"><div class="yr">29 января (10 февраля) 1837</div>
+            <h3>Последние минуты</h3>
+            <p>Умирает в квартире на Мойке, 12. Похоронен у Святогорского монастыря, рядом с Михайловским.</p>
+          </div>
+          <div class="quote r" style="--d:.74s;border-left-color:rgba(217,184,116,.35)">
+            <p style="font-size:clamp(11px,1.2vw,16px)">«Россия потеряла в нём величайшего поэта…»</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 ─ наследие + цитата -->
+    <section class="slide" data-title="Наследие">
+      <div class="kicker r">Наследие</div>
+      <h2 class="r" style="--d:.08s">Что осталось <span class="gold">после</span></h2>
+      <div class="cols-3" style="margin-top:.8em">
+        <div class="card r" style="--d:.2s"><div class="yr">Язык</div><h3>Норма и вкус</h3><p>Русский литературный язык получил в его текстах ясность, лёгкость и точность.</p></div>
+        <div class="card r" style="--d:.3s"><div class="yr">Жанры</div><h3>Основа традиции</h3><p>Реалистический роман, психологическая проза и русская драма выросли из его опыта.</p></div>
+        <div class="card r" style="--d:.4s"><div class="yr">Память</div><h3>Миф и музей</h3><p>Михайловское, Болдино, Мойка, 12 — места, ставшие частью национальной памяти.</p></div>
+      </div>
+      <div class="quote r" style="--d:.58s;margin-top:1.4em;max-width:62ch">
+        <p>«Я памятник себе воздвиг нерукотворный,<br>К нему не зарастёт народная тропа…»</p>
+        <small>А. С. Пушкин, 1836</small>
+      </div>
+      <div class="orn r" style="--d:.8s;margin-top:1.2em;font-size:clamp(9px,.95vw,12px);letter-spacing:.3em;text-transform:uppercase">Спасибо за внимание</div>
+    </section>
+
+    <!-- 11 ─ вывод / источники -->
+    <section class="slide" data-title="Вывод">
+      <div class="kicker r">Вывод</div>
+      <h2 class="r" style="--d:.08s">Пять дат, которые<br><span class="gold">стоит запомнить</span></h2>
+      <div class="cols-4" style="margin-top:1em">
+        <div class="card r" style="--d:.22s"><div class="yr">1799</div><p>Родился в Москве</p></div>
+        <div class="card r" style="--d:.32s"><div class="yr">1811</div><p>Поступил в Царскосельский лицей</p></div>
+        <div class="card r" style="--d:.42s"><div class="yr">1830</div><p>Болдинская осень</p></div>
+        <div class="card r" style="--d:.52s"><div class="yr">1831</div><p>Женитьба на Н. Гончаровой</p></div>
+      </div>
+      <div class="cols-4" style="margin-top:clamp(6px,1vw,12px)">
+        <div class="card r" style="--d:.62s;border-color:rgba(217,184,116,.5)"><div class="yr">1837</div><p>Дуэль на Чёрной речке</p></div>
+        <div class="card r" style="--d:.7s;grid-column:span 3"><p style="font-size:clamp(10px,1.05vw,15px);color:rgba(243,236,224,.85)">Пушкин прожил всего <b>37 лет</b>, но успел создать то, на что опирается вся русская литература после него.</p></div>
+      </div>
+      <div class="rule r line" style="--d:.85s;margin-top:1.4em"></div>
+      <p class="lead r" style="--d:.9s;margin-top:.9em">Источники: Пушкин А. С. Собр. соч.; В. В. Вересаев «Пушкин в жизни»; Ю. М. Лотман «Александр Сергеевич Пушкин»; материалы музеев «Михайловское» и «Болдино».</p>
+    </section>
+
+
+    <!-- 12 ─ финал -->
+    <section class="slide" data-title="Спасибо">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:clamp(10px,1.6vw,26px)">
+        <div class="portrait r zoom" style="--d:.1s;width:clamp(120px,15vw,230px);aspect-ratio:1">
+          <div class="halo"></div>
+          <div class="ring"></div>
+          <div class="frame"><img src="{{KIPRENSKY}}" alt="А. С. Пушкин"></div>
+        </div>
+        <div class="kicker r" style="--d:.3s;justify-content:center">Спасибо за внимание</div>
+        <div class="quote r" style="--d:.42s;border-left:0;padding-left:0;max-width:60ch">
+          <p style="font-size:clamp(13px,1.7vw,25px)">«Чтение — вот лучшее учение.<br>Следовать за мыслями великого человека — есть наука самая занимательная».</p>
+          <small>А. С. Пушкин</small>
+        </div>
+      </div>
+    </section>
+
+    <div class="vignette"></div>
+  </div>
+</div>
+
+<div class="hint" id="hint">← → или пробел — перелистывать</div>
+
+<div class="hud">
+  <div class="bar"><i id="progress"></i></div>
+  <div class="count" id="count">01 / 12</div>
+  <div class="dots" id="dots"></div>
+  <div class="nav">
+    <button class="btn" id="prev" aria-label="Назад">←</button>
+    <button class="btn" id="next" aria-label="Вперёд">→</button>
+    <button class="btn" id="full" aria-label="На весь экран">⛶</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const deck   = document.getElementById('deck');
+  const slides = Array.from(deck.querySelectorAll('.slide'));
+  const dots   = document.getElementById('dots');
+  const prog   = document.getElementById('progress');
+  const count  = document.getElementById('count');
+  let idx = 0, locked = false;
+
+  // точки навигации
+  slides.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'dot' + (i === 0 ? ' on' : '');
+    b.title = s.dataset.title || ('Слайд ' + (i + 1));
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', () => go(i));
+    dots.appendChild(b);
+  });
+
+  function pad(n){ return String(n).padStart(2, '0'); }
+
+  function render(){
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    Array.from(dots.children).forEach((d, i) => d.classList.toggle('on', i === idx));
+    prog.style.width = ((idx + 1) / slides.length * 100) + '%';
+    count.textContent = pad(idx + 1) + ' / ' + pad(slides.length);
+    locked = true;
+    setTimeout(() => { locked = false; }, 620);
+  }
+
+  function go(n){
+    if (locked && n !== idx) return;
+    idx = Math.max(0, Math.min(slides.length - 1, n));
+    render();
+  }
+  const next = () => go(idx + 1);
+  const prev = () => go(idx - 1);
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('full').addEventListener('click', () => {
+    if (!document.fullscreenElement) deck.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  });
+
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') document.getElementById('full').click();
+  });
+
+  // свайпы и колесо
+  let sx = 0, sy = 0;
+  addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive:true});
+  addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) dx < 0 ? next() : prev();
+  }, {passive:true});
+
+  let wheelAt = 0;
+  addEventListener('wheel', e => {
+    const now = Date.now();
+    if (now - wheelAt < 750) return;
+    if (Math.abs(e.deltaY) < 24) return;
+    wheelAt = now;
+    e.deltaY > 0 ? next() : prev();
+  }, {passive:true});
+
+  // пылинки
+  const dust = document.getElementById('dust');
+  for (let i = 0; i < 26; i++){
+    const p = document.createElement('i');
+    const size = 1 + Math.random() * 3;
+    p.style.left = (Math.random() * 100) + 'vw';
+    p.style.top  = (35 + Math.random() * 65) + 'vh';
+    p.style.width = p.style.height = size + 'px';
+    p.style.animationDuration = (14 + Math.random() * 18) + 's';
+    p.style.animationDelay = (-Math.random() * 24) + 's';
+    dust.appendChild(p);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

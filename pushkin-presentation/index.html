@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пушкин — жизнь и творчество · материалы</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#d9b874;--paper:#f3ece0;--serif:"Cormorant Garamond",Georgia,serif;--sans:"Inter",-apple-system,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;display:grid;place-items:center;padding:24px;
+       background:radial-gradient(120% 90% at 50% -10%,#1b1a24,#0b0b10 55%,#06060a);color:var(--paper);
+       font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{width:min(760px,100%);text-align:center}
+  .portrait{width:150px;height:150px;margin:0 auto 22px;border-radius:50%;overflow:hidden;position:relative;
+            box-shadow:0 24px 60px -24px #000,0 0 0 1px rgba(217,184,116,.45),0 0 70px -12px rgba(217,184,116,.35)}
+  .portrait img{width:100%;height:100%;object-fit:cover;animation:ken 20s ease-in-out infinite alternate}
+  @keyframes ken{from{transform:scale(1.02)}to{transform:scale(1.14)}}
+  .k{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,6vw,54px);line-height:1.05}
+  h1 span{color:var(--gold)}
+  .years{font-family:var(--serif);color:var(--gold);letter-spacing:.18em;margin:12px 0 18px;font-size:clamp(14px,2.4vw,20px)}
+  .lead{color:rgba(243,236,224,.65);font-weight:300;font-size:15px;line-height:1.6;max-width:46ch;margin:0 auto 30px}
+  .row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  a.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:999px;text-decoration:none;
+        font-size:14px;letter-spacing:.02em;transition:transform .3s,box-shadow .3s,background .3s}
+  .primary{background:linear-gradient(150deg,#e8cf94,#c9a45c);color:#171208;font-weight:500;
+           box-shadow:0 16px 40px -18px rgba(217,184,116,.9)}
+  .primary:hover{transform:translateY(-2px);box-shadow:0 22px 50px -18px rgba(217,184,116,1)}
+  .ghost{border:1px solid rgba(217,184,116,.35);color:var(--paper);background:rgba(255,255,255,.04);font-weight:400}
+  .ghost:hover{background:rgba(217,184,116,.15);border-color:var(--gold);transform:translateY(-2px)}
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:34px}
+  .f{padding:14px;border-radius:12px;border:1px solid rgba(217,184,116,.18);background:rgba(255,255,255,.03);
+     font-size:12.5px;color:rgba(243,236,224,.7);line-height:1.45}
+  .f b{display:block;color:var(--gold);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;font-weight:500}
+  .hint{margin-top:26px;font-size:11.5px;color:rgba(243,236,224,.35);letter-spacing:.04em;line-height:1.7}
+  kbd{border:1px solid rgba(217,184,116,.3);border-radius:4px;padding:1px 5px;font-family:var(--sans);font-size:10.5px;color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="portrait"><img src="assets/kiprensky.jpg" alt="А. С. Пушкин"></div>
+  <div class="k">Русская литература · 9 класс</div>
+  <h1>Александр Сергеевич <span>Пушкин</span></h1>
+  <div class="years">1799 — 1837</div>
+  <p class="lead">Жизнь и творчество: 12 слайдов, репродукции Кипренского, Репина, Ге и Брюллова, анимации и заметки для выступающего.</p>
+  <div class="row">
+    <a class="btn primary" href="Pushkin-prezentaciya.html">▶ Смотреть презентацию</a>
+    <a class="btn ghost" href="Pushkin-prezentaciya.pdf" download="Пушкин - презентация.pdf">↓ Скачать PDF</a>
+    <a class="btn ghost" href="Pushkin-prezentaciya.pptx" download="Пушкин - жизнь и творчество.pptx">↓ Скачать PPTX</a>
+  </div>
+  <div class="features">
+    <div class="f"><b>12 слайдов</b>От лицея до дуэли — без воды</div>
+    <div class="f"><b>Анимации</b>И в браузере, и в PowerPoint</div>
+    <div class="f"><b>Заметки</b>Что говорить на каждом слайде</div>
+  </div>
+  <p class="hint" style="margin-bottom:6px">
+    <a href="Pushkin-prezentaciya.pptx" download="Пушкин - жизнь и творчество.pptx"
+       style="color:#d9b874">Прямая ссылка на скачивание PPTX</a>
+  </p>
+  <p class="hint">В презентации: <kbd>←</kbd> <kbd>→</kbd> или пробел — листать · <kbd>F</kbd> — на весь экран · свайп на телефоне</p>
+</div>
+</body>
+</html>
