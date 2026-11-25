@@ -13,19 +13,20 @@
       --sky: #dff3ff;
       --yellow: #ffd166;
       --orange: #ff9f1c;
+      --orange-text: #d96b00;
       --red: #ef476f;
+      --pink: #ffe1e9;
       --green: #37b978;
+      --mint: #d9f7e6;
       --purple: #8b6bd9;
+      --lilac: #eee5ff;
+      --peach: #ffe4b8;
       --scale: 1;
     }
 
     * { box-sizing: border-box; }
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-    }
+    html, body { width: 100%; height: 100%; margin: 0; }
 
     body {
       background: #0d2338;
@@ -87,7 +88,7 @@
       pointer-events: none;
     }
 
-    .topbar, .footer, .content, .summary-layout { position: relative; z-index: 1; }
+    .topbar, .footer, .content, .wide-layout { position: relative; z-index: 1; }
 
     .topbar {
       display: flex;
@@ -111,11 +112,7 @@
       box-shadow: 4px 4px 0 var(--navy);
     }
 
-    .slide-number {
-      font-size: 19px;
-      font-weight: 800;
-      color: #58718b;
-    }
+    .slide-number { font-size: 19px; font-weight: 800; color: #58718b; }
 
     .content {
       flex: 1;
@@ -127,14 +124,9 @@
       margin-top: 22px;
     }
 
-    .copy {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
+    .copy { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 
-    h1, h2, p { margin: 0; }
+    h1, h2, h3, p { margin: 0; }
 
     h1 {
       font-size: 76px;
@@ -144,10 +136,10 @@
     }
 
     h2 {
-      font-size: 52px;
+      font-size: 50px;
       line-height: 1.02;
       letter-spacing: -1px;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
 
     .cover-topic {
@@ -164,33 +156,43 @@
     }
 
     .intro, .example {
-      font-size: 27px;
+      font-size: 26px;
       line-height: 1.28;
       font-weight: 700;
       color: #385572;
     }
 
     .intro { margin-bottom: 26px; }
+    .example { margin-top: 14px; }
 
     .big-line {
-      font-size: 39px;
+      font-size: 37px;
       line-height: 1.16;
       font-weight: 900;
       letter-spacing: -0.5px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .big-line .blue { color: var(--blue); }
     .big-line .red { color: var(--red); }
-    .big-line .orange { color: #e07a00; }
+    .big-line .orange { color: var(--orange-text); }
 
-    .example { margin-top: 4px; }
+    .definition {
+      padding: 18px 22px;
+      border: 4px solid var(--navy);
+      border-radius: 22px;
+      background: var(--sky);
+      font-size: 27px;
+      line-height: 1.25;
+      font-weight: 800;
+      box-shadow: 6px 6px 0 var(--navy);
+    }
 
     .pill-row {
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-top: 26px;
+      margin-top: 22px;
     }
 
     .pill {
@@ -201,18 +203,18 @@
       padding: 9px 18px;
       border: 3px solid var(--navy);
       border-radius: 999px;
-      font-size: 23px;
+      font-size: 22px;
       font-weight: 900;
       box-shadow: 4px 4px 0 var(--navy);
       white-space: nowrap;
     }
 
     .pill.blue { background: var(--sky); }
-    .pill.red { background: #ffe1e9; }
+    .pill.red { background: var(--pink); }
     .pill.yellow { background: var(--yellow); }
-    .pill.orange { background: #ffe4b8; }
-    .pill.green { background: #d9f7e6; }
-    .pill.purple { background: #eee5ff; }
+    .pill.orange { background: var(--peach); }
+    .pill.green { background: var(--mint); }
+    .pill.purple { background: var(--lilac); }
     .pill.white { background: var(--paper); }
 
     .image-card {
@@ -225,13 +227,7 @@
       box-shadow: 12px 12px 0 rgba(23, 50, 77, 0.18);
     }
 
-    .image-card img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
+    .image-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .cover-card { height: 525px; }
 
     .footer {
@@ -247,137 +243,170 @@
 
     .footer strong { color: var(--navy); }
 
-    /* Slide 7: experience */
-    .steps {
-      display: grid;
-      gap: 13px;
-      margin-top: 4px;
+    /* Formula slides */
+    .formula-box {
+      padding: 14px 18px;
+      margin-top: 12px;
+      border: 4px solid var(--navy);
+      border-radius: 22px;
+      background: var(--paper);
+      box-shadow: 6px 6px 0 rgba(23, 50, 77, 0.18);
     }
 
-    .step {
+    .formula-box.dark { background: var(--navy); color: #fff; }
+    .formula-box.dark .formula-note { color: #dbe9f4; }
+
+    .formula {
+      font-size: 36px;
+      line-height: 1.1;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .formula.small { font-size: 31px; }
+    .formula.large { font-size: 38px; }
+
+    .formula-note {
+      margin-top: 9px;
+      font-size: 18px;
+      line-height: 1.25;
+      font-weight: 700;
+      color: #385572;
+      text-align: center;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .legend span {
+      padding: 7px 10px;
+      border: 2px solid var(--navy);
+      border-radius: 12px;
+      background: var(--sky);
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .formula-caption {
+      margin-top: 12px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #385572;
+      line-height: 1.25;
+    }
+
+    /* Examples grid */
+    .wide-layout { flex: 1; min-height: 0; display: flex; flex-direction: column; margin-top: 16px; }
+
+    .example-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .example-card {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 12px 16px;
+      border: 4px solid var(--navy);
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: 6px 6px 0 rgba(23, 50, 77, 0.14);
+    }
+
+    .example-card img {
+      flex: 0 0 190px;
+      width: 190px;
+      height: 170px;
+      object-fit: cover;
+      border: 3px solid var(--navy);
+      border-radius: 18px;
+    }
+
+    .example-card h3 { font-size: 30px; line-height: 1.05; margin-bottom: 8px; }
+    .example-card p { font-size: 21px; font-weight: 800; color: #385572; line-height: 1.2; }
+
+    /* Summary */
+    .recap { display: grid; gap: 10px; margin-top: 4px; }
+
+    .recap-item {
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 12px 16px;
+      padding: 10px 18px;
       border: 3px solid var(--navy);
       border-radius: 18px;
       background: var(--paper);
-      font-size: 23px;
+      font-size: 21px;
       font-weight: 800;
-      line-height: 1.15;
-      box-shadow: 4px 4px 0 rgba(23, 50, 77, 0.16);
+      line-height: 1.2;
+      box-shadow: 4px 4px 0 rgba(23, 50, 77, 0.14);
     }
 
-    .step b {
-      flex: 0 0 42px;
-      height: 42px;
+    .recap-item b {
+      flex: 0 0 40px;
+      height: 40px;
       display: grid;
       place-items: center;
       border-radius: 50%;
       background: var(--yellow);
       border: 3px solid var(--navy);
-      font-size: 22px;
+      font-size: 20px;
     }
 
-    .step:nth-child(2) b { background: var(--sky); }
-    .step:nth-child(3) b { background: #ffe1e9; }
-    .step:nth-child(4) b { background: #d9f7e6; }
+    .recap-item:nth-child(2) b { background: var(--sky); }
+    .recap-item:nth-child(3) b { background: var(--peach); }
+    .recap-item:nth-child(4) b { background: var(--mint); }
 
-    .safety {
-      margin-top: 20px;
-      font-size: 22px;
-      font-weight: 800;
-      color: #385572;
-    }
-
-    /* Slide 8: summary */
-    .summary-layout {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      margin-top: 12px;
-    }
-
-    .summary-head {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 30px;
-      margin-bottom: 26px;
-    }
-
-    .summary-head h2 { margin-bottom: 8px; }
-
-    .summary-head p {
-      max-width: 500px;
-      font-size: 27px;
-      line-height: 1.22;
-      font-weight: 800;
-      color: #385572;
-    }
-
-    .big-rule {
-      padding: 15px 26px;
-      border: 4px solid var(--navy);
-      border-radius: 24px;
-      background: var(--yellow);
-      font-size: 31px;
+    .recap-item code {
+      font-family: Arial, Helvetica, sans-serif;
       font-weight: 900;
-      box-shadow: 7px 7px 0 var(--navy);
-      transform: rotate(1deg);
-      white-space: nowrap;
+      color: var(--blue);
+      font-size: 22px;
     }
 
-    .mini-grid {
+    .mini-strip {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 18px;
-      margin-bottom: 26px;
+      gap: 12px;
+      margin-top: 16px;
     }
 
-    .mini-card {
-      height: 270px;
-      border: 5px solid var(--navy);
-      border-radius: 26px;
-      background: var(--paper);
-      overflow: hidden;
-      box-shadow: 7px 7px 0 rgba(23, 50, 77, 0.16);
+    .mini-strip div {
+      height: 92px;
       display: flex;
-      flex-direction: column;
-    }
-
-    .mini-card img {
-      width: 100%;
-      height: 190px;
-      object-fit: cover;
-      display: block;
-      border-bottom: 5px solid var(--navy);
-    }
-
-    .mini-card span {
-      flex: 1;
-      display: grid;
-      place-items: center;
-      font-size: 25px;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border: 3px solid var(--navy);
+      border-radius: 16px;
+      background: var(--sky);
+      font-size: 18px;
       font-weight: 900;
     }
 
-    .mini-card:nth-child(1) span { background: #ffe1e9; }
-    .mini-card:nth-child(2) span { background: #d9f7e6; }
-    .mini-card:nth-child(3) span { background: #eee5ff; }
-    .mini-card:nth-child(4) span { background: #ffe4b8; }
-    .mini-card:nth-child(5) span { background: var(--sky); }
-
-    .answer-strip {
-      align-self: center;
-      padding: 14px 28px;
-      border-radius: 999px;
-      background: var(--navy);
-      color: #fff;
-      font-size: 24px;
-      font-weight: 800;
+    .mini-strip img {
+      width: 76px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid var(--navy);
     }
+
+    .mini-strip div:nth-child(2) { background: var(--mint); }
+    .mini-strip div:nth-child(3) { background: var(--lilac); }
+    .mini-strip div:nth-child(4) { background: var(--peach); }
+    .mini-strip div:nth-child(5) { background: var(--pink); }
 
     /* Viewer controls */
     #controls {
@@ -418,7 +447,6 @@
     }
 
     #controls button:hover, #controls .download:hover { background: var(--yellow); }
-
     #controls .nav { font-size: 20px; width: 42px; padding: 0; }
 
     #controls .counter {
@@ -430,16 +458,7 @@
     }
 
     #dots { display: flex; gap: 5px; margin: 0 4px; }
-
-    #dots button {
-      width: 12px;
-      height: 12px;
-      min-height: 0;
-      padding: 0;
-      border-radius: 50%;
-      background: #bdcfdb;
-    }
-
+    #dots button { width: 12px; height: 12px; min-height: 0; padding: 0; border-radius: 50%; background: #bdcfdb; }
     #dots button.current { background: var(--red); transform: scale(1.25); }
 
     #hint {
@@ -459,12 +478,7 @@
     @media print {
       @page { size: 13.333in 7.5in; margin: 0; }
       html, body { width: 1280px; height: auto; overflow: visible; background: #fff; }
-      #stage {
-        position: static;
-        width: 1280px;
-        height: auto;
-        transform: none !important;
-      }
+      #stage { position: static; width: 1280px; height: auto; transform: none !important; }
       .slide {
         position: relative;
         inset: auto;
@@ -495,134 +509,161 @@
           <p class="intro">Шарик, кальмар и ракета.<br>Почему они летят вперёд?</p>
           <div class="pill-row">
             <span class="pill blue">Простыми словами</span>
-            <span class="pill yellow">С примерами</span>
+            <span class="pill yellow">С формулами</span>
             <span class="pill orange">С картинками</span>
           </div>
         </div>
-        <div class="image-card cover-card"><img src="assets/01-oblozhka.jpg" alt="Шарик на трубочке едет по нитке"></div>
+        <div class="image-card cover-card"><img src="assets/01-oblozhka.jpg" alt="Ракета и шарик летят в небе"></div>
       </div>
       <div class="footer"><span>Задание на четверг, 26 ноября 2026</span><span><strong>Листай стрелками →</strong></span></div>
     </section>
 
-    <section class="slide" data-title="Главное правило">
+    <section class="slide" data-title="Что это такое">
       <div class="topbar">
-        <span class="kicker">Самое простое правило</span>
+        <span class="kicker">Что это такое</span>
         <span class="slide-number">2 / 8</span>
       </div>
       <div class="content">
         <div class="copy">
-          <h2>Главное правило</h2>
+          <h2>Простыми словами</h2>
+          <div class="definition">Реактивное движение — это когда тело едет вперёд, потому что от него что-то отделяется и летит назад.</div>
+          <p class="example">Не нужно отталкиваться от земли. Достаточно выбросить воздух, воду или газ.</p>
+          <div class="pill-row">
+            <span class="pill blue">Назад: воздух / вода / газ</span>
+            <span class="pill red">Вперёд: тело</span>
+          </div>
+        </div>
+        <div class="image-card"><img src="assets/02-sharik.jpg" alt="Из шарика выходит воздух, шарик летит вперёд"></div>
+      </div>
+      <div class="footer"><span>Главное: часть ушла назад — остальное пошло вперёд</span><span>Без опоры и без толчка от земли</span></div>
+    </section>
+
+    <section class="slide" data-title="Главное правило">
+      <div class="topbar">
+        <span class="kicker">Главное правило</span>
+        <span class="slide-number">3 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Воздух назад — шарик вперёд</h2>
           <p class="big-line"><span class="blue">Воздух выходит назад.</span><br><span class="red">Шарик летит вперёд.</span></p>
-          <p class="example">Надул шарик и отпустил — он побежал по комнате.</p>
+          <p class="example">Так же работают шланг, кальмар, ракета и самолёт. Меняется только то, что выбрасывают.</p>
           <div class="pill-row">
             <span class="pill blue">Воздух ←</span>
             <span class="pill red">Шарик →</span>
           </div>
         </div>
-        <div class="image-card"><img src="assets/02-sharik.jpg" alt="Из шарика выходит воздух, шарик летит вперёд"></div>
+        <div class="image-card"><img src="assets/02-sharik.jpg" alt="Шарик летит вперёд, воздух выходит назад"></div>
       </div>
-      <div class="footer"><span>Пример из жизни: воздушный шарик</span><span>Смотри: что ушло назад, то и толкнуло вперёд</span></div>
+      <div class="footer"><span>Пример: воздушный шарик</span><span>Одна причина для всех примеров</span></div>
     </section>
 
-    <section class="slide" data-title="Шланг">
+    <section class="slide" data-title="Формула 1">
       <div class="topbar">
-        <span class="kicker">Дома и на даче</span>
-        <span class="slide-number">3 / 8</span>
-      </div>
-      <div class="content">
-        <div class="copy">
-          <h2>Шланг тоже дёргается</h2>
-          <p class="big-line"><span class="blue">Вода бежит вперёд.</span><br><span class="orange">Шланг тянет назад.</span></p>
-          <p class="example">Открой воду сильнее — толчок сильнее.</p>
-          <div class="pill-row">
-            <span class="pill blue">Вода →</span>
-            <span class="pill green">Шланг ←</span>
-          </div>
-        </div>
-        <div class="image-card"><img src="assets/03-shlang.jpg" alt="Из садового шланга бьёт вода"></div>
-      </div>
-      <div class="footer"><span>Пример из жизни: полив из шланга</span><span>Вода в одну сторону — шланг в другую</span></div>
-    </section>
-
-    <section class="slide" data-title="Кальмар">
-      <div class="topbar">
-        <span class="kicker">В природе</span>
+        <span class="kicker">Формула 1 · импульс</span>
         <span class="slide-number">4 / 8</span>
       </div>
       <div class="content">
         <div class="copy">
-          <h2>Кальмар так удирает</h2>
-          <p class="big-line"><span class="blue">Воду вытолкнул назад.</span><br><span class="red">Сам поплыл вперёд.</span></p>
-          <p class="example">Так он быстро уплывает от опасности.</p>
+          <h2>Почему так выходит</h2>
+          <div class="formula-box">
+            <div class="formula">p = m · v</div>
+            <div class="formula-note">p — «сколько движения» (импульс); m — масса; v — скорость.</div>
+          </div>
+          <div class="formula-box">
+            <div class="formula">M · V = m · u</div>
+            <div class="formula-note">До старта p = 0. Ракета вперёд и газ назад дают равные числа.</div>
+          </div>
           <div class="pill-row">
-            <span class="pill blue">Вода ←</span>
-            <span class="pill purple">Кальмар →</span>
+            <span class="pill red">Ракета → M, V</span>
+            <span class="pill blue">Газ ← m, u</span>
           </div>
         </div>
-        <div class="image-card"><img src="assets/04-kalmar.jpg" alt="Кальмар выталкивает воду и плывёт вперёд"></div>
+        <div class="image-card"><img src="assets/05-raketa.jpg" alt="Ракета идёт вверх, газ идёт вниз"></div>
       </div>
-      <div class="footer"><span>Пример из природы: кальмар</span><span>Природа придумала это давно</span></div>
+      <div class="footer"><span>Закон сохранения импульса</span><span>По-простому: «движение» не пропадает, а делится</span></div>
     </section>
 
-    <section class="slide" data-title="Ракета">
+    <section class="slide" data-title="Формула 2">
       <div class="topbar">
-        <span class="kicker">В технике</span>
+        <span class="kicker">Формула 2 · толчок</span>
         <span class="slide-number">5 / 8</span>
       </div>
       <div class="content">
         <div class="copy">
-          <h2>Ракета</h2>
-          <p class="big-line"><span class="orange">Газ идёт вниз.</span><br><span class="red">Ракета идёт вверх.</span></p>
-          <p class="example">В небе не за что зацепиться — а она всё равно летит.</p>
+          <h2>От чего зависит толчок</h2>
+          <div class="formula-box">
+            <div class="formula">F = q · u</div>
+            <div class="formula-note">F — сила толчка; q — масса газа за 1 секунду; u — скорость газа.</div>
+          </div>
+          <div class="formula-box">
+            <div class="formula">a = F / M</div>
+            <div class="formula-note">a — ускорение; M — масса ракеты. Значит a = (q · u) / M.</div>
+          </div>
+          <p class="example">Больше газа или быстрее газ → сильнее толчок → быстрее разгон.</p>
           <div class="pill-row">
-            <span class="pill orange">Газ ↓</span>
-            <span class="pill red">Ракета ↑</span>
+            <span class="pill orange">Больше q</span>
+            <span class="pill blue">Больше u</span>
+            <span class="pill green">Больше a</span>
           </div>
         </div>
-        <div class="image-card"><img src="assets/05-raketa.jpg" alt="Ракета взлетает, горячий газ идёт вниз"></div>
+        <div class="image-card"><img src="assets/03-shlang.jpg" alt="Из шланга быстро выходит вода"></div>
       </div>
-      <div class="footer"><span>Пример из техники: ракета</span><span>Газ ушёл вниз — ракета пошла вверх</span></div>
+      <div class="footer"><span>q — сколько килограммов газа уходит каждую секунду</span><span>Легче ракета — больше ускорение</span></div>
     </section>
 
-    <section class="slide" data-title="Самолёт">
+    <section class="slide" data-title="Формула 3">
       <div class="topbar">
-        <span class="kicker">В технике</span>
+        <span class="kicker">Формула 3 · ракета</span>
         <span class="slide-number">6 / 8</span>
       </div>
       <div class="content">
         <div class="copy">
-          <h2>Самолёт</h2>
-          <p class="big-line"><span class="blue">Воздух гонит назад.</span><br><span class="orange">Самолёт летит вперёд.</span></p>
-          <p class="example">Тот же фокус, только вместо шарика — самолёт.</p>
-          <div class="pill-row">
-            <span class="pill blue">Воздух ←</span>
-            <span class="pill orange">Самолёт →</span>
+          <h2>Формула Циолковского</h2>
+          <div class="formula-box dark">
+            <div class="formula large">V = u · ln(m₀ / m)</div>
+            <div class="formula-note">Скорость ракеты, когда часть топлива уже сгорела.</div>
           </div>
+          <div class="legend">
+            <span>V — скорость ракеты</span>
+            <span>u — скорость газа</span>
+            <span>m₀ — масса в начале</span>
+            <span>m — масса в конце</span>
+          </div>
+          <p class="formula-caption">ln — кнопка на калькуляторе. Она показывает, во сколько раз ракета стала легче. Чем больше топлива сгорело, тем больше V.</p>
         </div>
-        <div class="image-card"><img src="assets/06-samolyot.jpg" alt="Самолёт летит вперёд, поток воздуха позади"></div>
+        <div class="image-card"><img src="assets/05-raketa.jpg" alt="Ракета летит вверх после сгорания топлива"></div>
       </div>
-      <div class="footer"><span>Пример из техники: самолёт</span><span>Назад уходит воздух — вперёд идёт самолёт</span></div>
+      <div class="footer"><span>Самая известная формула для ракеты</span><span>Без учёта воздуха и веса — школьный вид</span></div>
     </section>
 
-    <section class="slide" data-title="Опыт">
+    <section class="slide" data-title="Где это работает">
       <div class="topbar">
-        <span class="kicker">Можно показать на уроке</span>
+        <span class="kicker">Где это работает</span>
         <span class="slide-number">7 / 8</span>
       </div>
-      <div class="content">
-        <div class="copy">
-          <h2>Опыт за 1 минуту</h2>
-          <div class="steps">
-            <div class="step"><b>1</b><span>Натяни нитку между двумя стульями.</span></div>
-            <div class="step"><b>2</b><span>Надень на нитку трубочку для напитков.</span></div>
-            <div class="step"><b>3</b><span>Приклей к ней надутый шарик.</span></div>
-            <div class="step"><b>4</b><span>Отпусти — и шарик поедет по нитке.</span></div>
-          </div>
-          <p class="safety">Без огня и без хитрых приборов.</p>
+      <div class="wide-layout">
+        <h2>В жизни и в технике</h2>
+        <div class="example-grid">
+          <article class="example-card">
+            <img src="assets/03-shlang.jpg" alt="">
+            <div><h3>Шланг</h3><p>Вода →, шланг ←.</p></div>
+          </article>
+          <article class="example-card">
+            <img src="assets/04-kalmar.jpg" alt="">
+            <div><h3>Кальмар</h3><p>Вода ←, кальмар →.</p></div>
+          </article>
+          <article class="example-card">
+            <img src="assets/05-raketa.jpg" alt="">
+            <div><h3>Ракета</h3><p>Газ ↓, ракета ↑.</p></div>
+          </article>
+          <article class="example-card">
+            <img src="assets/06-samolyot.jpg" alt="">
+            <div><h3>Самолёт</h3><p>Воздух ←, самолёт →.</p></div>
+          </article>
         </div>
-        <div class="image-card"><img src="assets/07-opyt.jpg" alt="Шарик на трубочке едет по нитке между стульями"></div>
       </div>
-      <div class="footer"><span>Нужны: шарик, нитка, трубочка, скотч, два стула</span><span>Покажи и сразу скажи: «Воздух назад — шарик вперёд»</span></div>
+      <div class="footer"><span>Одна и та же причина: что-то уходит назад</span><span>Меняется только «то, что уходит»</span></div>
     </section>
 
     <section class="slide" data-title="Что запомнить">
@@ -630,24 +671,23 @@
         <span class="kicker">Что запомнить</span>
         <span class="slide-number">8 / 8</span>
       </div>
-      <div class="summary-layout">
-        <div class="summary-head">
-          <div>
-            <h2>Всё просто!</h2>
-            <p>Назад уходит воздух, вода или газ.<br>Вперёд идёт шарик, кальмар или ракета.</p>
-          </div>
-          <div class="big-rule">Выкинули назад — поехали вперёд</div>
+      <div class="wide-layout">
+        <h2>Коротко: 4 мысли</h2>
+        <div class="recap">
+          <div class="recap-item"><b>1</b><span>Что-то уходит назад — тело идёт вперёд.</span></div>
+          <div class="recap-item"><b>2</b><span><code>M · V = m · u</code> — ракета и газ «равны» по числу.</span></div>
+          <div class="recap-item"><b>3</b><span><code>F = q · u</code> — больше газа или быстрее газ → сильнее толчок.</span></div>
+          <div class="recap-item"><b>4</b><span><code>V = u · ln(m₀ / m)</code> — легче ракета → больше скорость.</span></div>
         </div>
-        <div class="mini-grid">
-          <div class="mini-card"><img src="assets/02-sharik.jpg" alt=""><span>Шарик</span></div>
-          <div class="mini-card"><img src="assets/03-shlang.jpg" alt=""><span>Шланг</span></div>
-          <div class="mini-card"><img src="assets/04-kalmar.jpg" alt=""><span>Кальмар</span></div>
-          <div class="mini-card"><img src="assets/05-raketa.jpg" alt=""><span>Ракета</span></div>
-          <div class="mini-card"><img src="assets/06-samolyot.jpg" alt=""><span>Самолёт</span></div>
+        <div class="mini-strip">
+          <div><img src="assets/02-sharik.jpg" alt="">Шарик</div>
+          <div><img src="assets/03-shlang.jpg" alt="">Шланг</div>
+          <div><img src="assets/04-kalmar.jpg" alt="">Кальмар</div>
+          <div><img src="assets/05-raketa.jpg" alt="">Ракета</div>
+          <div><img src="assets/06-samolyot.jpg" alt="">Самолёт</div>
         </div>
-        <div class="answer-strip">Если спросят «почему?»: газ ушёл вниз — ракета пошла вверх.</div>
       </div>
-      <div class="footer"><span>Шарик, шланг, кальмар, ракета, самолёт</span><span><strong>Всё!</strong></span></div>
+      <div class="footer"><span>Формулы + примеры из жизни и техники</span><span><strong>Всё!</strong></span></div>
     </section>
   </main>
 
