@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Реактивное движение в жизни и в технике — физика, 26 ноября</title>
+  <style>
+    :root {
+      --cream: #fff7e6;
+      --paper: #fffdf6;
+      --navy: #17324d;
+      --blue: #168aad;
+      --sky: #dff3ff;
+      --yellow: #ffd166;
+      --orange: #ff9f1c;
+      --red: #ef476f;
+      --green: #37b978;
+      --purple: #8b6bd9;
+      --scale: 1;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: #0d2338;
+      color: var(--navy);
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+
+    #stage {
+      position: absolute;
+      top: calc(50% - 20px);
+      left: 50%;
+      width: 1280px;
+      height: 720px;
+      transform: translate(-50%, -50%) scale(var(--scale));
+      transform-origin: center center;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 1280px;
+      height: 720px;
+      padding: 42px 56px 28px;
+      background: var(--cream);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+    }
+
+    .slide.active { display: flex; animation: fade 220ms ease-out; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .slide::before {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -125px;
+      top: -145px;
+      border-radius: 50%;
+      background: rgba(255, 209, 102, 0.35);
+      pointer-events: none;
+    }
+
+    .slide::after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      left: -95px;
+      bottom: -115px;
+      border-radius: 50%;
+      background: rgba(22, 138, 173, 0.12);
+      pointer-events: none;
+    }
+
+    .topbar, .footer, .content, .summary-layout { position: relative; z-index: 1; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 40px;
+      gap: 20px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 16px;
+      border: 3px solid var(--navy);
+      border-radius: 999px;
+      background: var(--paper);
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 0 var(--navy);
+    }
+
+    .slide-number {
+      font-size: 19px;
+      font-weight: 800;
+      color: #58718b;
+    }
+
+    .content {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 500px 1fr;
+      gap: 38px;
+      align-items: center;
+      margin-top: 22px;
+    }
+
+    .copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    h1, h2, p { margin: 0; }
+
+    h1 {
+      font-size: 76px;
+      line-height: 0.98;
+      letter-spacing: -2px;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      font-size: 52px;
+      line-height: 1.02;
+      letter-spacing: -1px;
+      margin-bottom: 22px;
+    }
+
+    .cover-topic {
+      display: inline-block;
+      padding: 8px 18px;
+      border-radius: 14px;
+      background: var(--yellow);
+      border: 3px solid var(--navy);
+      font-size: 28px;
+      font-weight: 800;
+      transform: rotate(-1.5deg);
+      margin-bottom: 24px;
+      box-shadow: 5px 5px 0 var(--navy);
+    }
+
+    .intro, .example {
+      font-size: 27px;
+      line-height: 1.28;
+      font-weight: 700;
+      color: #385572;
+    }
+
+    .intro { margin-bottom: 26px; }
+
+    .big-line {
+      font-size: 39px;
+      line-height: 1.16;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+    }
+
+    .big-line .blue { color: var(--blue); }
+    .big-line .red { color: var(--red); }
+    .big-line .orange { color: #e07a00; }
+
+    .example { margin-top: 4px; }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 9px 18px;
+      border: 3px solid var(--navy);
+      border-radius: 999px;
+      font-size: 23px;
+      font-weight: 900;
+      box-shadow: 4px 4px 0 var(--navy);
+      white-space: nowrap;
+    }
+
+    .pill.blue { background: var(--sky); }
+    .pill.red { background: #ffe1e9; }
+    .pill.yellow { background: var(--yellow); }
+    .pill.orange { background: #ffe4b8; }
+    .pill.green { background: #d9f7e6; }
+    .pill.purple { background: #eee5ff; }
+    .pill.white { background: var(--paper); }
+
+    .image-card {
+      width: 100%;
+      height: 510px;
+      border: 7px solid var(--navy);
+      border-radius: 34px;
+      background: var(--paper);
+      overflow: hidden;
+      box-shadow: 12px 12px 0 rgba(23, 50, 77, 0.18);
+    }
+
+    .image-card img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cover-card { height: 525px; }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 32px;
+      margin-top: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #6a7f94;
+    }
+
+    .footer strong { color: var(--navy); }
+
+    /* Slide 7: experience */
+    .steps {
+      display: grid;
+      gap: 13px;
+      margin-top: 4px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border: 3px solid var(--navy);
+      border-radius: 18px;
+      background: var(--paper);
+      font-size: 23px;
+      font-weight: 800;
+      line-height: 1.15;
+      box-shadow: 4px 4px 0 rgba(23, 50, 77, 0.16);
+    }
+
+    .step b {
+      flex: 0 0 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--yellow);
+      border: 3px solid var(--navy);
+      font-size: 22px;
+    }
+
+    .step:nth-child(2) b { background: var(--sky); }
+    .step:nth-child(3) b { background: #ffe1e9; }
+    .step:nth-child(4) b { background: #d9f7e6; }
+
+    .safety {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #385572;
+    }
+
+    /* Slide 8: summary */
+    .summary-layout {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .summary-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 30px;
+      margin-bottom: 26px;
+    }
+
+    .summary-head h2 { margin-bottom: 8px; }
+
+    .summary-head p {
+      max-width: 500px;
+      font-size: 27px;
+      line-height: 1.22;
+      font-weight: 800;
+      color: #385572;
+    }
+
+    .big-rule {
+      padding: 15px 26px;
+      border: 4px solid var(--navy);
+      border-radius: 24px;
+      background: var(--yellow);
+      font-size: 31px;
+      font-weight: 900;
+      box-shadow: 7px 7px 0 var(--navy);
+      transform: rotate(1deg);
+      white-space: nowrap;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+
+    .mini-card {
+      height: 270px;
+      border: 5px solid var(--navy);
+      border-radius: 26px;
+      background: var(--paper);
+      overflow: hidden;
+      box-shadow: 7px 7px 0 rgba(23, 50, 77, 0.16);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mini-card img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+      border-bottom: 5px solid var(--navy);
+    }
+
+    .mini-card span {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .mini-card:nth-child(1) span { background: #ffe1e9; }
+    .mini-card:nth-child(2) span { background: #d9f7e6; }
+    .mini-card:nth-child(3) span { background: #eee5ff; }
+    .mini-card:nth-child(4) span { background: #ffe4b8; }
+    .mini-card:nth-child(5) span { background: var(--sky); }
+
+    .answer-strip {
+      align-self: center;
+      padding: 14px 28px;
+      border-radius: 999px;
+      background: var(--navy);
+      color: #fff;
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    /* Viewer controls */
+    #controls {
+      position: fixed;
+      z-index: 20;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 253, 246, 0.96);
+      border: 2px solid rgba(23, 50, 77, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #controls button, #controls .download {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: #e8f2f8;
+      color: var(--navy);
+      min-height: 38px;
+      padding: 0 14px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    #controls button:hover, #controls .download:hover { background: var(--yellow); }
+
+    #controls .nav { font-size: 20px; width: 42px; padding: 0; }
+
+    #controls .counter {
+      min-width: 76px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #58718b;
+    }
+
+    #dots { display: flex; gap: 5px; margin: 0 4px; }
+
+    #dots button {
+      width: 12px;
+      height: 12px;
+      min-height: 0;
+      padding: 0;
+      border-radius: 50%;
+      background: #bdcfdb;
+    }
+
+    #dots button.current { background: var(--red); transform: scale(1.25); }
+
+    #hint {
+      position: fixed;
+      z-index: 20;
+      right: 16px;
+      bottom: 18px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+      #controls .download, #controls #fullscreen, #hint { display: none; }
+    }
+
+    @media print {
+      @page { size: 13.333in 7.5in; margin: 0; }
+      html, body { width: 1280px; height: auto; overflow: visible; background: #fff; }
+      #stage {
+        position: static;
+        width: 1280px;
+        height: auto;
+        transform: none !important;
+      }
+      .slide {
+        position: relative;
+        inset: auto;
+        display: flex !important;
+        width: 1280px;
+        height: 720px;
+        page-break-after: always;
+        break-after: page;
+        animation: none !important;
+      }
+      .slide:last-child { page-break-after: auto; break-after: auto; }
+      #controls, #hint { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main id="stage" aria-label="Презентация: Реактивное движение в жизни и в технике">
+
+    <section class="slide active" data-title="Титул">
+      <div class="topbar">
+        <span class="kicker">Физика · четверг, 26 ноября</span>
+        <span class="slide-number">1 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h1>Реактивное<br>движение</h1>
+          <span class="cover-topic">в жизни и в технике</span>
+          <p class="intro">Шарик, кальмар и ракета.<br>Почему они летят вперёд?</p>
+          <div class="pill-row">
+            <span class="pill blue">Простыми словами</span>
+            <span class="pill yellow">С примерами</span>
+            <span class="pill orange">С картинками</span>
+          </div>
+        </div>
+        <div class="image-card cover-card"><img src="assets/01-oblozhka.jpg" alt="Шарик на трубочке едет по нитке"></div>
+      </div>
+      <div class="footer"><span>Задание на четверг, 26 ноября 2026</span><span><strong>Листай стрелками →</strong></span></div>
+    </section>
+
+    <section class="slide" data-title="Главное правило">
+      <div class="topbar">
+        <span class="kicker">Самое простое правило</span>
+        <span class="slide-number">2 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Главное правило</h2>
+          <p class="big-line"><span class="blue">Воздух выходит назад.</span><br><span class="red">Шарик летит вперёд.</span></p>
+          <p class="example">Надул шарик и отпустил — он побежал по комнате.</p>
+          <div class="pill-row">
+            <span class="pill blue">Воздух ←</span>
+            <span class="pill red">Шарик →</span>
+          </div>
+        </div>
+        <div class="image-card"><img src="assets/02-sharik.jpg" alt="Из шарика выходит воздух, шарик летит вперёд"></div>
+      </div>
+      <div class="footer"><span>Пример из жизни: воздушный шарик</span><span>Смотри: что ушло назад, то и толкнуло вперёд</span></div>
+    </section>
+
+    <section class="slide" data-title="Шланг">
+      <div class="topbar">
+        <span class="kicker">Дома и на даче</span>
+        <span class="slide-number">3 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Шланг тоже дёргается</h2>
+          <p class="big-line"><span class="blue">Вода бежит вперёд.</span><br><span class="orange">Шланг тянет назад.</span></p>
+          <p class="example">Открой воду сильнее — толчок сильнее.</p>
+          <div class="pill-row">
+            <span class="pill blue">Вода →</span>
+            <span class="pill green">Шланг ←</span>
+          </div>
+        </div>
+        <div class="image-card"><img src="assets/03-shlang.jpg" alt="Из садового шланга бьёт вода"></div>
+      </div>
+      <div class="footer"><span>Пример из жизни: полив из шланга</span><span>Вода в одну сторону — шланг в другую</span></div>
+    </section>
+
+    <section class="slide" data-title="Кальмар">
+      <div class="topbar">
+        <span class="kicker">В природе</span>
+        <span class="slide-number">4 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Кальмар так удирает</h2>
+          <p class="big-line"><span class="blue">Воду вытолкнул назад.</span><br><span class="red">Сам поплыл вперёд.</span></p>
+          <p class="example">Так он быстро уплывает от опасности.</p>
+          <div class="pill-row">
+            <span class="pill blue">Вода ←</span>
+            <span class="pill purple">Кальмар →</span>
+          </div>
+        </div>
+        <div class="image-card"><img src="assets/04-kalmar.jpg" alt="Кальмар выталкивает воду и плывёт вперёд"></div>
+      </div>
+      <div class="footer"><span>Пример из природы: кальмар</span><span>Природа придумала это давно</span></div>
+    </section>
+
+    <section class="slide" data-title="Ракета">
+      <div class="topbar">
+        <span class="kicker">В технике</span>
+        <span class="slide-number">5 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Ракета</h2>
+          <p class="big-line"><span class="orange">Газ идёт вниз.</span><br><span class="red">Ракета идёт вверх.</span></p>
+          <p class="example">В небе не за что зацепиться — а она всё равно летит.</p>
+          <div class="pill-row">
+            <span class="pill orange">Газ ↓</span>
+            <span class="pill red">Ракета ↑</span>
+          </div>
+        </div>
+        <div class="image-card"><img src="assets/05-raketa.jpg" alt="Ракета взлетает, горячий газ идёт вниз"></div>
+      </div>
+      <div class="footer"><span>Пример из техники: ракета</span><span>Газ ушёл вниз — ракета пошла вверх</span></div>
+    </section>
+
+    <section class="slide" data-title="Самолёт">
+      <div class="topbar">
+        <span class="kicker">В технике</span>
+        <span class="slide-number">6 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Самолёт</h2>
+          <p class="big-line"><span class="blue">Воздух гонит назад.</span><br><span class="orange">Самолёт летит вперёд.</span></p>
+          <p class="example">Тот же фокус, только вместо шарика — самолёт.</p>
+          <div class="pill-row">
+            <span class="pill blue">Воздух ←</span>
+            <span class="pill orange">Самолёт →</span>
+          </div>
+        </div>
+        <div class="image-card"><img src="assets/06-samolyot.jpg" alt="Самолёт летит вперёд, поток воздуха позади"></div>
+      </div>
+      <div class="footer"><span>Пример из техники: самолёт</span><span>Назад уходит воздух — вперёд идёт самолёт</span></div>
+    </section>
+
+    <section class="slide" data-title="Опыт">
+      <div class="topbar">
+        <span class="kicker">Можно показать на уроке</span>
+        <span class="slide-number">7 / 8</span>
+      </div>
+      <div class="content">
+        <div class="copy">
+          <h2>Опыт за 1 минуту</h2>
+          <div class="steps">
+            <div class="step"><b>1</b><span>Натяни нитку между двумя стульями.</span></div>
+            <div class="step"><b>2</b><span>Надень на нитку трубочку для напитков.</span></div>
+            <div class="step"><b>3</b><span>Приклей к ней надутый шарик.</span></div>
+            <div class="step"><b>4</b><span>Отпусти — и шарик поедет по нитке.</span></div>
+          </div>
+          <p class="safety">Без огня и без хитрых приборов.</p>
+        </div>
+        <div class="image-card"><img src="assets/07-opyt.jpg" alt="Шарик на трубочке едет по нитке между стульями"></div>
+      </div>
+      <div class="footer"><span>Нужны: шарик, нитка, трубочка, скотч, два стула</span><span>Покажи и сразу скажи: «Воздух назад — шарик вперёд»</span></div>
+    </section>
+
+    <section class="slide" data-title="Что запомнить">
+      <div class="topbar">
+        <span class="kicker">Что запомнить</span>
+        <span class="slide-number">8 / 8</span>
+      </div>
+      <div class="summary-layout">
+        <div class="summary-head">
+          <div>
+            <h2>Всё просто!</h2>
+            <p>Назад уходит воздух, вода или газ.<br>Вперёд идёт шарик, кальмар или ракета.</p>
+          </div>
+          <div class="big-rule">Выкинули назад — поехали вперёд</div>
+        </div>
+        <div class="mini-grid">
+          <div class="mini-card"><img src="assets/02-sharik.jpg" alt=""><span>Шарик</span></div>
+          <div class="mini-card"><img src="assets/03-shlang.jpg" alt=""><span>Шланг</span></div>
+          <div class="mini-card"><img src="assets/04-kalmar.jpg" alt=""><span>Кальмар</span></div>
+          <div class="mini-card"><img src="assets/05-raketa.jpg" alt=""><span>Ракета</span></div>
+          <div class="mini-card"><img src="assets/06-samolyot.jpg" alt=""><span>Самолёт</span></div>
+        </div>
+        <div class="answer-strip">Если спросят «почему?»: газ ушёл вниз — ракета пошла вверх.</div>
+      </div>
+      <div class="footer"><span>Шарик, шланг, кальмар, ракета, самолёт</span><span><strong>Всё!</strong></span></div>
+    </section>
+  </main>
+
+  <nav id="controls" aria-label="Управление презентацией">
+    <button class="nav" id="prev" aria-label="Предыдущий слайд">←</button>
+    <div id="dots" aria-label="Слайды"></div>
+    <span class="counter" id="counter">1 / 8</span>
+    <button class="nav" id="next" aria-label="Следующий слайд">→</button>
+    <a class="download" href="reaktivnoe-dvizhenie.pptx" download="Реактивное_движение_26_ноября.pptx">Скачать PPTX</a>
+    <button id="print">Печать / PDF</button>
+    <button id="fullscreen">⛶</button>
+  </nav>
+  <div id="hint">Стрелки ← → · Пробел · F — на весь экран</div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const dots = document.getElementById('dots');
+    const counter = document.getElementById('counter');
+    let current = 0;
+
+    slides.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `Слайд ${i + 1}`);
+      dot.addEventListener('click', () => go(i));
+      dots.appendChild(dot);
+    });
+
+    function fit() {
+      const scale = Math.max(0.2, Math.min((window.innerWidth - 32) / 1280, (window.innerHeight - 96) / 720));
+      document.documentElement.style.setProperty('--scale', String(scale));
+    }
+
+    function go(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+      Array.from(dots.children).forEach((dot, i) => dot.classList.toggle('current', i === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      try { history.replaceState(null, '', `#slide-${current + 1}`); } catch (_) { /* offline-safe */ }
+    }
+
+    function next() { go(current + 1); }
+    function prev() { go(current - 1); }
+
+    document.getElementById('next').addEventListener('click', next);
+    document.getElementById('prev').addEventListener('click', prev);
+    document.getElementById('print').addEventListener('click', () => window.print());
+    document.getElementById('fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(event.key)) { event.preventDefault(); next(); }
+      else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(event.key)) { event.preventDefault(); prev(); }
+      else if (event.key === 'Home') { event.preventDefault(); go(0); }
+      else if (event.key === 'End') { event.preventDefault(); go(slides.length - 1); }
+      else if (event.key.toLowerCase() === 'f') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      }
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (event) => { touchStartX = event.changedTouches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', (event) => {
+      const delta = event.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(delta) > 60) (delta < 0 ? next : prev)();
+    }, { passive: true });
+
+    window.addEventListener('resize', fit);
+    fit();
+
+    const hash = Number((location.hash.match(/#slide-(\d+)/) || [])[1] || 1);
+    go(Number.isFinite(hash) ? hash - 1 : 0);
+  </script>
+</body>
+</html>
