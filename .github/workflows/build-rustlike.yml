@@ -8,6 +8,8 @@
 #     триггерятся только на main);
 #   - минимальные права: contents: read; никакие секреты не используются;
 #   - результат — JAR-артефакт сборки (без публикации релизов).
+#   - при ошибке компиляции тексты ошибок публикуются как аннотации
+#     и в Step Summary (чтобы их было видно без скачивания логов).
 # ============================================================
 name: Build RustLike mod
 
@@ -33,10 +35,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -52,10 +54,27 @@ jobs:
 
       - name: Build (gradlew build)
         working-directory: rustlike
-        run: ./gradlew build --no-daemon --stacktrace
+        shell: bash
+        run: ./gradlew build --no-daemon --stacktrace 2>&1 | tee /tmp/gradle.log
 
       - name: List produced jars
         run: ls -la rustlike/build/libs/
+
+      - name: Publish build errors (annotations + summary)
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## ❌ Ошибка сборки RustLike"
+            echo '```'
+            grep -E "error:|FAILURE:|What went wrong|Could not |Execution failed|A problem occurred|Caused by:" /tmp/gradle.log | head -60 || echo "(подробности в логе шага Build)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          grep -E "error:|FAILURE:|What went wrong|Could not |Execution failed|A problem occurred|Caused by:" /tmp/gradle.log \
+            | head -40 | while IFS= read -r line; do
+                echo "::error::${line}"
+              done
+          echo "::error::Сборка упала — см. Step Summary выше (полный текст в логе шага Build)"
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
