@@ -32,7 +32,8 @@ public final class ClientEvents {
 
     @SubscribeEvent
     public static void onClickInput(InputEvent.ClickInputEvent event) {
-        if (!event.isAttack() || event.getButton() != 0) {
+        // Нас интересует только нажатие левой кнопки мыши (код 0).
+        if (event.getButton() != 0) {
             return;
         }
 

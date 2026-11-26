@@ -2,9 +2,9 @@ package dev.rustlike.piece;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.SoundType;
 
 /**
  * Уровни строительства (материалы) — как в Rust:

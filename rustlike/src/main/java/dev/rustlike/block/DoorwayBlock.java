@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.HorizontalDirectionalProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -35,8 +35,8 @@ public class DoorwayBlock extends StructureBlock {
 
     public static final BooleanProperty HAS_DOOR = BooleanProperty.create("has_door");
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
-    public static final HorizontalDirectionalProperty FACING =
-            HorizontalDirectionalProperty.create("facing", Direction.Plane.HORIZONTAL);
+    public static final DirectionProperty FACING =
+            DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
     // --- Формы (VoxelShape) в ориентации «facing = south» ---
     // Рама: левый столб (x 0..3), правый столб (x 13..16), перемычка (y 13..16).

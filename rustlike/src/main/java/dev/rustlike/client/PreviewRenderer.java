@@ -73,7 +73,7 @@ public final class PreviewRenderer {
     }
 
     /** Рисует 6 граней параллелепипеда (формат POSITION_COLOR). */
-    private static void drawFilledBox(net.minecraft.client.renderer.BufferBuilder buffer,
+    private static void drawFilledBox(com.mojang.blaze3d.vertex.BufferBuilder buffer,
                                       Matrix4f pose, AABB box,
                                       float r, float g, float b, float a) {
         float x0 = (float) box.minX, y0 = (float) box.minY, z0 = (float) box.minZ;
@@ -93,7 +93,7 @@ public final class PreviewRenderer {
         quad(buffer, pose, x1, y0, z0, x1, y1, z0, x1, y1, z1, x1, y0, z1, r, g, b, a);
     }
 
-    private static void quad(net.minecraft.client.renderer.BufferBuilder buffer,
+    private static void quad(com.mojang.blaze3d.vertex.BufferBuilder buffer,
                              Matrix4f pose,
                              float ax, float ay, float az,
                              float bx, float by, float bz,
@@ -106,7 +106,7 @@ public final class PreviewRenderer {
         vertex(buffer, pose, dx, dy, dz, r, g, b, a);
     }
 
-    private static void vertex(net.minecraft.client.renderer.BufferBuilder buffer,
+    private static void vertex(com.mojang.blaze3d.vertex.BufferBuilder buffer,
                                Matrix4f pose,
                                float x, float y, float z,
                                float r, float g, float b, float a) {
