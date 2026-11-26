@@ -1,0 +1,70 @@
+# ============================================================
+# Сборка мода RustLike (Minecraft 1.20.1 + Forge) в GitHub Actions.
+#
+# Безопасность:
+#   - запускается ТОЛЬКО при пуше в ветку arena/faf605bf-nexomessenger
+#     (по путям rustlike/** и этого файла) или вручную (workflow_dispatch);
+#   - НЕ затрагивает main и деплой NEXO Messenger (deploy.yml/deploy-pages.yml
+#     триггерятся только на main);
+#   - минимальные права: contents: read; никакие секреты не используются;
+#   - результат — JAR-артефакт сборки (без публикации релизов).
+# ============================================================
+name: Build RustLike mod
+
+on:
+  push:
+    branches: [arena/faf605bf-nexomessenger]
+    paths:
+      - 'rustlike/**'
+      - '.github/workflows/build-rustlike.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rustlike-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            rustlike/gradle/wrapper/gradle-wrapper.properties
+            rustlike/build.gradle
+
+      - name: Show environment
+        run: |
+          java -version
+          chmod +x rustlike/gradlew
+
+      - name: Build (gradlew build)
+        working-directory: rustlike
+        run: ./gradlew build --no-daemon --stacktrace
+
+      - name: List produced jars
+        run: ls -la rustlike/build/libs/
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustlike-mod-jar
+          path: |
+            rustlike/build/libs/*.jar
+            !rustlike/build/libs/*-sources.jar
+            !rustlike/build/libs/*-dev.jar
+            !rustlike/build/libs/*-slim.jar
+          if-no-files-found: error
+          retention-days: 30
