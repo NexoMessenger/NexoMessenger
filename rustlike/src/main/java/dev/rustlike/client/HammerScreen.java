@@ -99,7 +99,7 @@ public class HammerScreen extends Screen {
         if (id == null || id.isEmpty()) {
             return Component.literal("?");
         }
-        Item item = ForgeRegistries.ITEMS.get(new ResourceLocation(id));
+        Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(id));
         if (item == null || item == Items.AIR) {
             return Component.literal(id);
         }

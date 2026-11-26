@@ -20,12 +20,12 @@ public final class CreativeTabEvents {
 
     @SubscribeEvent
     public static void onTabContents(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTab() == CreativeModeTabs.BUILDING_BLOCKS) {
+        if (event.getTabKey().equals(CreativeModeTabs.BUILDING_BLOCKS)) {
             event.accept(ModRegistry.FOUNDATION_ITEM.get());
             event.accept(ModRegistry.WALL_ITEM.get());
             event.accept(ModRegistry.DOORWAY_ITEM.get());
         }
-        if (event.getTab() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+        if (event.getTabKey().equals(CreativeModeTabs.TOOLS_AND_UTILITIES)) {
             event.accept(ModRegistry.BUILDING_PLAN.get());
             event.accept(ModRegistry.HAMMER.get());
         }

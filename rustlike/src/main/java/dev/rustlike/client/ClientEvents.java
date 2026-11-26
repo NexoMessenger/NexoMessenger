@@ -6,6 +6,7 @@ import dev.rustlike.logic.PlacementRules;
 import dev.rustlike.network.ModNetwork;
 import dev.rustlike.network.PlaceStructureC2S;
 import dev.rustlike.piece.PieceType;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
@@ -31,9 +32,9 @@ public final class ClientEvents {
     }
 
     @SubscribeEvent
-    public static void onClickInput(InputEvent.ClickInputEvent event) {
-        // Нас интересует только нажатие левой кнопки мыши (код 0).
-        if (event.getButton() != 0) {
+    public static void onMouseButton(InputEvent.MouseButton.Pre event) {
+        // Только НАЖАТИЕ (PRESS) левой кнопки мыши (код 0).
+        if (event.getButton() != 0 || event.getAction() != InputConstants.PRESS) {
             return;
         }
 
