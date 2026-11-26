@@ -1,0 +1,39 @@
+{
+  "textures": {
+    "0": "rustlike:block/foundation_2"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        3,
+        16
+      ],
+      "faces": {
+        "up": {
+          "texture": "#0"
+        },
+        "down": {
+          "texture": "#0"
+        },
+        "north": {
+          "texture": "#0"
+        },
+        "south": {
+          "texture": "#0"
+        },
+        "east": {
+          "texture": "#0"
+        },
+        "west": {
+          "texture": "#0"
+        }
+      }
+    }
+  ]
+}

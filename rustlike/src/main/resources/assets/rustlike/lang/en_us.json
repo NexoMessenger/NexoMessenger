@@ -1,0 +1,53 @@
+{
+  "item.rustlike.building_plan": "Building Plan",
+  "item.rustlike.hammer": "Hammer",
+
+  "block.rustlike.foundation": "Foundation",
+  "block.rustlike.wall": "Wall",
+  "block.rustlike.doorway": "Doorway",
+
+  "rustlike.tier.0": "Twigs",
+  "rustlike.tier.1": "Wood",
+  "rustlike.tier.2": "Stone",
+  "rustlike.tier.3": "Metal",
+  "rustlike.tier.4": "Armored Metal",
+
+  "rustlike.piece.foundation": "Foundation",
+  "rustlike.piece.wall": "Wall",
+  "rustlike.piece.doorway": "Doorway",
+  "rustlike.piece.door": "Door",
+
+  "rustlike.radial.title": "Building",
+  "rustlike.radial.hint": "LMB/Enter — select · 1–4 — sector · Esc — close",
+  "rustlike.radial.cost": "Cost: %1$s × %2$s",
+
+  "rustlike.hud.title": "Building Plan",
+  "rustlike.hud.hint": "RMB — building menu · LMB — place element",
+  "rustlike.hud.can_place": "✔ Can place here",
+  "rustlike.hud.aim": "Aim at the placement spot",
+
+  "rustlike.msg.not_loaded": "Chunk not loaded yet",
+  "rustlike.msg.too_far": "Too far away",
+  "rustlike.msg.need_doorway": "Need an empty doorway",
+  "rustlike.msg.occupied": "Occupied here",
+  "rustlike.msg.need_ground": "Foundation needs solid ground below",
+  "rustlike.msg.need_support": "Place a foundation below or nearby first",
+  "rustlike.msg.no_resources": "Missing: %1$s × %2$s",
+  "rustlike.msg.placed": "Built: %s",
+  "rustlike.msg.installed": "Door installed",
+  "rustlike.msg.need_plan": "Building plan required in hand",
+  "rustlike.msg.not_structure": "That is not a structure",
+  "rustlike.msg.need_hammer": "Hammer required in hand",
+  "rustlike.msg.no_damage": "No damage",
+  "rustlike.msg.repaired": "Structure repaired",
+  "rustlike.msg.max_tier": "Maximum level",
+  "rustlike.msg.upgraded": "Upgraded: %s",
+
+  "rustlike.hammer.title": "Hammer",
+  "rustlike.hammer.material": "Material: %s",
+  "rustlike.hammer.condition": "Condition: %1$s / %2$s",
+  "rustlike.hammer.repair_cost": "Repair (%1$s × %2$s)",
+  "rustlike.hammer.upgrade_cost": "Upgrade to \"%1$s\" (%2$s × %3$s)",
+  "rustlike.hammer.max": "Upgrade: max level",
+  "rustlike.hammer.close": "Close"
+}

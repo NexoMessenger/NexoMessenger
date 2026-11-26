@@ -1,0 +1,15 @@
+# Gradle / Forge
+build/
+.gradle/
+run/
+out/
+eclipse/
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+bin/
+src/generated/

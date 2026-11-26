@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "tier=0": {
+      "model": "rustlike:block/wall_t0"
+    },
+    "tier=1": {
+      "model": "rustlike:block/wall_t1"
+    },
+    "tier=2": {
+      "model": "rustlike:block/wall_t2"
+    },
+    "tier=3": {
+      "model": "rustlike:block/wall_t3"
+    },
+    "tier=4": {
+      "model": "rustlike:block/wall_t4"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+issueTrackerURL=""
+license="All rights reserved (личное использование)"
+
+[[mods]]
+modId="rustlike"
+version="0.1.0"
+displayName="RustLike — Rust-подобное выживание"
+displayURL=""
+authors="RustLike Project"
+description='''
+Постепенный перенос игрового опыта Rust в Minecraft Java 1.20.1 (Forge).
+Этап 1: строительный план, фундаменты, стены, дверные проёмы, двери,
+превью размещения, молоток (ремонт/улучшение), уровни строительства.
+'''
+
+[[dependencies.rustlike]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47.1.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.rustlike]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"

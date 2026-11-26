@@ -1,0 +1,53 @@
+{
+  "item.rustlike.building_plan": "Строительный план",
+  "item.rustlike.hammer": "Молоток",
+
+  "block.rustlike.foundation": "Фундамент",
+  "block.rustlike.wall": "Стена",
+  "block.rustlike.doorway": "Дверной проём",
+
+  "rustlike.tier.0": "Ветки",
+  "rustlike.tier.1": "Дерево",
+  "rustlike.tier.2": "Камень",
+  "rustlike.tier.3": "Металл",
+  "rustlike.tier.4": "Улучшенный металл",
+
+  "rustlike.piece.foundation": "Фундамент",
+  "rustlike.piece.wall": "Стена",
+  "rustlike.piece.doorway": "Дверной проём",
+  "rustlike.piece.door": "Дверь",
+
+  "rustlike.radial.title": "Строительство",
+  "rustlike.radial.hint": "ЛКМ/Enter — выбрать · 1–4 — сектор · Esc — закрыть",
+  "rustlike.radial.cost": "Расход: %1$s × %2$s",
+
+  "rustlike.hud.title": "Строительный план",
+  "rustlike.hud.hint": "ПКМ — меню строительства · ЛКМ — установить элемент",
+  "rustlike.hud.can_place": "✔ Можно поставить",
+  "rustlike.hud.aim": "Наведи на место установки",
+
+  "rustlike.msg.not_loaded": "Чанк ещё не загружен",
+  "rustlike.msg.too_far": "Слишком далеко",
+  "rustlike.msg.need_doorway": "Нужен дверной проём без двери",
+  "rustlike.msg.occupied": "Здесь занято",
+  "rustlike.msg.need_ground": "Фундаменту нужна твёрдая опора снизу",
+  "rustlike.msg.need_support": "Сначала поставь фундамент снизу или рядом",
+  "rustlike.msg.no_resources": "Не хватает: %1$s × %2$s",
+  "rustlike.msg.placed": "Построено: %s",
+  "rustlike.msg.installed": "Дверь установлена",
+  "rustlike.msg.need_plan": "Нужен строительный план в руке",
+  "rustlike.msg.not_structure": "Это не постройка",
+  "rustlike.msg.need_hammer": "Нужен молоток в руке",
+  "rustlike.msg.no_damage": "Повреждений нет",
+  "rustlike.msg.repaired": "Постройка починена",
+  "rustlike.msg.max_tier": "Максимальный уровень",
+  "rustlike.msg.upgraded": "Улучшено: %s",
+
+  "rustlike.hammer.title": "Молоток",
+  "rustlike.hammer.material": "Материал: %s",
+  "rustlike.hammer.condition": "Прочность: %1$s / %2$s",
+  "rustlike.hammer.repair_cost": "Починить (%1$s × %2$s)",
+  "rustlike.hammer.upgrade_cost": "Улучшить до «%1$s» (%2$s × %3$s)",
+  "rustlike.hammer.max": "Улучшение: максимум",
+  "rustlike.hammer.close": "Закрыть"
+}

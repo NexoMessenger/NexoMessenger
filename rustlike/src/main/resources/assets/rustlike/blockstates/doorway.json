@@ -1,0 +1,324 @@
+{
+  "variants": {
+    "tier=0,has_door=false,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 0
+    },
+    "tier=0,has_door=false,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 90
+    },
+    "tier=0,has_door=false,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 180
+    },
+    "tier=0,has_door=false,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 270
+    },
+    "tier=0,has_door=false,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 0
+    },
+    "tier=0,has_door=false,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 90
+    },
+    "tier=0,has_door=false,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 180
+    },
+    "tier=0,has_door=false,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t0",
+      "y": 270
+    },
+    "tier=0,has_door=true,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t0_closed",
+      "y": 0
+    },
+    "tier=0,has_door=true,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t0_closed",
+      "y": 90
+    },
+    "tier=0,has_door=true,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t0_closed",
+      "y": 180
+    },
+    "tier=0,has_door=true,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t0_closed",
+      "y": 270
+    },
+    "tier=0,has_door=true,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t0_open",
+      "y": 0
+    },
+    "tier=0,has_door=true,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t0_open",
+      "y": 90
+    },
+    "tier=0,has_door=true,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t0_open",
+      "y": 180
+    },
+    "tier=0,has_door=true,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t0_open",
+      "y": 270
+    },
+    "tier=1,has_door=false,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 0
+    },
+    "tier=1,has_door=false,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 90
+    },
+    "tier=1,has_door=false,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 180
+    },
+    "tier=1,has_door=false,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 270
+    },
+    "tier=1,has_door=false,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 0
+    },
+    "tier=1,has_door=false,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 90
+    },
+    "tier=1,has_door=false,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 180
+    },
+    "tier=1,has_door=false,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t1",
+      "y": 270
+    },
+    "tier=1,has_door=true,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t1_closed",
+      "y": 0
+    },
+    "tier=1,has_door=true,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t1_closed",
+      "y": 90
+    },
+    "tier=1,has_door=true,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t1_closed",
+      "y": 180
+    },
+    "tier=1,has_door=true,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t1_closed",
+      "y": 270
+    },
+    "tier=1,has_door=true,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t1_open",
+      "y": 0
+    },
+    "tier=1,has_door=true,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t1_open",
+      "y": 90
+    },
+    "tier=1,has_door=true,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t1_open",
+      "y": 180
+    },
+    "tier=1,has_door=true,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t1_open",
+      "y": 270
+    },
+    "tier=2,has_door=false,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 0
+    },
+    "tier=2,has_door=false,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 90
+    },
+    "tier=2,has_door=false,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 180
+    },
+    "tier=2,has_door=false,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 270
+    },
+    "tier=2,has_door=false,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 0
+    },
+    "tier=2,has_door=false,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 90
+    },
+    "tier=2,has_door=false,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 180
+    },
+    "tier=2,has_door=false,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t2",
+      "y": 270
+    },
+    "tier=2,has_door=true,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t2_closed",
+      "y": 0
+    },
+    "tier=2,has_door=true,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t2_closed",
+      "y": 90
+    },
+    "tier=2,has_door=true,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t2_closed",
+      "y": 180
+    },
+    "tier=2,has_door=true,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t2_closed",
+      "y": 270
+    },
+    "tier=2,has_door=true,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t2_open",
+      "y": 0
+    },
+    "tier=2,has_door=true,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t2_open",
+      "y": 90
+    },
+    "tier=2,has_door=true,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t2_open",
+      "y": 180
+    },
+    "tier=2,has_door=true,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t2_open",
+      "y": 270
+    },
+    "tier=3,has_door=false,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 0
+    },
+    "tier=3,has_door=false,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 90
+    },
+    "tier=3,has_door=false,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 180
+    },
+    "tier=3,has_door=false,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 270
+    },
+    "tier=3,has_door=false,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 0
+    },
+    "tier=3,has_door=false,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 90
+    },
+    "tier=3,has_door=false,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 180
+    },
+    "tier=3,has_door=false,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t3",
+      "y": 270
+    },
+    "tier=3,has_door=true,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t3_closed",
+      "y": 0
+    },
+    "tier=3,has_door=true,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t3_closed",
+      "y": 90
+    },
+    "tier=3,has_door=true,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t3_closed",
+      "y": 180
+    },
+    "tier=3,has_door=true,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t3_closed",
+      "y": 270
+    },
+    "tier=3,has_door=true,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t3_open",
+      "y": 0
+    },
+    "tier=3,has_door=true,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t3_open",
+      "y": 90
+    },
+    "tier=3,has_door=true,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t3_open",
+      "y": 180
+    },
+    "tier=3,has_door=true,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t3_open",
+      "y": 270
+    },
+    "tier=4,has_door=false,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 0
+    },
+    "tier=4,has_door=false,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 90
+    },
+    "tier=4,has_door=false,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 180
+    },
+    "tier=4,has_door=false,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 270
+    },
+    "tier=4,has_door=false,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 0
+    },
+    "tier=4,has_door=false,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 90
+    },
+    "tier=4,has_door=false,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 180
+    },
+    "tier=4,has_door=false,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t4",
+      "y": 270
+    },
+    "tier=4,has_door=true,open=false,facing=south": {
+      "model": "rustlike:block/doorway_t4_closed",
+      "y": 0
+    },
+    "tier=4,has_door=true,open=false,facing=west": {
+      "model": "rustlike:block/doorway_t4_closed",
+      "y": 90
+    },
+    "tier=4,has_door=true,open=false,facing=north": {
+      "model": "rustlike:block/doorway_t4_closed",
+      "y": 180
+    },
+    "tier=4,has_door=true,open=false,facing=east": {
+      "model": "rustlike:block/doorway_t4_closed",
+      "y": 270
+    },
+    "tier=4,has_door=true,open=true,facing=south": {
+      "model": "rustlike:block/doorway_t4_open",
+      "y": 0
+    },
+    "tier=4,has_door=true,open=true,facing=west": {
+      "model": "rustlike:block/doorway_t4_open",
+      "y": 90
+    },
+    "tier=4,has_door=true,open=true,facing=north": {
+      "model": "rustlike:block/doorway_t4_open",
+      "y": 180
+    },
+    "tier=4,has_door=true,open=true,facing=east": {
+      "model": "rustlike:block/doorway_t4_open",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,76 @@
+// ============================================================
+// RustLike — мод для Minecraft Java 1.20.1 + Forge
+// Стандартная сборка ForgeGradle 6 (как в официальном MDK)
+// Собрать:   gradlew build        (Windows: gradlew.bat build)
+// Результат: build/libs/rustlike-0.1.0.jar
+// ============================================================
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+
+version = '0.1.0'
+group = 'dev.rustlike'
+
+base {
+    archivesName = 'rustlike'
+}
+
+// Мод компилируется под Java 17 (требование Minecraft 1.20.1)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    // Официальные (mojmap) обфускационные маппинги — как в оригинальном MDK
+    mappings channel: 'official', version: '1.20.1'
+
+    runs {
+        // Общие настройки всех запусков (dev-среда внутри IDE/Gradle)
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                rustlike {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        // Запуск клиента: gradlew runClient
+        client {
+            property 'forge.enabledGameTestNamespaces', 'rustlike'
+        }
+
+        // Запуск выделенного сервера: gradlew runServer
+        server {
+            property 'forge.logging.console.level', 'debug'
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    // Дополнительные репозитории не требуются — все зависимости Forge/Mojang
+    // скачиваются автоматически из maven.minecraftforge.net и официальных
+    // репозиториев Mojang при сборке.
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+}
+
+// Простой манифест JAR
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'   : 'rustlike',
+                'Specification-Version' : '1',
+                'Implementation-Title'  : 'rustlike',
+                'Implementation-Version': project.jar.archiveVersion,
+                'Implementation-Vendor' : 'RustLike Project',
+        ])
+    }
+    // Forge требует обратную обфускацию JAR после сборки
+    finalizedBy 'reobfJar'
+}
