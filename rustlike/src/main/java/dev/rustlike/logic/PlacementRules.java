@@ -39,7 +39,7 @@ public final class PlacementRules {
             return new Result(false, Component.translatable(key, args));
         }
 
-        public static Result ok() {
+        public static Result success() {
             return new Result(true, Component.empty());
         }
     }
@@ -117,7 +117,7 @@ public final class PlacementRules {
     /** Достаточно ли ресурсов у игрока (или он в творческом режиме). */
     private static Result checkResources(Player player, PieceType piece) {
         if (isFree(player)) {
-            return Result.ok();
+            return Result.success();
         }
         int need = piece.placeCost();
         int have = countItem(player.getInventory(), piece.placeCostItem());
@@ -125,7 +125,7 @@ public final class PlacementRules {
             return Result.fail("rustlike.msg.no_resources",
                     need, Component.translatable(piece.placeCostItem().getDescriptionId()));
         }
-        return Result.ok();
+        return Result.success();
     }
 
     /** Тратятся ли ресурсы (творческий режим + настройка). */

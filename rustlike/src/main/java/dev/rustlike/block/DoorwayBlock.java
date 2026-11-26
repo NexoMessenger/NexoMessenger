@@ -88,14 +88,14 @@ public class DoorwayBlock extends StructureBlock {
     /** Поворот на 90° вокруг центра блока: (x, z) -> (16 - z, x). */
     private static VoxelShape rotate90(VoxelShape shape) {
         java.util.List<net.minecraft.world.phys.AABB> boxes = shape.toAabbs();
-        VoxelShape[] parts = new VoxelShape[boxes.size()];
-        for (int i = 0; i < boxes.size(); i++) {
-            net.minecraft.world.phys.AABB a = boxes.get(i);
-            parts[i] = Shapes.create(new net.minecraft.world.phys.AABB(
+        VoxelShape result = null;
+        for (net.minecraft.world.phys.AABB a : boxes) {
+            VoxelShape part = Shapes.create(new net.minecraft.world.phys.AABB(
                     16.0D - a.maxZ, a.minY, a.minX,
                     16.0D - a.minZ, a.maxY, a.maxX));
+            result = (result == null) ? part : Shapes.or(result, part);
         }
-        return Shapes.or(parts).optimize();
+        return result == null ? Shapes.empty() : result.optimize();
     }
 
     public DoorwayBlock(Properties properties) {
