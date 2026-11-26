@@ -8,10 +8,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Действия молотка на сервере: ремонт и улучшение построек.
@@ -76,8 +78,7 @@ public final class StructureActions {
         }
 
         be.setDamage(0);
-        level.playSound(null, pos, SoundEvents.BLOCK_ANVIL_USE,
-                SoundSource.BLOCKS, 1.0F, 1.2F);
+        playAnvil(level, pos, "block.anvil.use", 1.2F);
         player.displayClientMessage(
                 Component.translatable("rustlike.msg.repaired"), true);
 
@@ -116,13 +117,23 @@ public final class StructureActions {
         BlockState upgraded = state.setValue(StructureBlock.TIER, next.id());
         level.setBlock(pos, upgraded, 3);
 
-        level.playSound(null, pos, SoundEvents.BLOCK_ANVIL_PLACE,
-                SoundSource.BLOCKS, 1.0F, 1.0F);
+        playAnvil(level, pos, "block.anvil.place", 1.0F);
         player.displayClientMessage(
                 Component.translatable("rustlike.msg.upgraded",
                         Component.translatable(next.nameKey())), true);
 
         HammerMenu.open(player, pos);
+    }
+
+    /**
+     * Звук по его строковому id (например "block.anvil.use").
+     * Так мы не зависим от точных имён констант в SoundEvents.
+     */
+    private static void playAnvil(ServerLevel level, BlockPos pos, String soundId, float pitch) {
+        SoundEvent sound = ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation(soundId));
+        if (sound != null) {
+            level.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, pitch);
+        }
     }
 
     /** Небольшая прослойка к конфигу (чтобы не тянуть Forge-классы в логику). */

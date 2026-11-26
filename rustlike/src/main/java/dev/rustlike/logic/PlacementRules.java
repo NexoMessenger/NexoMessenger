@@ -103,11 +103,11 @@ public final class PlacementRules {
 
     /** Есть ли постройка снизу или на одном уровне по горизонтали. */
     private static boolean hasStructureNeighbor(Level level, BlockPos pos) {
-        if (level.getBlockState(pos.below()) instanceof StructureBlock) {
+        if (level.getBlockState(pos.below()).getBlock() instanceof StructureBlock) {
             return true;
         }
         for (Direction direction : Direction.Plane.HORIZONTAL) {
-            if (level.getBlockState(pos.relative(direction)) instanceof StructureBlock) {
+            if (level.getBlockState(pos.relative(direction)).getBlock() instanceof StructureBlock) {
                 return true;
             }
         }
